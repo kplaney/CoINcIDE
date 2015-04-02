@@ -252,7 +252,7 @@ createLungSimDatasets <-  function(numSimDatasets=10,
     for(c in 1:length(numPerClust)){
       
       clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClust[c]-1))
-      clustFeatureIndexList[[d]][[c]] <- c(count:(count+numPerClust[c]-1))
+      clustFeatureIndexList[[d]][[c]] <- c(1:numRows)
       count <- count+numPerClust[c]
       
     }
@@ -271,7 +271,8 @@ createLungSimDatasets <-  function(numSimDatasets=10,
     stop("Must specify the number of samples for all 4 tissue types.")
     
   }
-  if(length(simType>1)){
+  
+  if(length(simType)>1){
     
     message("\nMore than one simType selected; defaulting to highQualityClust option.")
     simType <- "highQualityClust"

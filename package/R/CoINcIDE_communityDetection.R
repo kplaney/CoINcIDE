@@ -1,5 +1,47 @@
+
+
+ output <- list(trueSimilData=trueSimilData,pvalueMatrix=pvalueMatrix,clustIndexMatrix=clustIndexMatrix)
+dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
+edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+                      "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
+sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
+
+outputFile="./CoINcIDE_messages.txt",minFractFeatureIntersect=0,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
+
+  if(is.na(thresh)){
+    
+    stop("\nthresh variable must be non-NA.")
+    
+  }
+  if(length(na.omit(match(edgeMethod,names(summary(pr_DB)[2]$distance))))!=1 && 
+              all(is.na(match(edgeMethod,c("distCor","spearman","pearson","kendall"))))){
+    
+    stop("\nedgeMethod specified does not unique match one of the allowed methods in proxy
+       or c(\"distCor\",\"spearman\",\"pearson\",\"kendall\")
+       Type \'names(summary(pr_DB)[2]$distance)\' to see permitted string characters.
+       Use the formal list name, not the other possible synonyms.")
+    
+  }
+
+    #distance or cor matrix?
+      if(!is.na(summary(pr_DB)[2]$distance[edgeMethod]) && summary(pr_DB)[2]$distance[edgeMethod]){
+      
+          #do count NAs in full length?
+      pvalue <- length(which(nullSimilVector <= thresh))/length(nullSimilVector)
+      
+      }else{
+        #want greater than for similarity. rest of metrics are simil metrics.
+       pvalue <- length(which(nullSimilVector >= thresh))/length(nullSimilVector)  
+        
+      }
+    
+  
 #######ANALYZE OUTPUT FUNCTIONS
-computeEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",length(thresholdVector)),saveDir="/home/kplaney/",fileTag="",saveEdgeFile=TRUE){
+#TO DO: p-value where entire cluster is data matrix (what if rest of samples very few?/below clustSizeMin? nah..)
+#
+
+#create wrapper function for filterEdges (this is what user sees.)
+filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",length(thresholdVector)),saveDir="/home/kplaney/",fileTag="",saveEdgeFile=TRUE){
   
   #creates directory if there isn't one
   dir.create(saveDir);
@@ -50,8 +92,7 @@ computeEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",lengt
                 #break out of loop.
                 break;
                 
-              }
-              
+              }             
               
             }else{
               
@@ -105,6 +146,7 @@ computeEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",lengt
     #end of loops
   }
   
+  #TO DO: also analyze clusters who adjMatrix are ALL zeros (no edges.) return this info.
   #remove first NA row
   edgeMatrix <- edgeMatrix[-1, ,drop=FALSE];
   edgeWeightMatrix <- edgeWeightMatrix[-1, ,drop=FALSE];
@@ -123,12 +165,7 @@ computeEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",lengt
                 col.names=FALSE);
     
   }
-  
-  ##COME BACK: function to combine edge weights matrices
-  ##list of edgeWeights. relative weights vector for each.
-  ##assumption: all of same dimensions.
-  ##THEN do a weighted community for every weight matrix??
-  
+
   #create edge and weight files for cytoscape or other graphing programs
   write.table(edgeMatrix,file=paste0(saveDir,"/IGPN_edgeMatrix_",fileTag, "_",Sys.Date(),".txt"),sep="\t",quote=FALSE,row.names=FALSE,
               col.names=FALSE);
