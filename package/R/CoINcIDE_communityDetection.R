@@ -1,9 +1,7 @@
 
 #######ANALYZE OUTPUT FUNCTIONS
-#TO DO: p-value where entire cluster is data matrix (what if rest of samples very few?/below clustSizeMin? nah..)
-#
 assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueThresh=.1,
-                             meanEdgePairPvalueThresh=.05
+                             meanEdgePairPvalueThresh=.05,
                              minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
                              minFractFeatureIntersect=0,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
                              clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges"
@@ -15,14 +13,14 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   
   for(r in 1:nrow(computeTrueSimilOutput$clustSizeMatrix)){
     
-    if(computeTrueSimilOutput$clustFractSizeMatrix[r]==1){
+    if(computeTrueSimilOutput$clustSizeFractMatrix[r]==1){
       #ROW is when this cluster was the reference cluster. p-value will by default be insignificant.
       #just replace with p-value in the other direction (columnwise)
       #(if both clusters in a pair were entire size of matrix, will have NA p-value still.)
       pvalueMatrix[r, ] <-   pvalueMatrix[, r]
       
     }
-    if(computeTrueSimilOutput$clustSizeMatrix[r] <= clustSizeThresh || computeTrueSimilOutput$clustFractSizeMatrix[r] <= clustSizeFractThresh){
+    if(computeTrueSimilOutput$clustSizeMatrix[r] <= clustSizeThresh || computeTrueSimilOutput$clustSizeFractMatrix[r] <= clustSizeFractThresh){
       #remove these clusters
       pvalueMatrix[r, ] <- NA
       count <- count + 1
@@ -67,7 +65,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   
   clustFurtherRemoved <- setdiff(filterEdgeOutput$clustRemoved,clustSizeIndexRemove)
   
-  output <- list=(clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput)
+  output <- list(meanEdgePvalueMatrix=meanEdgePvalueMatrix,clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput)
   return(output)
   
 }
@@ -99,7 +97,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
           if(!is.na(adjMatricesList[[a]][p,n]) && !is.na(adjMatricesList[[a]][n,p])){
             #is it below threshold? must pass ALL thresholds.
             #NOTE: will need to figure something else if doing a Euc dist...want > then.
-            if(threshDir[a]==">"){
+            if(threshDir[a]==">="){
               
               if(adjMatricesList[[a]][p,n] > thresholdVector[a] && adjMatricesList[[a]][n,p] > thresholdVector[a]){
                 
@@ -111,7 +109,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
                 break;
               }
               
-            }else  if(threshDir[a]=="<"){
+            }else  if(threshDir[a]=="<="){
               
               if(adjMatricesList[[a]][p,n] < thresholdVector[a] && adjMatricesList[[a]][n,p] < thresholdVector[a]){
                 
@@ -128,7 +126,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
               
             }else{
               
-              stop("\nPlease pick > or < for thresh directions.")
+              stop("\nPlease pick >= or <= for thresh directions.")
             }
             
           }else{
@@ -150,10 +148,11 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
           edgeMatrix <- rbind(edgeMatrix, t(as.matrix(c(n,p))));
           
           temp <- c();
-          #take average of each bidirectional weight
+          #take average of each bidirectional weight to get final weight.
           for(a in 1:length(adjMatricesList)){
             
             temp[a] <- mean(adjMatricesList[[a]][p,n],adjMatricesList[[a]][n,p]);
+            
             if(is.na(temp[a])){
               
               stop("Getting NA edge weights!");
@@ -194,13 +193,13 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
   }else{
     
     colnames(edgeWeightMatrix) <- names(adjMatricesList);
-    write.table(edgeWeightMatrix,file=paste0(saveDir,"/IGPN_edgeWeights_",fileTag, "_",Sys.Date(),".txt"),sep="\t",quote=FALSE,row.names=FALSE,
+    write.table(edgeWeightMatrix,file=paste0(saveDir,"/edgeWeights_",fileTag, "_",Sys.Date(),".txt"),sep="\t",quote=FALSE,row.names=FALSE,
                 col.names=FALSE);
     
   }
 
   #create edge and weight files for cytoscape or other graphing programs
-  write.table(edgeMatrix,file=paste0(saveDir,"/IGPN_edgeMatrix_",fileTag, "_",Sys.Date(),".txt"),sep="\t",quote=FALSE,row.names=FALSE,
+  write.table(edgeMatrix,file=paste0(saveDir,"/edgeAssignments_",fileTag, "_",Sys.Date(),".txt"),sep="\t",quote=FALSE,row.names=FALSE,
               col.names=FALSE);
   
   }
