@@ -217,7 +217,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
 # undirGraph <- graph.edgeMatrix(finalEdgeMatrix,directed=FALSE);
 # plot(undirGraph)
 
-findCommunities <- function(edgeMatrix,edgeWeightMatrix,clust_detailedNames,fileTag="IGPN_communityNodeAttributes_",
+findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag="IGPN_communityNodeAttributes_",
                             saveDir="./",minNumUniqueStudiesPerCommunity=3,clustMethodName="sparseBC",
                             commMethod=c("fastGreedy","edgeBetween","walktrap","eigenvector","optimal","spinglass","multilevel"),
                             makePlots=TRUE,saveGraphData=TRUE){
@@ -244,9 +244,9 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clust_detailedNames,file
     
   }
   
-  studyKey <- cbind(strsplit2(clust_detailedNames,split="_")[,1],strsplit2(clust_detailedNames,split="_")[,2]);
+  
   clustNames <- union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]));
-  studyNames <-  studyKey[na.omit(match(clustNames,studyKey[,1])) ,2];
+  studyNames <-  clustIndexMatrix[na.omit(match(clustNames,clustIndexMatrix[,1])) ,2];
   #order in same order as orig names.
   igraph_clustNames <- graphKey[match(clustNames,graphKey[,"orig_id"]),"new_id"];
 
@@ -355,7 +355,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clust_detailedNames,file
   
   #add on study num
   #assumption: study number is in the second location. cluster number is in the first.:  x_x_..
-  membership <- cbind(membership,studyKey[na.omit(match(membership[,"clust"],studyKey[,1])) ,2])
+  membership <- cbind(membership,clustIndexMatrix[na.omit(match(membership[,"clust"],clustIndexMatrix[,1])) ,2])
   colnames(membership)[ncol(membership)] <- "studyNum";
   
   numMembersInComm <- table(membership[,"community"]);
@@ -404,12 +404,15 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clust_detailedNames,file
   
   
   commLose <- setdiff(unique(membership[ ,"community"]),commKeep);
+  clustLose <- c()
+
   
   if(length(commLose)>0){
     
   for(l in 1:length(commLose)){
     
     nodesLose <- igraph_attrDF[which(igraph_attrDF[,"community"]==commLose[l]) ,"igraph_id"];
+    clustLose <- append(clustLose,igraph_attrDF[which(igraph_attrDF[,"community"]==commLose[l]) ,"orig_id"])
     #remove these from your attribute data frame.
     igraph_attrDF <- igraph_attrDF[-which(igraph_attrDF[,"community"]==commLose[l]) ,];
     #and remove all edges that involve nodes in community commLose[l]...
@@ -437,6 +440,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clust_detailedNames,file
     warning("all edges removed after pruning - no communities left.");
     finalNumCommunities <- NA;
     networkCommPlot <- NA;
+    undirGraph <- NA;
     
   }else{
     
@@ -447,7 +451,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clust_detailedNames,file
   finalNumCommunities <- length(unique(igraph_attrDF[,"community"]));
   
   if(makePlots){
-    
+    #COME BACK: update resolutions, colors.
     png(filename=paste0(saveDir,clustMethodName,"_communityPlotPruned_",Sys.Date(),".png"),
       width = 700, height = 1000);
   
@@ -484,7 +488,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clust_detailedNames,file
   output <- list(numCommunities=finalNumCommunities,numCommunitiesOrig=numCommunitiesOrig,undirGraph=undirGraph,communityObject=comm,networkCommPlot=networkCommPlot,
                  networkCommPlot_unpruned=networkCommPlot_full,ClustKey=graphKey,undirGraph_base=undirGraph_base,origNetworkPlot=origNetworkPlot,
                  edgeDF=igraph_edgeDF,attrDF=igraph_attrDF,undirGraph_full=undirGraph_full,edgeDF_full=igraph_edgeDF_full,attrDF_full=igraph_attrDF_full,
-                 commMethod=commMethod,modularity=modularity,communityObject_full=comm);
+                 commMethod=commMethod,modularity=modularity,communityObject_full=comm,commLose=commLose,clustLose=clustLose);
   return(output);
   
 }
