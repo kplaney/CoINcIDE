@@ -1,57 +1,89 @@
 
-
- output <- list(trueSimilData=trueSimilData,pvalueMatrix=pvalueMatrix,clustIndexMatrix=clustIndexMatrix)
-dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
-edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
-                      "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
-
-outputFile="./CoINcIDE_messages.txt",minFractFeatureIntersect=0,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
-
-  if(is.na(thresh)){
-    
-    stop("\nthresh variable must be non-NA.")
-    
-  }
-  if(length(na.omit(match(edgeMethod,names(summary(pr_DB)[2]$distance))))!=1 && 
-              all(is.na(match(edgeMethod,c("distCor","spearman","pearson","kendall"))))){
-    
-    stop("\nedgeMethod specified does not unique match one of the allowed methods in proxy
-       or c(\"distCor\",\"spearman\",\"pearson\",\"kendall\")
-       Type \'names(summary(pr_DB)[2]$distance)\' to see permitted string characters.
-       Use the formal list name, not the other possible synonyms.")
-    
-  }
-
-    #distance or cor matrix?
-      if(!is.na(summary(pr_DB)[2]$distance[edgeMethod]) && summary(pr_DB)[2]$distance[edgeMethod]){
-      
-          #do count NAs in full length?
-      pvalue <- length(which(nullSimilVector <= thresh))/length(nullSimilVector)
-      
-      }else{
-        #want greater than for similarity. rest of metrics are simil metrics.
-       pvalue <- length(which(nullSimilVector >= thresh))/length(nullSimilVector)  
-        
-      }
-    
-  
 #######ANALYZE OUTPUT FUNCTIONS
 #TO DO: p-value where entire cluster is data matrix (what if rest of samples very few?/below clustSizeMin? nah..)
 #
+assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueThresh=.1,
+                             meanEdgePairPvalueThresh=.05
+                             minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
+                             minFractFeatureIntersect=0,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
+                             clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges"
+){
+  
+  clustSizeIndexRemove <- c()
+  count <- 0
+  meanEdgePvalueMatrix <- matrix(data=NA,ncol=ncol(pvalueMatrix),nrow=nrow(pvalueMatrix))
+  
+  for(r in 1:nrow(computeTrueSimilOutput$clustSizeMatrix)){
+    
+    if(computeTrueSimilOutput$clustFractSizeMatrix[r]==1){
+      #ROW is when this cluster was the reference cluster. p-value will by default be insignificant.
+      #just replace with p-value in the other direction (columnwise)
+      #(if both clusters in a pair were entire size of matrix, will have NA p-value still.)
+      pvalueMatrix[r, ] <-   pvalueMatrix[, r]
+      
+    }
+    if(computeTrueSimilOutput$clustSizeMatrix[r] <= clustSizeThresh || computeTrueSimilOutput$clustFractSizeMatrix[r] <= clustSizeFractThresh){
+      #remove these clusters
+      pvalueMatrix[r, ] <- NA
+      count <- count + 1
+      clustSizeIndexRemove[count] <- r
+    }
+    
+  }
+  
+  #assign mean p-value matrix
+  
+  for(r in 1:nrow(meanEdgePvalueMatrix)){
+    
+    for(c in 1:nrow(meanEdgePvalueMatrix)){
+      #have we already computed the mean here?
+      if(is.na(meanEdgePvalueMatrix[r,c])){
+        
+        #other choice: could combine via fisher's p-value, stouffer's (Z-transform) or brown's method.
+        #for independent p-values: some claim Stouffer's is preferred over fisher's method: http://onlinelibrary.wiley.com/doi/10.1111/j.1420-9101.2005.00917.x/full
+        #Brown's method, not stouffer or fisher, are correct for dependent p-values (which is the case here.)
+        #But Brown's only defines the variance/standard devation and mean - i.e. not a readily interpretable p-value.
+        #this sum method is simpler but much more conservative than fisher's p-value, and 
+        #presumably more conservative than stouffer's or brown's method.
+        meanEdgePvalueMatrix[r,c] <- mean(c(pvalueMatrix[r,c],pvalueMatrix[c,r]))
+        meanEdgePvalueMatrix[c,r] <- meanEdgePvalueMatrix[r,c]
+        
+      }
+      
+    }
+    
+  }
+  
+  adjMatricesList <- list(computeTrueSimilOutput$similValueMatrix,computeTrueSimilOutput$similValueMatrix,
+                          pvalueMatrix,meanEdgePvalueMatrix,computeTrueSimilOutput$fractFeatIntersectMatrix,
+                          computeTrueSimilOutput$numFeatIntersectMatrix)
+  
+  thresholdVector <- c(minTrueSimilThresh,maxTrueSimilThresh,indEdgePvalueThresh,meanEdgePairPvalueThresh,
+                       fractFeatIntersect,numFeatIntersectThresh)
+  
+  threshDir <- c(">=","<=","<=","<=",">=",">=")
+  
+  filterEdgeOutput <- filterEdges(adjMatricesList,thresholdVector,threshDir=threshDir,saveDir=saveDir,fileTag=fileTag,saveEdgeFile=TRUE)
+  
+  clustFurtherRemoved <- setdiff(filterEdgeOutput$clustRemoved,clustSizeIndexRemove)
+  
+  output <- list=(clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput)
+  return(output)
+  
+}
 
 #create wrapper function for filterEdges (this is what user sees.)
-filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",length(thresholdVector)),saveDir="/home/kplaney/",fileTag="",saveEdgeFile=TRUE){
+filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",length(thresholdVector)),saveDir="/home/kplaney/",fileTag="",saveEdgeFile=TRUE){
   
   #creates directory if there isn't one
   dir.create(saveDir);
-  #set NA p-values to 1.
-  #adjMatrixIGP_pvalue[which(is.na(adjMatrixIGP_pvalue))] <- 1;
+
   numEdges <- 0;
+  #create a "master" adjacency matrix.
   #if no edge: is a zero.
   adjMatrix <- matrix(data=NA,ncol=ncol(adjMatricesList[[1]]),nrow=nrow(adjMatricesList[[1]]));
   edgeMatrix <- matrix(data=NA,ncol=2);
-  edgeWeightMatrix <- matrix(data=NA,ncol=length(adjMatricesList));
+  edgeWeightMatrix <- matrix(data=NA,ncol=length(adjMatricesList))
   
   for(n in 1:nrow(adjMatricesList[[1]])){
     
@@ -146,7 +178,8 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",length
     #end of loops
   }
   
-  #TO DO: also analyze clusters who adjMatrix are ALL zeros (no edges.) return this info.
+  #identify clusters who adjMatrix are ALL zeros (no edges.) return this info.
+  clustRemoved <- which(rowSums(adjMatrix)==0)
   #remove first NA row
   edgeMatrix <- edgeMatrix[-1, ,drop=FALSE];
   edgeWeightMatrix <- edgeWeightMatrix[-1, ,drop=FALSE];
@@ -172,7 +205,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">",length
   
   }
   #create a weight column from each adjMatrix (use names() as column names.)
-  output <- list(edgeMatrix=edgeMatrix,edgeWeightMatrix=edgeWeightMatrix,adjMatrix=adjMatrix);
+  output <- list(edgeMatrix=edgeMatrix,edgeWeightMatrix=edgeWeightMatrix,adjMatrix=adjMatrix,clustRemoved=clustRemoved);
   return(output);
   
 }

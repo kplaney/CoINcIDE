@@ -10,7 +10,7 @@ edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
 sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
 
-outputFile="./CoINcIDE_messages.txt",minFractFeatureIntersect=0,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
+outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
   
 
   if(length(na.omit(match(edgeMethod,names(summary(pr_DB)[2]$distance))))!=1 && 
@@ -119,7 +119,7 @@ message("This code assumes what you're clustering columns, and features are in t
        thresh <- maxNullFractSize
      }
      #don't analyze clusters from the same dataset.
-     if(clustIndexMatrix[n,2] != clustIndexMatrix[r,2]){
+     if(clustIndexMatrix[n,2] != clustIndexMatrix[r,2] && !is.na(thresh)){
        
       if(!any(is.na(nullSimilMatrix[r,]))){
         
@@ -133,14 +133,13 @@ message("This code assumes what you're clustering columns, and features are in t
     
   }
 
- output <- list(trueSimilData=trueSimilData,pvalueMatrix=pvalueMatrix,clustIndexMatrix=clustIndexMatrix)
+ output <- list(computeTrueSimilOutput=trueSimilData,pvalueMatrix=pvalueMatrix,clustIndexMatrix=clustIndexMatrix)
  return(output)
 #EOF
 }
 
 
-######A
-#CHECK: is there a bug with indexing here??
+######
 computeTrueSimil <- function(clustIndexMatrix,
                                     edgeMethod="correlation",
                                     dataMatrixList,clustSampleIndexList,clustFeatureIndexList,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
@@ -208,7 +207,7 @@ computeTrueSimil <- function(clustIndexMatrix,
 
 
   output <- list(similValueMatrix=similValueMatrix,numFeatIntersectMatrix=numFeatIntersectMatrix,fractFeatIntersectMatrix=fractFeatIntersectMatrix,
-                 clustSizeMatrix=clustSizeMatrix,clustSizeFractMatrix)
+                 clustSizeMatrix=clustSizeMatrix,clustSizeFractMatrix=clustSizeFractMatrix)
   
   return(output)
 #EOF  
@@ -368,12 +367,30 @@ computeClusterPairSimil_centroid <- function(compareClust,refCentroid,nullCentro
   similMatrix <- computeClusterPairSimil(refClust=compareClust,compareClust=centroids,
                                     edgeMethod=edgeMethod)
   
-  for (i in 1:nrow(similMatrix)) {
-    
-    sampleClass[i] <- which.max(similMatrix[i,])
-    
-  }
   
+      #distance or cor matrix?
+      #running this "if" statement for all simulations does slow down the code...
+     #if only using a distance, or a simlarity metric, could remove the if statements to speed this up.
+      if(!is.na(summary(pr_DB)[2]$distance[edgeMethod]) && summary(pr_DB)[2]$distance[edgeMethod]){
+      
+        #want greater than for similarity. rest of metrics are simil metrics.
+         for (i in 1:nrow(similMatrix)) {
+    
+            sampleClass[i] <- which.min(similMatrix[i,])
+    
+        }
+      
+      }else{
+        #want greater than for similarity. rest of metrics are simil metrics.
+         for (i in 1:nrow(similMatrix)) {
+    
+            sampleClass[i] <- which.max(similMatrix[i,])
+    
+        }
+  
+        
+      }
+
   #clusterRepro code we didn't use:
   #result <- c()
   #IGP.clusterRepro from clusterRepro package returns these metrics.
