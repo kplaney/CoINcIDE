@@ -12,7 +12,14 @@ sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefC
 
 outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
   
-
+    if(any(is.na(unlist(dataMatrixList)))){
+    
+    warning("\nIn CoINcIDE_getAdjMatrices functions found NAs in a data matrix.
+             \nPlease impute all NAs using the function filterAndImputeSamples
+             function or an imputation method of your choice.")
+  
+    }
+    
   if(length(na.omit(match(edgeMethod,names(summary(pr_DB)[2]$distance))))!=1 && 
               all(is.na(match(edgeMethod,c("distCor","spearman","pearson","kendall"))))){
     
