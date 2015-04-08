@@ -2,22 +2,62 @@
 library("cluster")
 library("ConsensusClusterPlus")
 
-cluster_kmeansGap <- function(dataMatrix,clustFeatureIndex,maxNumClusters=30,iter.max=30,nstart=25,numSims=1000,algorithm="Hartigan-Wong",outputFile="./cluster_kmeansGap_output.txt"){
+clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,iter.max=30,nstart=25,numSims=1000,algorithm="Hartigan-Wong",outputFile="./cluster_kmeansGap_output.txt"){
   
-  if(any(clustFeatureIndex)>nrow(dataMatrix)){
+  
+  #lapply doens't work because also need to loop over clust features list.
+  #mapply didn't quite work either.
+  clustOutput <- list()
+  for(d in 1:length(dataMatrixList)){
     
-    stop("\nIn cluster_kmeansGap: your clustFeatureIndex list contains at least one indice that is beyond the number of rows in your input dataMatrix.\n")
-  }
-  
-  dataset <- dataMatrix[clustFeatureIndex, , drop=FALSE]
-  
-  clustF <- function(dataset,k,env=parent.frame()){
-  
-    kmeans(dataset, centers=k,iter.max=env$iter.max,nstart=env$nstart,algorithm=env$algorithm);
-  
+    outputList[[d]] <- clusterMatrixKmeansGap(dataMatrixList[[d]],clustFeaturesList[[d]],
+                                          maxNumClusters=maxNumClusters,iter.max=iter.max,
+                                          nstart=nstart,algorithm=algorithm,numSims=numSims,outputFile=outputFile)
+    
   }
 
-  gapTest <- clusGap(dataset, FUNcluster=clustF,K.max=maxNumClusters, B = numSims, verbose = interactive());
+  clustSampleIndexList <- list()
+  clustFeatureIndexList <- list()
+  bestK <- list()
+  consensusInfo <- list()
+  
+  for(d in 1:length(outputList)){
+    
+    clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    bestK[[d]] <- outputList[[d]]$bestK
+    consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+    
+  }
+  
+  output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                 bestK=bestK,consensusInfo=consensusInfo)
+  
+  return(output)
+
+}
+
+clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,iter.max=30,nstart=25,numSims=1000,algorithm="Hartigan-Wong",outputFile="./cluster_kmeansGap_output.txt"){
+  
+  dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
+  
+  if(nrow(dataset)==0){
+    
+    stop("\nIn clusterMatrixKmeansGap function: no clustFeatures were found in the data matrix inputted.")
+    
+  }
+
+  clustF <- function(x,k){
+    #k-means clusters the ROWs
+    #it turns out that R will recognize the upper-level function input value in this function.
+    #transpose BEFORE feed in here; I found it to return odd results if
+    #I feed in t(x) in the kmeans function that is feed into clusGap
+    kmeans(x, centers=k,iter.max=iter.max,nstart=nstart,algorithm=algorithm);
+  
+  }
+  
+  #k-means clusters the ROWs - so transpose dataset
+  gapTest <- clusGap(t(dataset), FUNcluster=clustF,K.max=maxNumClusters, B = numSims, verbose = interactive());
 
   #f(k) is the gap statistic.
   # method = c("firstSEmax", "Tibs2001SEmax", "globalSEmax", "firstmax", "globalmax")
@@ -46,7 +86,7 @@ cluster_kmeansGap <- function(dataMatrix,clustFeatureIndex,maxNumClusters=30,ite
   
  for(k in 1:bestK){
    
-   clustFeatureIndexList[[k]] <- clustFeatureIndex
+   clustFeatureIndexList[[k]] <- clustFeatures
    clustSampleIndexList[[k]] <- which(clusterAssignments==k)
    
    
@@ -58,23 +98,55 @@ cluster_kmeansGap <- function(dataMatrix,clustFeatureIndex,maxNumClusters=30,ite
   
 }
 
+clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,algorithm="complete",
+                              distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_kmeansGap_output.txt",
+                              corUse=c("everything","pairwise.complete.obs", "complete.obs"),numSims=1000){
+  
+  clustOutput <- list()
+  for(d in 1:length(dataMatrixList)){
+    
+   outputList[[d]] <- clusterMatrixKmeansGap(dataMatrixList[[d]],clustFeaturesList[[d]],maxNumClusters=maxNumClusters,algorithm=algorithm,numSims=numSims,distMethod=distMethod,outputFile=outputFile,corUse=corUse)
+    
+  }
 
-cluster_hclustGap <- function(dataMatrix,clustFeatureIndex,maxNumClusters=30,algorithm="complete",
+  clustSampleIndexList <- list()
+  clustFeatureIndexList <- list()
+  bestK <- list()
+  consensusInfo <- list()
+
+  for(d in 1:length(outputList)){
+    
+    clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    bestK[[d]] <- outputList[[d]]$bestK
+    consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+    
+  }
+   
+  output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                 bestK=bestK,consensusInfo=consensusInfo)
+
+return(output)
+
+}
+
+clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,algorithm="complete",
                               distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_kmeansGap_output.txt",
                               corUse=c("everything","pairwise.complete.obs", "complete.obs")){
   
-  if(any(clustFeatureIndex)>nrow(dataMatrix)){
+  dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
+
+  if(nrow(dataset)==0){
     
-    stop("\nIn cluster_kmeansGap: your clustFeatureIndex list contains at least one indice that is beyond the number of rows in your input dataMatrix.\n")
-  }
-  
-  dataset <- dataMatrix[clustFeatureIndex, , drop=FALSE]
+    stop("\nIn clusterMatrixHclustGap function: no clustFeatures were found in the data matrix inputted.")
+    
+  } 
   
   if(distMethod==("pearson") || distMethod=="spearman"){
     
-  clustF <- function(dataset,k,env=parent.frame()){
-  
-    clustObject <- hclust(as.dist((1-cor(dataset,use=corUse,method=distMethod))), method=env$algorithm);
+  clustF <- function(dataset,k){
+   #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
+    clustObject <- hclust(as.dist((1-cor(dataset,use=corUse,method=distMethod))), method=algorithm);
     clustObject <- cutree(clustObject,k=k)
     #must be in list format for cluster package to recognize.
     output <- list()
@@ -84,11 +156,17 @@ cluster_hclustGap <- function(dataMatrix,clustFeatureIndex,maxNumClusters=30,alg
     
   }
 
+     gapTest <- clusGap(dataset, FUNcluster=clustF(distMethod=distMethod,algorithm=algorithm),K.max=maxNumClusters, B = numSims, verbose = interactive());
+
   }else{
     
-  clustF <- function(dataset,k,env=parent.frame()){
-  
-    clustObject <- hclust(dist(dataset,method=env$distMethod), method=env$algorithm);
+        #dist (but not cor) computes across the rows, not columns.
+
+  clustF <- function(dataset,k){
+       #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
+    #tried passing in parent.frame() to make a more elegant solution but didn't work.
+
+    clustObject <- hclust(dist(dataset,method=distMethod), method=algorithm);
     #ConsensusClustPlus works with cutree output (see vignette.)
     output <- cutree(clustObject,k=k)
     #must be in list format for cluster package to recognize.
@@ -97,9 +175,10 @@ cluster_hclustGap <- function(dataMatrix,clustFeatureIndex,maxNumClusters=30,alg
     names(output$cluster) <- colnames(dataset)
     return(output)
   }
-    
+         #dist (but not cor) computes across the rows, not columns. works better when do t() in outside clustGap function.
+    gapTest <- clusGap(t(dataset), FUNcluster=clustF(distMethod=distMethod,algorithm=algorithm),K.max=maxNumClusters, B = numSims, verbose = interactive());
+
   }
-  gapTest <- clusGap(dataset, FUNcluster=clustF(distMethod=distMethod,algorithm=algorithm),K.max=maxNumClusters, B = numSims, verbose = interactive());
 
   #f(k) is the gap statistic.
   # method = c("firstSEmax", "Tibs2001SEmax", "globalSEmax", "firstmax", "globalmax")
@@ -138,26 +217,70 @@ cluster_hclustGap <- function(dataMatrix,clustFeatureIndex,maxNumClusters=30,alg
   
 }
 
+consensusClusterMatrixList <- function(dataMatrixList,clustFeatures,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
+innerLinkage="average", finalLinkage_hclust="average",
+corUse=c("everything","pairwise.complete.obs", "complete.obs"),
+distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
+minClustConsensus=.7){
+  
+  outputList <- lapply(dataMatrixList,FUN=function(dataMatrix,clustFeatures,maxNumClusters, numSims, pItem, pFeature, clusterAlg,
+innerLinkage, finalLinkage_hclust,
+corUse,
+distMethod,
+minClustConsensus){
+    
+    clusterOutput <- consensusClusterMatrix(dataMatrix,clustFeatures,maxNumClusters, numSims, pItem, pFeature, clusterAlg,
+innerLinkage, finalLinkage_hclust,
+corUse,
+distMethod,
+minClustConsensus)
+    
+    },clustFeatures,maxNumClusters, numSims, pItem, pFeature, clusterAlg,
+innerLinkage, finalLinkage_hclust,
+corUse,
+distMethod,
+minClustConsensus)
+  
+clustSampleIndexList <- list()
+clustFeatureIndexList <- list()
+bestK <- list()
+consensusInfo <- list()
 
+for(d in 1:length(outputList)){
+  
+  clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+  clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+  bestK[[d]] <- outputList[[d]]$bestK
+  consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+  
+}
+ 
+output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+               bestK=bestK,consensusInfo=consensusInfo)
+return(output)
+  
+}
 #biobase:
 #hclustMethod ==finalLinkage
 #looks like uses the default Hartigan-Wong for kmeans clustering.
 #but that has a pretty low iter.max (10) and nstarts...
 #but your own "homemade" cluster functions can only take in a distance matrix,
 #so couldn't write a separate kmeans function where I could tweak this.
-consensusClusterPlus_wrapper(dataMatrix, clustFeatureIndex,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
+consensusClusterMatrix <- function(dataMatrix, clustFeatures,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
 innerLinkage="average", finalLinkage_hclust="average",
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
 minClustConsensus=.7
 ){
 
-  if(any(clustFeatureIndex)>nrow(dataMatrix)){
-    
-    stop("\nIn cluster_kmeansGap: your clustFeatureIndex list contains at least one indice that is beyond the number of rows in your input dataMatrix.\n")
-  }
   
-  dataset <- dataMatrix[clustFeatureIndex, , drop=FALSE]
+  dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
+  
+    if(nrow(dataset)==0){
+    
+    stop("\nIn clusterMatrixHclustGap function: no clustFeatures were found in the data matrix inputted.")
+    
+  } 
  
   
     consensusClustOutput <- ConsensusClustPlus(d=dataset,
@@ -187,6 +310,19 @@ minClustConsensus=.7
     bestK <- 1
   }
 
+    clustFeatureIndexList <- list()
+  clustSampleIndexList <- list()
+
+  #COME BACK: is this the correct list index name?
+  clusterAssignments <- consensusClustOutput$cluster
+  
+ for(k in 1:bestK){
+   
+   clustFeatureIndexList[[k]] <- clustFeatureIndex
+   clustSampleIndexList[[k]] <- which(clusterAssignments==k)
+   
+   
+ }
   output <- list(bestK=bestK,clustFeatureIndexList=clustFeatureIndexList,
                  clustSampleIndexList=clustSampleIndexList, consensusCalc=icl,
                  consensusClustOutput=consensusClustOutput)
