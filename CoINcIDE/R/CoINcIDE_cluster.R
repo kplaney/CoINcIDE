@@ -19,19 +19,19 @@ clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClus
   clustSampleIndexList <- list()
   clustFeatureIndexList <- list()
   bestK <- list()
-  consensusInfo <- list()
+  gapTest <- list()
   
   for(d in 1:length(outputList)){
     
     clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
     clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
     bestK[[d]] <- outputList[[d]]$bestK
-    consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+    gapTest[[d]] <- outputList[[d]]$gapTest
     
   }
   
   output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
-                 bestK=bestK,consensusInfo=consensusInfo)
+                 bestK=bestK,gapTest=gapTest)
   
   return(output)
 
@@ -105,34 +105,35 @@ clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumCl
   clustOutput <- list()
   for(d in 1:length(dataMatrixList)){
     
-   outputList[[d]] <- clusterMatrixKmeansGap(dataMatrixList[[d]],clustFeaturesList[[d]],maxNumClusters=maxNumClusters,algorithm=algorithm,numSims=numSims,distMethod=distMethod,outputFile=outputFile,corUse=corUse)
+   outputList[[d]] <- clusterMatrixHclustGap(dataMatrixList[[d]],clustFeaturesList[[d]],maxNumClusters=maxNumClusters,algorithm=algorithm,numSims=numSims,distMethod=distMethod,outputFile=outputFile,corUse=corUse)
     
   }
 
   clustSampleIndexList <- list()
   clustFeatureIndexList <- list()
   bestK <- list()
-  consensusInfo <- list()
+  gapTest <- list()
 
   for(d in 1:length(outputList)){
     
     clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
     clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
     bestK[[d]] <- outputList[[d]]$bestK
-    consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+    gapTest[[d]] <- outputList[[d]]$gapTest
     
   }
    
   output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
-                 bestK=bestK,consensusInfo=consensusInfo)
+                 bestK=bestK,gapTest=gapTest)
 
 return(output)
 
 }
 
-clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,algorithm="complete",
+clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
+                                   algorithm=c("complete","ward.D", "ward.D2", "single", "average","mcquitty","median","centroid"),                     
                               distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_kmeansGap_output.txt",
-                              corUse=c("everything","pairwise.complete.obs", "complete.obs")){
+                              corUse=c("everything","pairwise.complete.obs", "complete.obs"),numSims=1000){
   
   dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
 
@@ -144,39 +145,34 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,al
   
   if(distMethod==("pearson") || distMethod=="spearman"){
     
-  clustF <- function(dataset,k){
+  clustF <- function(x,k){
    #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
-    clustObject <- hclust(as.dist((1-cor(dataset,use=corUse,method=distMethod))), method=algorithm);
-    clustObject <- cutree(clustObject,k=k)
-    #must be in list format for cluster package to recognize.
+    clustObject <- hclust(as.dist((1-cor(x,use=corUse,method=distMethod))), method=algorithm);
+    #clustGap needs a list output
     output <- list()
-    output$cluster <- clustObject
-    names(output$cluster) <- colnames(dataset)
+    output$cluster <- cutree(clustObject,k=k)
     return(output)
     
   }
 
-     gapTest <- clusGap(dataset, FUNcluster=clustF(distMethod=distMethod,algorithm=algorithm),K.max=maxNumClusters, B = numSims, verbose = interactive());
+     gapTest <- clusGap(dataset, FUNcluster=clustF,K.max=maxNumClusters, B = numSims, verbose = interactive());
 
   }else{
     
         #dist (but not cor) computes across the rows, not columns.
-
-  clustF <- function(dataset,k){
+ #dist (but not cor) computes across the rows, not columns.
+  clustF <- function(x,k){
        #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
     #tried passing in parent.frame() to make a more elegant solution but didn't work.
 
-    clustObject <- hclust(dist(dataset,method=distMethod), method=algorithm);
-    #ConsensusClustPlus works with cutree output (see vignette.)
-    output <- cutree(clustObject,k=k)
-    #must be in list format for cluster package to recognize.
+    clustObject <- hclust(dist(x,method=distMethod), method=algorithm);
     output <- list()
-    output$cluster <- clustObject
-    names(output$cluster) <- colnames(dataset)
+    output$cluster <- cutree(clustObject,k=k)
     return(output)
+  
   }
          #dist (but not cor) computes across the rows, not columns. works better when do t() in outside clustGap function.
-    gapTest <- clusGap(t(dataset), FUNcluster=clustF(distMethod=distMethod,algorithm=algorithm),K.max=maxNumClusters, B = numSims, verbose = interactive());
+    gapTest <- clusGap(t(dataset), FUNcluster=clustF,K.max=maxNumClusters, B = numSims, verbose = interactive());
 
   }
 
@@ -205,14 +201,15 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,al
   
  for(k in 1:bestK){
    
-   clustFeatureIndexList[[k]] <- clustFeatureIndex
+   clustFeatureIndexList[[k]] <- clustFeatures
    clustSampleIndexList[[k]] <- which(clusterAssignments==k)
    
    
  }
 
-   output <- list(bestK=bestK,clustFeatureIndexList=clustFeatureIndexList,
-                 clustSampleIndexList=clustSampleIndexList, gapTest= gapTest)
+  output <- list(bestK=bestK,clustFeatureIndexList=clustFeatureIndexList,
+                 clustSampleIndexList=clustSampleIndexList, gapTest=gapTest)
+ 
  return(output)
   
 }
