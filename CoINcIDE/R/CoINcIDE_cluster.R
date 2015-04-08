@@ -2,7 +2,8 @@
 library("cluster")
 library("ConsensusClusterPlus")
 
-clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,iter.max=30,nstart=25,numSims=1000,algorithm="Hartigan-Wong",outputFile="./cluster_kmeansGap_output.txt"){
+clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,iter.max=30,nstart=25,numSims=1000,algorithm="Hartigan-Wong",outputFile="./cluster_kmeansGap_output.txt",
+                                     bestK=c("firstMatch")){
   
   
   #lapply doens't work because also need to loop over clust features list.
@@ -214,47 +215,41 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
   
 }
 
-consensusClusterMatrixList <- function(dataMatrixList,clustFeatures,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
+consensusClusterMatrixList <- function(dataMatrixList,clustFeaturesList,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
 innerLinkage="average", finalLinkage_hclust="average",
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
-minClustConsensus=.7){
+minClustConsensus=.7,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh")){
   
-  outputList <- lapply(dataMatrixList,FUN=function(dataMatrix,clustFeatures,maxNumClusters, numSims, pItem, pFeature, clusterAlg,
-innerLinkage, finalLinkage_hclust,
-corUse,
-distMethod,
-minClustConsensus){
+  clusterOutput <- list()
+  
+  for(d in 1:length(dataMatrixList)){
     
-    clusterOutput <- consensusClusterMatrix(dataMatrix,clustFeatures,maxNumClusters, numSims, pItem, pFeature, clusterAlg,
-innerLinkage, finalLinkage_hclust,
-corUse,
-distMethod,
-minClustConsensus)
+        clusterOutput[[d]] <- consensusClusterMatrix(dataMatrixList[[d]],clustFeaturesList[[d]],
+                                                     maxNumClusters=maxNumClusters, numSims=numSims, 
+                                                     pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
+  innerLinkage=innerLinkage, finalLinkage_hclust=finalLinkage_hclust,corUse=corUse,distMethod=distMethod,
+  minClustConsensus=minClustConsensus,bestKmethod=bestKmethod)
     
-    },clustFeatures,maxNumClusters, numSims, pItem, pFeature, clusterAlg,
-innerLinkage, finalLinkage_hclust,
-corUse,
-distMethod,
-minClustConsensus)
+  }
   
-clustSampleIndexList <- list()
-clustFeatureIndexList <- list()
-bestK <- list()
-consensusInfo <- list()
-
-for(d in 1:length(outputList)){
+  clustSampleIndexList <- list()
+  clustFeatureIndexList <- list()
+  bestK <- list()
+  consensusInfo <- list()
   
-  clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
-  clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
-  bestK[[d]] <- outputList[[d]]$bestK
-  consensusInfo[[d]] <- outputList[[d]]$consensusCalc
-  
-}
- 
-output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
-               bestK=bestK,consensusInfo=consensusInfo)
-return(output)
+  for(d in 1:length(outputList)){
+    
+    clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    bestK[[d]] <- outputList[[d]]$bestK
+    consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+    
+  }
+   
+  output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                 bestK=bestK,consensusInfo=consensusInfo)
+  return(output)
   
 }
 #biobase:
@@ -263,13 +258,23 @@ return(output)
 #but that has a pretty low iter.max (10) and nstarts...
 #but your own "homemade" cluster functions can only take in a distance matrix,
 #so couldn't write a separate kmeans function where I could tweak this.
-consensusClusterMatrix <- function(dataMatrix, clustFeatures,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
+
+#bestKOverThreshBeforeNAclust: what the is largest k value whose min cluster consensus passes the minClustConsensus threshold BEFORE the first instance of a cluster with NAs (presumably "too many" clusters then.)
+#maxBestKOverThresh: what the is largest k value whose min cluster consensus passes the minClustConsensus threshold?
+#highestMinConsensus: what is the k value with the maximum min cluster consensus value?
+
+#warning: can't really silence the ConsensusClusterPlus plotting functions,
+#so testing a large maxNumClusters gets slow.
+consensusClusterMatrix <- function(dataMatrix, clustFeatures,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("km","hc","pam","kmdist"),
 innerLinkage="average", finalLinkage_hclust="average",
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
-minClustConsensus=.7
+minClustConsensus=.8,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh")
 ){
 
+  #come back: add defaults to make more user-friendly.
+  #if(length(clusterAlg)>1 || length(bestKmethod)>1)
+   #ConsensusClustPlus: assumes clustering the columns.
   
   dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
   
@@ -279,17 +284,18 @@ minClustConsensus=.7
     
   } 
  
-  
-    consensusClustOutput <- ConsensusClustPlus(d=dataset,
+
+    consensusClustOutput <- ConsensusClusterPlus(d=dataset,
                                                maxK=maxNumClusters,reps=numSims,
-                                               pItem=pItem, pFeature=pFeature, clusterAlg=clustF,
+                                               pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
   innerLinkage=innerLinkage, finalLinkage=finalLinkage_hclust, ml=NULL,
-  tmyPal=NULL,seed=NULL,plot=NULL,writeTable=FALSE,weightsItem=NULL,weightsFeature=NULL,verbose=F,corUse=corUse)
+  tmyPal=NULL,seed=NULL,plot=FALSE,writeTable=FALSE,weightsItem=NULL,weightsFeature=NULL,verbose=F,corUse=corUse)
   
 
   #get consensus score for each cluster for each k: 
   #hmm..doesn't work for k=1?? not so great...
-  icl <- calcICL(consensusClustOutput,title=NULL)
+  #weird...can't NOT have the plots outputted...tried title=NULL
+  icl <- calcICL(consensusClustOutput,plot=FALSE)
 
   consensusByK <- split(icl[["clusterConsensus"]],f=icl[["clusterConsensus"]][,"k"])
   #if one cluster's consensus is NA: will return NA. but want this.
@@ -298,9 +304,22 @@ minClustConsensus=.7
   minConsensusClusterByK <- lapply(consensusByK,FUN=function(consensusUnit){min(consensusUnit)})
   #starts at k=2
   if(length(which(unlist(minConsensusClusterByK)>=minClustConsensus))>0){
-  
-    #want to pick highest K we can (lowest K would basically always return 2.)
-    bestK <- max(which(unlist(minConsensusClusterByK)>=minClustConsensus)) +1
+
+    if(bestKmethod=="bestKOverThreshBeforeNAclust"){  
+    #want to pick highest K we can before an NA? (lowest K would basically always return 2.)
+    #take ONE step back then from this NA_limit (-1 part) 
+    NA_limit <- which(is.na(minConsensusClusterByK))[1] -1
+    bestK <- max(which(unlist(minConsensusClusterByK)[c(1:NA_limit)]>=minClustConsensus)) +1
+    
+    }else if(bestKmethod=="maxBestKOverThresh"){
+      
+         bestK <- max(which(unlist(minConsensusClusterByK)[c(1:length(minConsensusClusterByK))]>=minClustConsensus)) +1 
+      
+    }else if(bestKmethod=="highestMinConsensus"){
+      
+       bestK <- which.max(minConsensusClusterByK) + 1
+      
+    }
 
   }else{
     #none passed threshold...let k=1?
@@ -315,14 +334,14 @@ minClustConsensus=.7
   
  for(k in 1:bestK){
    
-   clustFeatureIndexList[[k]] <- clustFeatureIndex
+   clustFeatureIndexList[[k]] <- clustFeatures
    clustSampleIndexList[[k]] <- which(clusterAssignments==k)
    
    
  }
   output <- list(bestK=bestK,clustFeatureIndexList=clustFeatureIndexList,
                  clustSampleIndexList=clustSampleIndexList, consensusCalc=icl,
-                 consensusClustOutput=consensusClustOutput)
+                 consensusClustOutput=consensusClustOutput,minConsensusClusterByK=minConsensusClusterByK)
 
  return(output)
  
