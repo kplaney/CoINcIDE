@@ -167,7 +167,8 @@ createExpressionSetList <- function(exprMatrixList,masterPhenoData,patientKey="G
 }
   
 processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
-                                     numTopVarGenes,minVarPercentile,maxVarPercentile=1,minVar){
+                                     numTopVarGenes,minVarPercentile,maxVarPercentile=1,minVar,
+                                     featureDataFieldName="gene_symbol"){
   
   outputFile = paste0(outputFileDirectory,
                       "/curatedBreastData_processExpressionSetMessages.txt")
@@ -180,7 +181,7 @@ processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
       
      exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
                         outputFileDirectory=outputFileDirectory,
-                        numTopVarGenes=numTopVarGenes)
+                        numTopVarGenes=numTopVarGenes,featureDataFieldName=featureDataFieldName)
     
     }else if(!missing(minVarPercentile) && !missing(maxVarPercentile) 
              && missing(minVar)){
@@ -188,18 +189,18 @@ processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
       exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
                           outputFileDirectory=outputFileDirectory,
                           maxVarPercentile=maxVarPercentile,
-                          minVarPercentile=minVarPercentile)
+                          minVarPercentile=minVarPercentile,featureDataFieldName=featureDataFieldName)
       
     }else if(!missing(minVar)){
       
       exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
-                          outputFileDirectory=outputFileDirectory,minVar=minVar)
+                          outputFileDirectory=outputFileDirectory,minVar=minVar,featureDataFieldName=featureDataFieldName)
       
       
    }else{
       
       exprSetList[[e]] <- processExpressionSet(exprSetList[[e]],
-                          outputFileDirectory=outputFileDirectory)
+                          outputFileDirectory=outputFileDirectory,featureDataFieldName=featureDataFieldName)
     
     }
    
@@ -212,10 +213,10 @@ processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
 #assumption:  your feature data has a column that labeled gene_symbol.
 processExpressionSet <- function(exprSet,outputFileDirectory="./",
                                  numTopVarGenes,minVarPercentile,
-                                 maxVarPercentile=1,minVar){
+                                 maxVarPercentile=1,minVar,featureDataFieldName="gene_symbol"){
   
   study <- list(expr=exprSet@assayData$exprs,
-                keys=exprSet@featureData$gene_symbol,phenoData=pData(exprSet))
+                keys=fData(exprSet)[ ,featureDataFieldName],phenoData=pData(exprSet))
   tmp <- filterAndImputeSamples(study,studyName = "study",
          outputFile = paste0(outputFileDirectory,
          "/curatedBreastData_processExpressionSetMessages.txt"),impute=TRUE, 
@@ -228,7 +229,7 @@ processExpressionSet <- function(exprSet,outputFileDirectory="./",
    #need a data.frame and not cbind: otherwise coerces 
   #gene symbols into numeric data type.
   fData <- data.frame(c(1:length(tmp$keysFilterImpute)), tmp$keysFilterImpute)
-  colnames(fData) <- c("number","gene_symbol")
+  colnames(fData) <- c("number",featureDataFieldName)
     fData(exprSet) <- fData
   #only one set of classes data here - the phenoData, 
   #so will be in first list index.
@@ -237,7 +238,11 @@ processExpressionSet <- function(exprSet,outputFileDirectory="./",
   #must also set global featureNames to updated keys, not just featureData.
   #otheriwse won't return a valid ExpressionObject.
   featureNames(exprSet@featureData) <- c(1:length(tmp$keysFilterImpute))
-
+  #if samples were dropped: update protocolData
+  #The number of rows and row names of protocolData must agree with the dimension and column names of assayData.
+  #usually just an empty data frame - so just update the # of rows (samples.)
+  protocolData(exprSet)@data <- data.frame(row.names=colnames(exprs(exprSet)))
+  
   if(!validObject(exprSet)){
     
     warning("\nYour expression set is now not valid.
@@ -253,7 +258,7 @@ assay, pheno and feature slots.\n Proceed through data analysis with caution!")
 
   exprs(exprSet) <- data.matrix(tmp$expr)
   fData <- data.frame(tmp$keys,stringsAsFactors=FALSE)
-  colnames(fData) <- "gene_symbol"
+  colnames(fData) <- featureDataFieldName
   fData(exprSet) <- fData
   #must also set global featureNames to updated keys, not just featureData.
   #otheriwse won't return a valid ExpressionObject.
@@ -275,7 +280,7 @@ assay, pheno and feature slots.\n Proceed through data analysis with caution!")
   }
 
   study <- list(expr=exprSet@assayData$exprs,
-                keys=exprSet@featureData$gene_symbol)
+                keys=fData(exprSet)[ ,featureDataFieldName])
   
   if(!missing(numTopVarGenes)){
     
@@ -288,7 +293,7 @@ assay, pheno and feature slots.\n Proceed through data analysis with caution!")
     
     exprs(exprSet) <- data.matrix(tmp$filteredStudy$expr)
     fData <- data.frame(tmp$filteredStudy$keys,stringsAsFactors=FALSE)
-    colnames(fData) <- "gene_symbol"
+    colnames(fData) <- featureDataFieldName
     fData(exprSet) <- fData
     #must also set global featureNames to updated keys, not just featureData.
     #otheriwse won't return a valid ExpressionObject.
@@ -310,7 +315,7 @@ assay, pheno and feature slots.\n Proceed through data analysis with caution!")
     
     exprs(exprSet) <- data.matrix(tmp$filteredStudy$expr)
     fData <- data.frame(tmp$filteredStudy$keys,stringsAsFactors=FALSE)
-    colnames(fData) <- "gene_symbol"
+    colnames(fData) <- featureDataFieldName
     fData(exprSet) <- fData
     #must also set global featureNames to updated keys, not just featureData.
     #otheriwse won't return a valid ExpressionObject.
@@ -328,7 +333,7 @@ assay, pheno and feature slots.\n Proceed through data analysis with caution!")
     
     exprs(exprSet) <- data.matrix(tmp$filteredStudy$expr)
     fData <- data.frame(tmp$filteredStudy$keys,stringsAsFactors=FALSE)
-    colnames(fData) <- "gene_symbol"
+    colnames(fData) <- featureDataFieldName
     fData(exprSet) <- fData
     #must also set global featureNames to updated keys, not just featureData.
     #otheriwse won't return a valid ExpressionObject.
@@ -948,7 +953,7 @@ removeDuplicatedPatients <- function(exprMatrix,
                                                   "na.or.complete", 
                                                   "pairwise.complete.obs")){
   
-  message("\nStarting with  ", ncol(exprMatrix) ,"patients.")
+  message("\nStarting with  ", ncol(exprMatrix) ," patients.")
   cat("\nStarting with ", ncol(exprMatrix) ,"patients. \n\n",
       append=TRUE,file=outputFile)
   
@@ -1295,13 +1300,13 @@ filterGenesByVariance <- function(study, plotSaveDir="~/",minVarPercentile,
 }
 
 
-exprSetListToMatrixList <- function(esetList,featureColName="gene_symbol"){
+exprSetListToMatrixList <- function(esetList,featureDataFieldName="gene_symbol"){
   
   dataMatrixList <- list()
   for(e in 1:length(esetList)){
     
   dataMatrixList[[e]] <- exprs(esetList[[e]])
-  rownames(dataMatrixList[[e]]) <- fData(esetList[[e]])[,featureColName]
+  rownames(dataMatrixList[[e]]) <- fData(esetList[[e]])[,featureDataFieldName]
   
   }
   

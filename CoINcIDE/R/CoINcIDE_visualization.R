@@ -1,3 +1,16 @@
+
+###correlation heatmaps
+#png(filename=paste0(saveDir,paste0("sim",simNum,"_corr_heatmap_",Sys.Date(),".png")),
+    width = 700, height = 1000)
+
+#if want no density plot: density.info="none",
+#heatmap.2(cor(t(simData$dataMatrixList[[1]])),Rowv=F,Colv=F,scale = c("none"), 
+ #         density.info="none",trace="none",symkey=TRUE,key.title="Color Key",key.xlab="correlation",
+  #        col=rev(brewer.pal(11, "RdBu")),key=TRUE,labRow=F,labCol=F,ColSideColors=simSampleColors,
+   #       RowSideColors=simSampleColors,main=paste0("\n\nSimulation ",simNum," :\ncorrelation heatmap \nby tissue type"));
+
+#dev.off();
+
 ####
 advanced_networkPlots <- function(analysisOutput,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),

@@ -4,13 +4,8 @@ library("curatedOvarianData")
 datasetNames <- data(package="curatedOvarianData")
 datasetNames <- datasetNames[3]$results[,"Item"]
 
-esetList <- list()
-for(d in 1:length(datasetNames)){
-  
-  data(datasetNames[d])
-  esetList[[d]] <- datasetNames[d]
-  
-}
+
+
 #odd way to get a dataset list...I just downloaded the source file
 #and pull out their code.
 expandProbesets <- function (eset, sep = "///"){
@@ -47,12 +42,91 @@ for (strEset in strEsets){
 }
 #pData(esets) already contains survival data.
 
+#remove the extra TCGA datasets
+#TCGA.RNASeqV2_eset                           Integrated genomic analyses of ovarian carcinoma.
+#TCGA.mirna.8x15kv2_eset                      Integrated genomic analyses of ovarian carcinoma.
+#TCGA_eset                                    Integrated genomic analyses of ovarian carcinoma.
+indicesRemove <- na.omit(match(c("TCGA.RNASeqV2_eset","TCGA.mirna.8x15kv2_eset"),names(esets)))
+esets <- esets[-indicesRemove]
 
-#now process
+
+#look for batches - break these apart?
+#but it only looks like TCGA has actual site batches -
+#the rest look like the date the samples were collected?
+#in the R documentation it says 
+#"Hybridization date when Affymetrix CEL files are available"
+#perhaps TOO granular for our purposes.
+
+for(e in 1:length(esets)){
+  
+  if(!all(is.na(pData(esets[[e]])[,"batch"]))){
+    
+    cat("\n",names(esets[[e]]))
+    
+  }
+  
+}
+
+#only split up TCGA into batches
+TCGAbatches <- unique(pData(esets[["TCGA_eset"]])[,"batch"])
+#any samples with NA batch? these will be thrown out.
+which(is.na(pData(esets[["TCGA_eset"]])[,"batch"]))
+
+for(t in 1:length(TCGAbatches)){
+  
+  expr <- exprs(esets[["TCGA_eset"]])[ ,
+                                which(pData(esets[["TCGA_eset"]])[,"batch"]==TCGAbatches[t])]
+  
+  phenoData <-  pData(esets[["TCGA_eset"]])[
+                                which(pData(esets[["TCGA_eset"]])[,"batch"]==TCGAbatches[t]), ]
+  
+  esets[[paste0("TCGA_eset_batch_",t)]] <-  createS4exprSet(expr=expr,phenoData=phenoData)
+  
+}
+
+#remove original entire TCGA matrix
+esets <- esets[-which(names(esets)=="TCGA_eset")]
+
+#remove datasets that are too small? allow them for now.
+#now process, then grab meta-features
+#sounds like there SHOULD be some duplicated samples  in here.
+esets <- processExpressionSetList(exprSetList=esets,outputFileDirectory="~/Desktop/",
+                                     minVar=0,featureDataFieldName="gene")
+
+#now format just as a list of data matrices.
+dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
+
+names(dataMatrixList) <- names(esets)
+#run meta-feature analysis.
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),numFeatSelectByGlobalRank=1000,
+                                       numTopFeatFromEachDataset=10,fractNATopFeatAllowedPerDataset=.2,selectMethod=c("median"),
+                                       outputFile="~/Desktop//selectFeaturesMetaVarianceOut.txt")
+#remove datasets with too many missing top gene features
+dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+
+#STOPPED HERE.
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- metaFeatures$finalFeatures
+  
+}
+clusterOut <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=20,algorithm="ward.D",
+                              distMethod=c("euclidean"),outputFile="~/Desktop//cluster_hclustGap_output.txt",
+                              corUse=c("everything"),numSims=100)
 
 
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+####################
 #extra functions from curatedBreatData code.
   esetToSurv <- function(eset, output, months=TRUE){
   if (sum(eset$vital_status =="deceased", na.rm=TRUE) == 0) return(NULL)

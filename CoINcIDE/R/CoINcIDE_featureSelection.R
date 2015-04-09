@@ -1,11 +1,3 @@
-library("matrixStats")
-library("curatedBreastData")
-data(curatedBreastDataExprSetList)
-#load YOUR code for this one in the geneExprProc file.
-esetList <- processExpressionSetList(curatedBreastDataExprSetList, outputFileDirectory = "~/Desktop", 
-minVarPercentile=.01, maxVarPercentile = 1)
-dataMatrixList <- exprSetListToMatrixList(esetList)
-
 
 createTestVarianceDataMatrixList  <- function(){
   
@@ -45,7 +37,7 @@ testDataMatrixList <- list();
 
 }
 
-selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("sd,mad"), 
+selectFeaturesMetaVariance_wrapper <- function(dataMatrixList,rankMethod=c("sd,mad"), 
                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),numFeatSelectByGlobalRank=1000,
                                        numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.2,selectMethod=c("mean","median"),
                                        outputFile="./selectFeaturesMetaVarianceOut.txt"){
@@ -54,7 +46,7 @@ selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("sd,mad"),
   
   rankMatrix <- combineFeatureRanks(rankList)
   
-  output <- selectFeaturesMetaVariance(rankMatrix=rankMatrix,numNAstudiesAllowedPerFeat=numNAstudiesAllowedPerFeat,numFeatSelectByGlobalRank=numFeatSelectByGlobalRank,
+  output <- selectFeaturesMetaVariance(rankMatrix=rankMatrix,rankList=rankList,numNAstudiesAllowedPerFeat=numNAstudiesAllowedPerFeat,numFeatSelectByGlobalRank=numFeatSelectByGlobalRank,
                                        numTopFeatFromEachDataset=numTopFeatFromEachDataset,fractNATopFeatAllowedPerDataset=fractNATopFeatAllowedPerDataset,selectMethod=selectMethod,
                                        outputFile=outputFile)
   
@@ -124,7 +116,7 @@ combineFeatureRanks <- function(rankList){
   
   uniqueFeat <- c()
   
-  for(g in 1:length(dataMatrixList)){
+  for(g in 1:length(rankList)){
     
     uniqueFeat <- union(uniqueFeat,names(rankList[[g]]))
     
@@ -144,7 +136,7 @@ combineFeatureRanks <- function(rankList){
 
 }
 
-selectFeaturesMetaVariance <- function(rankMatrix,numNAstudiesAllowedPerFeat=ceiling(ncol(rankMatrix)/10),numFeatSelectByGlobalRank=1000,
+selectFeaturesMetaVariance <- function(rankMatrix,rankList, numNAstudiesAllowedPerFeat=ceiling(ncol(rankMatrix)/10),numFeatSelectByGlobalRank=1000,
                                        numTopFeatFromEachDataset=10,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("mean","median"),
                                        outputFile="./selectFeaturesMetaVarianceOut.txt"){
   

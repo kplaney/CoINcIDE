@@ -9,20 +9,16 @@ clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClus
   #lapply doens't work because also need to loop over clust features list.
   #mapply didn't quite work either.
   clustOutput <- list()
-  for(d in 1:length(dataMatrixList)){
-    
-    outputList[[d]] <- clusterMatrixKmeansGap(dataMatrixList[[d]],clustFeaturesList[[d]],
-                                          maxNumClusters=maxNumClusters,iter.max=iter.max,
-                                          nstart=nstart,algorithm=algorithm,numSims=numSims,outputFile=outputFile)
-    
-  }
-
   clustSampleIndexList <- list()
   clustFeatureIndexList <- list()
   bestK <- list()
   gapTest <- list()
-  
-  for(d in 1:length(outputList)){
+  for(d in 1:length(dataMatrixList)){
+    
+    message(paste0("\nClustering dataset ",d, ": ",names(dataMatrixList)[d]))
+    outputList[[d]] <- clusterMatrixKmeansGap(dataMatrixList[[d]],clustFeaturesList[[d]],
+                                          maxNumClusters=maxNumClusters,iter.max=iter.max,
+                                          nstart=nstart,algorithm=algorithm,numSims=numSims,outputFile=outputFile)
     
     clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
     clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
@@ -72,6 +68,13 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
   best_k <- which(select_metric)[1]
   
   
+  if(is.na(best_k)){
+    
+    stop(paste0("\nDid not find an optimal k below ",maxNumClusters))
+  
+  }
+ 
+  
   if(bestK != best_k){
     
     stop("\nError when selecting best K in clusGap function in cluster package.")
@@ -100,30 +103,24 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
 }
 
 clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,algorithm="complete",
-                              distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_kmeansGap_output.txt",
+                              distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_hclustGap_output.txt",
                               corUse=c("everything","pairwise.complete.obs", "complete.obs"),numSims=1000){
   
   clustOutput <- list()
-  for(d in 1:length(dataMatrixList)){
-    
-   outputList[[d]] <- clusterMatrixHclustGap(dataMatrixList[[d]],clustFeaturesList[[d]],maxNumClusters=maxNumClusters,algorithm=algorithm,numSims=numSims,distMethod=distMethod,outputFile=outputFile,corUse=corUse)
-    
-  }
-
   clustSampleIndexList <- list()
   clustFeatureIndexList <- list()
   bestK <- list()
   gapTest <- list()
 
-  for(d in 1:length(outputList)){
-    
-    clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+  for(d in 1:length(dataMatrixList)){
+      message(paste0("\nClustering dataset ",d, ": ",names(dataMatrixList)[d]))
+   outputList[[d]] <- clusterMatrixHclustGap(dataMatrixList[[d]],clustFeaturesList[[d]],maxNumClusters=maxNumClusters,algorithm=algorithm,numSims=numSims,distMethod=distMethod,outputFile=outputFile,corUse=corUse)
+        clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
     clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
     bestK[[d]] <- outputList[[d]]$bestK
     gapTest[[d]] <- outputList[[d]]$gapTest
-    
   }
-   
+
   output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
                  bestK=bestK,gapTest=gapTest)
 
@@ -187,6 +184,12 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
   #take first one that is true.
   best_k <- which(select_metric)[1];
 
+  if(is.na(best_k)){
+    
+    stop(paste0("\nDid not find an optimal k below ",maxNumClusters))
+  
+  }
+ 
   if(bestK != best_k){
     
     stop("\nError when selecting best K in clusGap function in cluster package.")
