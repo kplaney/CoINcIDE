@@ -54,7 +54,19 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
   }
   
   #k-means clusters the ROWs - so transpose dataset
-  gapTest <- clusGap(t(dataset), FUNcluster=clustF,K.max=maxNumClusters, B = numSims, verbose = interactive());
+  
+  if(ncol(dataset)<maxNumClusters){
+    #clustGap may return NA gap test if K.max = ncol(dataset)
+    #this will also mest up maxSE calculations
+    K.max <- ncol(dataset) - 1
+    
+  }else{
+    
+    K.max <- maxNumClusters
+    
+  }
+  
+  gapTest <- clusGap(t(dataset), FUNcluster=clustF,K.max=K.max, B = numSims, verbose = interactive());
 
   #f(k) is the gap statistic.
   # method = c("firstSEmax", "Tibs2001SEmax", "globalSEmax", "firstmax", "globalmax")
@@ -63,7 +75,7 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
       method = c("Tibs2001SEmax"),
       SE.factor = 1)
   #way to confirm bestK is actually working specifically for Tibs2001SEmax - compute by hand:
-  select_metric <- gapTest$Tab[c(1:(maxNumClusters-1)),"gap"] > gapTest$Tab[c(2:maxNumClusters),"gap"] - gapTest$Tab[c(2:maxNumClusters),"SE.sim"]
+  select_metric <- gapTest$Tab[c(1:(K.max-1)),"gap"] > gapTest$Tab[c(2:K.max),"gap"] - gapTest$Tab[c(2:K.max),"SE.sim"]
   #take first one that is true.
   best_k <- which(select_metric)[1]
   
@@ -141,6 +153,17 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
     
   } 
   
+  if(ncol(dataset)<maxNumClusters){
+    #hclust usually returns NA gap test if K.max = ncol(dataset)
+    #will also mest up maxSE calculations
+    K.max <- ncol(dataset)-1
+    
+  }else{
+    
+    K.max <- maxNumClusters
+    
+  }
+  
   if(distMethod==("pearson") || distMethod=="spearman"){
     
   clustF <- function(x,k){
@@ -152,8 +175,8 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
     return(output)
     
   }
-
-     gapTest <- clusGap(dataset, FUNcluster=clustF,K.max=maxNumClusters, B = numSims, verbose = interactive());
+  
+     gapTest <- clusGap(dataset, FUNcluster=clustF,K.max=K.max, B = numSims, verbose = interactive());
 
   }else{
     
@@ -170,7 +193,7 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
   
   }
          #dist (but not cor) computes across the rows, not columns. works better when do t() in outside clustGap function.
-    gapTest <- clusGap(t(dataset), FUNcluster=clustF,K.max=maxNumClusters, B = numSims, verbose = interactive());
+    gapTest <- clusGap(t(dataset), FUNcluster=clustF,K.max=K.max, B = numSims, verbose = interactive());
 
   }
 
@@ -180,7 +203,7 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
       method = c("Tibs2001SEmax"),
       SE.factor = 1)
   #way to confirm bestK is actually working specifically for Tibs2001SEmax - compute by hand:
-  select_metric <- gapTest$Tab[c(1:(maxNumClusters-1)),"gap"] > gapTest$Tab[c(2:maxNumClusters),"gap"] - gapTest$Tab[c(2:maxNumClusters),"SE.sim"];
+  select_metric <- gapTest$Tab[c(1:(K.max-1)),"gap"] > gapTest$Tab[c(2:K.max),"gap"] - gapTest$Tab[c(2:K.max),"SE.sim"];
   #take first one that is true.
   best_k <- which(select_metric)[1];
 
@@ -195,7 +218,7 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
     stop("\nError when selecting best K in clusGap function in cluster package.")
   }
 
-  cat(paste0("\nBest K as determined by k-means and gap test is: ", bestK ,"\n"),
+  cat(paste0("\nBest K as determined by hclust and gap test is: ", bestK ,"\n"),
       append=TRUE,file=outputFile);
 
   clustFeatureIndexList <- list()

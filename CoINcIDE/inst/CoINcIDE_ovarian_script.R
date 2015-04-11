@@ -68,9 +68,14 @@ for(e in 1:length(esets)){
 }
 
 #only split up TCGA into batches
-TCGAbatches <- unique(pData(esets[["TCGA_eset"]])[,"batch"])
+#na.omit: if any NA batch variables, then unique will return one "NA" 
+TCGAbatches <- na.omit(unique(pData(esets[["TCGA_eset"]])[,"batch"]))
 #any samples with NA batch? these will be thrown out.
 which(is.na(pData(esets[["TCGA_eset"]])[,"batch"]))
+#check: any duplicated patients? careful because could they be in different batches
+#and thus not collapsed in the dataset loop later?
+#nope..
+any(duplicated(colnames(exprs(esets[["TCGA_eset"]]))))
 
 for(t in 1:length(TCGAbatches)){
   
@@ -80,7 +85,8 @@ for(t in 1:length(TCGAbatches)){
   phenoData <-  pData(esets[["TCGA_eset"]])[
                                 which(pData(esets[["TCGA_eset"]])[,"batch"]==TCGAbatches[t]), ]
   
-  esets[[paste0("TCGA_eset_batch_",t)]] <-  createS4exprSet(expr=expr,phenoData=phenoData)
+  esets[[paste0("TCGA_eset_batch_",t)]] <-  createS4exprSet(expr=expr,phenoData=phenoData,
+                                                            featureDataFieldName="gene")
   
 }
 
@@ -102,17 +108,20 @@ metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("
                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),numFeatSelectByGlobalRank=1000,
                                        numTopFeatFromEachDataset=10,fractNATopFeatAllowedPerDataset=.2,selectMethod=c("median"),
                                        outputFile="~/Desktop//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
 #remove datasets with too many missing top gene features
 dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
 
-#STOPPED HERE.
+
 clustFeaturesList <- list()
 for(d in 1:length(dataMatrixList)){
   
   clustFeaturesList[[d]] <- metaFeatures$finalFeatures
   
 }
-clusterOut <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=20,algorithm="ward.D",
+
+clusterOut <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=30,algorithm="ward.D",
                               distMethod=c("euclidean"),outputFile="~/Desktop//cluster_hclustGap_output.txt",
                               corUse=c("everything"),numSims=100)
 

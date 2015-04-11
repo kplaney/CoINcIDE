@@ -1,6 +1,6 @@
 
 
-createS4exprSet <- function(expr,phenoData,featureData){
+createS4exprSet <- function(expr,phenoData,featureData,featureDataFieldName="gene"){
   
   require("Biobase")
   #search for class.
@@ -45,30 +45,31 @@ createS4exprSet <- function(expr,phenoData,featureData){
     
     exprSet@assayData <- assayDataNew(exprs = expr)
     
-    exprSet@featureData <- featureData
+    exprSet@featureData <- AnnotatedDataFrame(featData)
     
   }else if ((!missing(phenoData))&&(missing(featureData))){
     
     rownames(phenoData) <- colnames(expr)
     
     phenoData <-  new("AnnotatedDataFrame", data=as.data.frame(phenoData))
-    #phenoData <- as.data.frame(phenoData, row.names = colnames(expr),stringsAsFactors=FALSE)
-    
-    #exprSet <- ExpressionSet(assayData = assayDataNew(exprs=as.matrix(expr)),phenoData = AnnotatedDataFrame(phenoData), experimentData = new("MIAME"), annotation = character(0))
-    
+  
     exprSet <- new("ExpressionSet", assayData = assayDataNew(exprs=new("matrix")), phenoData = new("AnnotatedDataFrame"), featureData = new("AnnotatedDataFrame"), experimentData = new("MIAME"), annotation = character(0))
     
     exprSet@assayData <- assayDataNew(exprs = expr)
     
     exprSet@phenoData <- phenoData
     
-  }else{
-    # print("got here")
-    #featureData=annotatedDataFrameFrom(assayData, byrow=TRUE)
-    #exprSet <- ExpressionSet(assayData = assayDataNew(exprs=as.matrix(expr)), experimentData = new("MIAME"), annotation = character(0),protocolData=annotatedDataFrameFrom(assayData, byrow=FALSE),featureData=annotatedDataFrameFrom(assayData, byrow=TRUE))
-    exprSet <- new("ExpressionSet", assayData = assayDataNew(exprs=new("matrix")), phenoData = new("AnnotatedDataFrame"), featureData = new("AnnotatedDataFrame"), experimentData = new("MIAME"), annotation = character(0))
+    featData <- data.frame(rownames(expr))
+    colnames(featData) <-  featureDataFieldName
+    exprSet@featureData <- AnnotatedDataFrame(featData)
     
-    exprSet@assayData <- assayDataNew(exprs = expr)
+  }else{
+  exprSet <- new("ExpressionSet", assayData = assayDataNew(exprs=new("matrix")), phenoData = new("AnnotatedDataFrame"), featureData = new("AnnotatedDataFrame"), experimentData = new("MIAME"), annotation = character(0))
+    
+    exprSet@assayData <- assayDataNew(exprs = expr)      
+    featData <- data.frame(rownames(expr))
+    colnames(featData) <-  featureDataFieldName
+    exprSet@featureData <- AnnotatedDataFrame(featData)
     
   }
   
@@ -79,7 +80,8 @@ createS4exprSet <- function(expr,phenoData,featureData){
 #####
 #some of these variables are a bit noisy - remove
 #phenoData <- patientDataFull[,c(1:112)]
-createExpressionSetList <- function(exprMatrixList,masterPhenoData,patientKey="GEO_GSMID"){
+createExpressionSetList <- function(exprMatrixList,masterPhenoData,patientKey="GEO_GSMID",
+                                    featureDataFieldName){
   
   ExpressionSetList <- list()
   
@@ -127,16 +129,15 @@ createExpressionSetList <- function(exprMatrixList,masterPhenoData,patientKey="G
     colnames(phenoData)[1] <- c("datasetName")
     
     #store row names in feature data - see below how will need to update row names of assay data to store featureData.
-    featureData <- rownames(exprMatrixList[[d]]$expr)
-    
-    
+    featureData <- data.frame(rownames(exprMatrixList[[d]]$expr))
+
     if(!all(is.null(exprMatrixList[[d]]$featureData))){
       
       featureData <- data.frame(featureData,exprMatrixList[[d]]$featureData)
       
     }
-    
-    colnames(featureData)[1] <- "origAssayDataRowName"
+        #want first column to be designated featureDataFieldName.
+    colnames(featureData)[1] <- featureDataFieldName
     
     #Row names of featureData data frane must match row names of the matrix / matricies in expr.
     #unforutnately, can't have duplicated rownames in a dataframe...so just make unique IDs for assay data matrix.
