@@ -8,7 +8,7 @@ clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClus
   
   #lapply doens't work because also need to loop over clust features list.
   #mapply didn't quite work either.
-  clustOutput <- list()
+  outputList <- list()
   clustSampleIndexList <- list()
   clustFeatureIndexList <- list()
   bestK <- list()
@@ -118,7 +118,7 @@ clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumCl
                               distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_hclustGap_output.txt",
                               corUse=c("everything","pairwise.complete.obs", "complete.obs"),numSims=1000){
   
-  clustOutput <- list()
+  outputList <- list()
   clustSampleIndexList <- list()
   clustFeatureIndexList <- list()
   bestK <- list()
@@ -245,17 +245,22 @@ consensusClusterMatrixList <- function(dataMatrixList,clustFeaturesList,maxNumCl
 innerLinkage="average", finalLinkage_hclust="average",
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
-minClustConsensus=.7,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh")){
+minClustConsensus=.7,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),
+outputFile="./consensusOut.txt"){
   
-  clusterOutput <- list()
+ 
+  outputList <- list()
   
   for(d in 1:length(dataMatrixList)){
     
-        clusterOutput[[d]] <- consensusClusterMatrix(dataMatrixList[[d]],clustFeaturesList[[d]],
+    message(paste0("\nClustering dataset ",d, " ",names(dataMatrixList)[d]))
+    cat(paste0("\nClustering dataset ",d, " ",names(dataMatrixList)[d]),
+        append=TRUE,file=outputFile);
+    outputList[[d]] <- consensusClusterMatrix(dataMatrixList[[d]],clustFeaturesList[[d]],
                                                      maxNumClusters=maxNumClusters, numSims=numSims, 
                                                      pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
   innerLinkage=innerLinkage, finalLinkage_hclust=finalLinkage_hclust,corUse=corUse,distMethod=distMethod,
-  minClustConsensus=minClustConsensus,bestKmethod=bestKmethod)
+  minClustConsensus=minClustConsensus,bestKmethod=bestKmethod,outputFile=outputFile)
     
   }
   
@@ -295,7 +300,8 @@ consensusClusterMatrix <- function(dataMatrix, clustFeatures,maxNumClusters = 30
 innerLinkage="average", finalLinkage_hclust="average",
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
-minClustConsensus=.8,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh")
+minClustConsensus=.8,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),
+outputFile="./consensusOut.txt"
 ){
 
   #come back: add defaults to make more user-friendly.
@@ -309,10 +315,22 @@ minClustConsensus=.8,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeN
     stop("\nIn clusterMatrixHclustGap function: no clustFeatures were found in the data matrix inputted.")
     
   } 
- 
+  
+  #remember: we're clustering pItem*ncol(dataset) each time...so
+  #our max K is NOT ncol(dataset), but rather pItem*ncol(dataset)
+  if(floor(ncol(dataset)*pItem)<maxNumClusters){
+    #hclust usually returns NA gap test if K.max = pItem*ncol(dataset) as opposed to pItem*ncol(dataset)-1
+    #will also mest up maxSE calculations
+    K.max <- floor(pItem*ncol(dataset))-1
+    
+  }else{
+    
+    K.max <- maxNumClusters
+    
+  }
 
     consensusClustOutput <- ConsensusClusterPlus(d=dataset,
-                                               maxK=maxNumClusters,reps=numSims,
+                                               maxK=K.max,reps=numSims,
                                                pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
   innerLinkage=innerLinkage, finalLinkage=finalLinkage_hclust, ml=NULL,
   tmyPal=NULL,seed=NULL,plot=FALSE,writeTable=FALSE,weightsItem=NULL,weightsFeature=NULL,verbose=F,corUse=corUse)
@@ -352,11 +370,20 @@ minClustConsensus=.8,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeN
     bestK <- 1
   }
 
+  message(paste0("Best K is: ",bestK))
+  cat(paste0("\nBest K as determined by ",clusterAlg, " and consensus metric  is: ", bestK ,"\n"),
+      append=TRUE,file=outputFile);
     clustFeatureIndexList <- list()
   clustSampleIndexList <- list()
 
-  #COME BACK: is this the correct list index name?
-  clusterAssignments <- consensusClustOutput$cluster
+  if(bestK >1){
+
+  clusterAssignments <- consensusClustOutput[[bestK]]$consensusClass
+  
+  }else{
+    
+    clusterAssignments <- rep.int(1,times=ncol(dataset))
+  }
   
  for(k in 1:bestK){
    
