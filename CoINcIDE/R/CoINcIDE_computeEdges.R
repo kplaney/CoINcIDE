@@ -30,13 +30,6 @@ outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersect
     
   }
 
-  
-  if(length(sigMethod)>1){
-    
-    sigMethod <- "centroid"
-    message("More than one sigMethod given; defaulting to meanMatrix method.")
-    
-  }
 
   if(sigMethod != "meanMatrix" && sigMethod != "centroid"){
     
@@ -50,7 +43,6 @@ outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersect
  
   }
   
-
   ##check: all clustIndex lists have featureIndexLists, and these
   #exist in the fullDataMatrix?
 date <- Sys.time();
@@ -117,20 +109,30 @@ message("This code assumes what you're clustering columns, and features are in t
    
    for(r in 1:nrow(clustIndexMatrix)){
 
+     threshDir <- "greater"
+     
      if(sigMethod=="meanMatrix"){
        #CHECK: is trueSimilData$similValueMatrix computing the correct numbers??
        thresh <- trueSimilData$similValueMatrix[n,r]
          
+       if(!is.na(summary(pr_DB)[2]$distance[edgeMethod]) && summary(pr_DB)[2]$distance[edgeMethod]){
+         
+         threshDir <- "less"
+         
+       }
+       
      }else if(sigMethod=="centroid"){
        
        thresh <- maxNullFractSize
      }
+     
+     
      #don't analyze clusters from the same dataset.
      if(clustIndexMatrix[n,2] != clustIndexMatrix[r,2] && !is.na(thresh)){
        
       if(!any(is.na(nullSimilMatrix[r,]))){
         
-        pvalueMatrix[n,r] <- computeEdgePvalue(thresh=thresh,nullSimilVector = nullSimilMatrix[r,],edgeMethod=edgeMethod)
+        pvalueMatrix[n,r] <- computeEdgePvalue(thresh=thresh,threshDir=threshDir,nullSimilVector = nullSimilMatrix[r,])
       
       }
      }
@@ -220,8 +222,9 @@ computeTrueSimil <- function(clustIndexMatrix,
 #EOF  
 }
 
-
-computeEdgePvalue <- function(thresh,nullSimilVector,edgeMethod){
+#nullSimilVector: for that clusterA-nullClust pair, with cluster A as reference,
+#all similarities across all nullClusts.
+computeEdgePvalue <- function(thresh,threshDir = c("greater","less"),nullSimilVector){
   
   if(is.na(thresh)){
     
@@ -235,27 +238,21 @@ computeEdgePvalue <- function(thresh,nullSimilVector,edgeMethod){
          This can occur if your data has extremely low variance and you are using correlation metrics.")
     
   }
-  
-  if(length(na.omit(match(edgeMethod,names(summary(pr_DB)[2]$distance))))!=1 && 
-              all(is.na(match(edgeMethod,c("distCor","spearman","pearson","kendall"))))){
-    
-    stop("\nedgeMethod specified does not unique match one of the allowed methods in proxy
-       or c(\"distCor\",\"spearman\",\"pearson\",\"kendall\")
-       Type \'names(summary(pr_DB)[2]$distance)\' to see permitted string characters.
-       Use the formal list name, not the other possible synonyms.")
-    
-  }
 
     #distance or cor matrix?
-      if(!is.na(summary(pr_DB)[2]$distance[edgeMethod]) && summary(pr_DB)[2]$distance[edgeMethod]){
+      if(threshDir=="less"){
       
           #do count NAs in full length?
       pvalue <- length(which(nullSimilVector <= thresh))/length(nullSimilVector)
       
-      }else{
+      }else if(threshDir=="greater"){
         #want greater than for similarity. rest of metrics are simil metrics.
        pvalue <- length(which(nullSimilVector >= thresh))/length(nullSimilVector)  
         
+      }else{
+        
+        stop("\nMust provide a value of \'less\' or \'greater\' for threshDir input.")
+      
       }
   
   return(pvalue)
@@ -263,13 +260,10 @@ computeEdgePvalue <- function(thresh,nullSimilVector,edgeMethod){
 }
 
 computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSampleIndexList,clustFeatureIndexList,numSims=100,
-                               trueSimilMatrix,numParallelCores=1,sigMethod,edgeMethod,includeRefClustInNull=TRUE,clustIndexMatrix,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf){
-  
-  if(numParallelCores>1){
+                               trueSimilMatrix,numParallelCores=1,sigMethod,edgeMethod,includeRefClustInNull=TRUE,clustIndexMatrix,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf){  
     
     registerDoParallel(cores=numParallelCores)
-  
-  }
+
 
         refDataMatrix <- dataMatrixList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]]
         sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
@@ -363,16 +357,11 @@ computeClusterPairSimil_centroid <- function(compareClust,refCentroid,nullCentro
   #added other simil metrics to code..
   sampleClass <- rep(NA, ncol(compareClust))
   names(sampleClass) <- colnames(compareClust)
-  
-  if(!all(rownames(centroids)==rownames(compareClust))){
-    
-    stop("\nNot all row (feature) names match up.")
-    
-  }
 
-  
+  #centroidCompare=TRUE only matter for distCor, as it automatically returns a point value
+  #and not a matrix if we feed in the entire refClust and compareClusts at once.
   similMatrix <- computeClusterPairSimil(refClust=compareClust,compareClust=centroids,
-                                    edgeMethod=edgeMethod)
+                                    edgeMethod=edgeMethod,centroidCompare=TRUE)
   
   
       #distance or cor matrix?
@@ -389,6 +378,7 @@ computeClusterPairSimil_centroid <- function(compareClust,refCentroid,nullCentro
       
       }else{
         #want greater than for similarity. rest of metrics are simil metrics.
+        #distCor is also a similarity metric - want highest one.
          for (i in 1:nrow(similMatrix)) {
     
             sampleClass[i] <- which.max(similMatrix[i,])
@@ -436,10 +426,13 @@ computeClusterPairSimil_centroid <- function(compareClust,refCentroid,nullCentro
 #Votes: specific cluster, or none at all (how have none at all? perhaps if the probability outputted is very low.)
 
 #THEN: meta-variance code, kmeans.
-
 computeClusterPairSimil <- function(refClust,compareClust,
-                                    edgeMethod="correlation"){
-
+                                    edgeMethod="correlation",centroidCompare=FALSE){
+  
+  features <- intersect(rownames(refClust),rownames(compareClust))
+  refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+  compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+  
   if(!all(rownames(refClust)==rownames(compareClust))){
     
     stop("\nNot all row (feature) names match up.")
@@ -453,44 +446,60 @@ computeClusterPairSimil <- function(refClust,compareClust,
   }
   
   if(length(na.omit(match(edgeMethod,names(summary(pr_DB)[2]$distance))))!=1 && 
-              all(is.na(match(edgeMethod,c("distCor","spearman","pearson","kendall"))))){
+       all(is.na(match(edgeMethod,c("distCor","spearman","pearson","kendall"))))){
     
     stop("\nedgeMethod specified does not unique match one of the allowed methods in proxy
-       or c(\"distCor\",\"spearman\",\"pearson\",\"kendall\")
-       Type \'names(summary(pr_DB)[2]$distance)\' to see permitted string characters.
-       Use the formal list name, not the other possible synonyms.")
+         or c(\"distCor\",\"spearman\",\"pearson\",\"kendall\")
+         Type \'names(summary(pr_DB)[2]$distance)\' to see permitted string characters.
+         Use the formal list name, not the other possible synonyms.")
     
   }
-
+  
+  
+  if(edgeMethod!="distCor"){
     
-    if(edgeMethod!="distCor"){
-      
-      if(!is.na(summary(pr_DB)[2]$distance[edgeMethod])){
+    if(!is.na(summary(pr_DB)[2]$distance[edgeMethod])){
       #distance or cor matrix?
       if(summary(pr_DB)[2]$distance[edgeMethod]){
         
-         clusterPairSimil <-   dist(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
-        
+        clusterPairSimil <-   dist(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
+                                    
       }else{
         
-         clusterPairSimil <- simil(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
+        clusterPairSimil <- simil(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
         
       }
-  
-  }else{
+      
+    }else{
+      
+      clusterPairSimil <- cor(refClust,compareClust,method=edgeMethod)
+      
+    }
     
-     clusterPairSimil <- cor(refClust,compareClust,method=edgeMethod)
-    
-  }
-    
-  }else{
+  }else if(edgeMethod=="distCor"){
     
     #number of rows must agree.
     #I have found this metric does NOT actually work too well in separating
     #gene expression clusters.
-    clusterPairSimil <- dcor(refClust,compareClust,index=1.0)
+    if(!centroidCompare){
+      
+      clusterPairSimil <- dcor(refClust,compareClust,index=1.0)
+      
+    }else{
+      #if the compareClust are actually two columns of centroids: want separate measurements for each one against each
+      #sample in refClust
+      clusterPairSimil <- matrix(data=NA,ncol=2,nrow=ncol(refClust))
+      
+      for(s in 1:ncol(refClust)){
+        
+        clusterPairSimil[s, ] <- cbind(dcor(refClust[,s],compareClust[,1],index=1.0),dcor(refClust[,s],compareClust[,2],index=1.0))
+        
+      }
+      
+    }
     
   }
-  
+  return(clusterPairSimil)
 }
+
 

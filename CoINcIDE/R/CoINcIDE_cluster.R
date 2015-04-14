@@ -2,10 +2,148 @@
 library("cluster")
 library("ConsensusClusterPlus")
 
-clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,iter.max=30,nstart=25,numSims=1000,algorithm="Hartigan-Wong",outputFile="./cluster_kmeansGap_output.txt",
-                                     bestK=c("firstMatch")){
+#for more specific options: use the individual clustMatrixList functions
+clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=c("km","hc"),pickKMethod=c("gap","consensus"),numSims=1000,maxNumClusters=30,
+                                   outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
+                                   hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
+                                   consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
+                                   bestKconsensusMethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),minClustConsensus=.9){
   
+  if(pickKMethod=="gap"){
+    
+    if(clustMethod=="kmeans"){
+      
+      clusterOutputList <- clustMatrixListKmeansGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,iter.max=iter.max,nstart=nstart,maxNumClusters=maxNumClusters,numSims=numSims,outputFile=outputFile)
+        
+    }else if(clustMethod=="hc"){
+      
+      clusterOutputList <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=maxNumClusters,algorithm=hclustAlgorithm,
+                                                              distMethod=distMethod,outputFile=outputFile,
+                                                              corUse=corUse,numSims=numSims)      
+    }else{
+      
+      stop("In clustMatrixListWrapper: did not pick hc or kmeans as clustMethod input")
+    }
+    
+  }else if(pickKMethod=="consensus"){
+    
+    if(clustMethod=="kmeans"){
+      
+      clusterAlg <- "km"
+      
+    }else{
+      
+      clusterAlg <- clustMethod
+      
+    }
+    
+    if(length( bestKconsensusMethod)>1){
+      
+      warning("In clustMatrixListWrapper: bestKconsensusMethod longer than 1; picking default \"highestMinConsensus\"")
+      bestKconsensusMethod <- "highestMinConsensus"
+      
+    }
+    
+    clusterOutputList <- consensusClusterMatrixList(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters = maxNumClusters, numSims=numSims, pItem=0.8, pFeature=1, clusterAlg=clusterAlg,
+                                           hclustAlgorithm=hclustAlgorithm, consensusHclustAlgorithm=consensusHclustAlgorithm,
+                                           corUse=corUse,
+                                           distMethod=distMethod,
+                                           minClustConsensus=minClustConsensus,bestKmethod=bestKconsensusMethod,
+                                           outputFile=outputFile)
+      
+  }else if(is.numeric(pickKMethod)){
+    
+      
+      clusterOutputList <- list()
+      
+      for(c in 1:length(dataMatrixList)){
+        
+        clusterOutputList[[c]] <- list()
+        dataset <- dataMatrixList[[c]][rownames(dataMatrixList[[c]]) %in% clustFeaturesList[[c]], , drop=FALSE]
+        
+        if(nrow(dataset)==0){
+          
+          stop("\nI function clustMatrixListWrapper: no clustFeatures were found in the data matrix inputted.")
+          
+        }
+        
+        
+        if(ncol(dataset)<pickKMethod){
+          #hclust usually returns NA gap test if K.max = ncol(dataset)
+          #will also mest up maxSE calculations
+          K <- ncol(dataset)-1
+          
+        }else{
+          
+          K <- pickKMethod
+          
+        }
+
+        if(clustMethod=="kmeans"){
+          
+        clusterAssignments <-   kmeans(t(dataset), centers=K,iter.max=iter.max,nstart=nstart,algorithm=algorithm)$cluster;
+        
+        clustFeatureIndexList <- list()
+        clustSampleIndexList <- list()
+
+        
+        }else if(clustMethod=="hc"){
+          
+
+          
+          if(distMethod==("pearson") || distMethod=="spearman"){
+            
+              #for cor: don't transpose dataset.
+              #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
+              clustObject <- hclust(as.dist((1-cor(dataset,use=corUse,method=distMethod))), method=algorithm);
+              #clustGap needs a list output
+              clusterAssignments <- cutree(clustObject,k=K)
+
+          }else{
+
+              #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
+              #tried passing in parent.frame() to make a more elegant solution but didn't work.
+              
+              clustObject <- hclust(dist(t(dataset),method=distMethod), method=algorithm);
+              clusterAssignments <- cutree(clustObject,k=K)
+
+        
+          }
+        }else{
+          
+          stop("In clustMatrixListWrapper: did not pick hc or kmeans as clustMethod input")
+          
+        }
+        
+        
+        clustFeatureIndexList <- list()
+        clustSampleIndexList <- list()
+        
+        for(k in 1:K){
+          
+          clustFeatureIndexList[[k]] <- clustFeaturesList[[c]]
+          clustSampleIndexList[[k]] <- which(clusterAssignments==k)
+          
+          
+        }
+        clusterOutputList[[c]]$clustFeatureIndexList <- clustFeatureIndexList
+        clusterOutputList[[c]]$clustSampleIndexList <- clustSampleIndexList
+
+        
+      }                                            
+    
+    
+  }else{
+    
+    stop("In clustMatrixListWrapper: did not pick one of the allowed input character strings, or a number, for pickKMethod")
+  }
   
+  return(clusterOutputList)
+  
+}
+
+clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,iter.max=30,nstart=25,numSims=1000,algorithm="Hartigan-Wong",outputFile="./cluster_kmeansGap_output.txt"
+                                     ){
   #lapply doens't work because also need to loop over clust features list.
   #mapply didn't quite work either.
   outputList <- list()
@@ -16,12 +154,12 @@ clustMatrixListKmeansGap <- function(dataMatrixList,clustFeaturesList,maxNumClus
   for(d in 1:length(dataMatrixList)){
     
     message(paste0("\nClustering dataset ",d, ": ",names(dataMatrixList)[d]))
-    outputList[[d]] <- clusterMatrixKmeansGap(dataMatrixList[[d]],clustFeaturesList[[d]],
+    outputList[[d]] <- clusterMatrixKmeansGap(dataMatrix=dataMatrixList[[d]],clustFeatures=clustFeaturesList[[d]],
                                           maxNumClusters=maxNumClusters,iter.max=iter.max,
                                           nstart=nstart,algorithm=algorithm,numSims=numSims,outputFile=outputFile)
     
     clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
-    clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    clustFeatureIndexList[[d]] <- outputList[[d]]$clustFeatureIndexList
     bestK[[d]] <- outputList[[d]]$bestK
     gapTest[[d]] <- outputList[[d]]$gapTest
     
@@ -82,7 +220,10 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
   
   if(is.na(best_k)){
     
-    stop(paste0("\nDid not find an optimal k below ",maxNumClusters))
+    warning(paste0("\nDid not find an optimal k below ",maxNumClusters," setting K=1\n"))
+    cat(paste0("\nDid not find an optimal k below ",maxNumClusters," setting K=1\n"),
+        append=TRUE,file=outputFile)
+    best_k <- 1
   
   }
  
@@ -98,11 +239,12 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
   clustFeatureIndexList <- list()
   clustSampleIndexList <- list()
 
-   clusterAssignments <- clustF(dataset,bestK)$cluster
+  #remember: transpose!
+   clusterAssignments <- clustF(t(dataset),bestK)$cluster
   
  for(k in 1:bestK){
    
-   clustFeatureIndexList[[k]] <- clustFeatures
+   clustFeatureIndexList[[k]] <-  na.omit(match(clustFeatures,rownames(dataMatrix)))
    clustSampleIndexList[[k]] <- which(clusterAssignments==k)
    
    
@@ -114,7 +256,7 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
   
 }
 
-clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,algorithm="complete",
+clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,algorithm="ward.D",
                               distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_hclustGap_output.txt",
                               corUse=c("everything","pairwise.complete.obs", "complete.obs"),numSims=1000){
   
@@ -126,9 +268,9 @@ clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumCl
 
   for(d in 1:length(dataMatrixList)){
       message(paste0("\nClustering dataset ",d, ": ",names(dataMatrixList)[d]))
-   outputList[[d]] <- clusterMatrixHclustGap(dataMatrixList[[d]],clustFeaturesList[[d]],maxNumClusters=maxNumClusters,algorithm=algorithm,numSims=numSims,distMethod=distMethod,outputFile=outputFile,corUse=corUse)
+   outputList[[d]] <- clusterMatrixHclustGap(dataMatrix=dataMatrixList[[d]],clustFeatures=clustFeaturesList[[d]],maxNumClusters=maxNumClusters,algorithm=algorithm,numSims=numSims,distMethod=distMethod,outputFile=outputFile,corUse=corUse)
         clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
-    clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    clustFeatureIndexList[[d]] <- outputList[[d]]$clustFeatureIndexList
     bestK[[d]] <- outputList[[d]]$bestK
     gapTest[[d]] <- outputList[[d]]$gapTest
   }
@@ -209,8 +351,10 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
 
   if(is.na(best_k)){
     
-    stop(paste0("\nDid not find an optimal k below ",maxNumClusters))
-  
+    warning(paste0("\nDid not find an optimal k below ",maxNumClusters," setting K=1\n"))
+    cat(paste0("\nDid not find an optimal k below ",maxNumClusters," setting K=1\n"),
+        append=TRUE,file=outputFile)
+    best_k <- 1
   }
  
   if(bestK != best_k){
@@ -224,11 +368,18 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
   clustFeatureIndexList <- list()
   clustSampleIndexList <- list()
 
+ if(distMethod==("pearson") || distMethod=="spearman"){
+   
   clusterAssignments <- clustF(dataset,bestK)$cluster
+  
+  }else{
+    #mus tranpose dataset for traditional distance matrix hclustering
+    clusterAssignments <- clustF(t(dataset),bestK)$cluster
+  }
   
  for(k in 1:bestK){
    
-   clustFeatureIndexList[[k]] <- clustFeatures
+   clustFeatureIndexList[[k]] <-  na.omit(match(clustFeatures,rownames(dataMatrix)))
    clustSampleIndexList[[k]] <- which(clusterAssignments==k)
    
    
@@ -242,7 +393,7 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
 }
 
 consensusClusterMatrixList <- function(dataMatrixList,clustFeaturesList,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
-innerLinkage="average", finalLinkage_hclust="average",
+                                       hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
 minClustConsensus=.7,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),
@@ -259,7 +410,7 @@ outputFile="./consensusOut.txt"){
     outputList[[d]] <- consensusClusterMatrix(dataMatrixList[[d]],clustFeaturesList[[d]],
                                                      maxNumClusters=maxNumClusters, numSims=numSims, 
                                                      pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
-  innerLinkage=innerLinkage, finalLinkage_hclust=finalLinkage_hclust,corUse=corUse,distMethod=distMethod,
+                                              hclustAlgorithm=hclustAlgorithm, consensusHclustAlgorithm=consensusHclustAlgorithm,corUse=corUse,distMethod=distMethod,
   minClustConsensus=minClustConsensus,bestKmethod=bestKmethod,outputFile=outputFile)
     
   }
@@ -268,18 +419,20 @@ outputFile="./consensusOut.txt"){
   clustFeatureIndexList <- list()
   bestK <- list()
   consensusInfo <- list()
+  minConsensusClusterByK <- list()
   
   for(d in 1:length(outputList)){
     
     clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
-    clustFeatureIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
+    clustFeatureIndexList[[d]] <- outputList[[d]]$clustFeatureIndexList
     bestK[[d]] <- outputList[[d]]$bestK
     consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+    minConsensusClusterByK[[d]] <- outputList[[d]]$minConsensusClusterByK
     
   }
    
   output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
-                 bestK=bestK,consensusInfo=consensusInfo)
+                 bestK=bestK,consensusInfo=consensusInfo,minConsensusClusterByK=minConsensusClusterByK)
   return(output)
   
 }
@@ -297,13 +450,28 @@ outputFile="./consensusOut.txt"){
 #warning: can't really silence the ConsensusClusterPlus plotting functions,
 #so testing a large maxNumClusters gets slow.
 consensusClusterMatrix <- function(dataMatrix, clustFeatures,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("km","hc","pam","kmdist"),
-innerLinkage="average", finalLinkage_hclust="average",
+                                   hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
 minClustConsensus=.8,bestKmethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),
 outputFile="./consensusOut.txt"
 ){
-
+  
+ innerLinkage <- hclustAlgorithm
+ finalLinkage <- consensusHclustAlgorithm
+ 
+ if(length(innerLinkage)>1){
+   
+   warning("Multiple inputs for innerLinkage used so setting to defaule \'average\'")
+   innerLinkage <- "average"
+ }
+ 
+ if(length(finalLinkage)>1){
+   
+   warning("Multiple inputs for innerLinkage used so setting to defaule \'average\'")
+   finalLinkage <- "average"
+   
+ }
   #come back: add defaults to make more user-friendly.
   #if(length(clusterAlg)>1 || length(bestKmethod)>1)
    #ConsensusClustPlus: assumes clustering the columns.
@@ -332,7 +500,7 @@ outputFile="./consensusOut.txt"
     consensusClustOutput <- ConsensusClusterPlus(d=dataset,
                                                maxK=K.max,reps=numSims,
                                                pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
-  innerLinkage=innerLinkage, finalLinkage=finalLinkage_hclust, ml=NULL,
+  innerLinkage=innerLinkage, finalLinkage=finalLinkage, ml=NULL,
   tmyPal=NULL,seed=NULL,plot=FALSE,writeTable=FALSE,weightsItem=NULL,weightsFeature=NULL,verbose=F,corUse=corUse)
   
 
@@ -387,14 +555,14 @@ outputFile="./consensusOut.txt"
   
  for(k in 1:bestK){
    
-   clustFeatureIndexList[[k]] <- clustFeatures
+   clustFeatureIndexList[[k]] <- na.omit(match(clustFeatures,rownames(dataMatrix)))
    clustSampleIndexList[[k]] <- which(clusterAssignments==k)
    
    
  }
-  output <- list(bestK=bestK,clustFeatureIndexList=clustFeatureIndexList,
+  output <- list(bestK=bestK,clustFeatureIndexList=clustFeatureIndexList,minConsensusClusterByK=minConsensusClusterByK,
                  clustSampleIndexList=clustSampleIndexList, consensusCalc=icl,
-                 consensusClustOutput=consensusClustOutput,minConsensusClusterByK=minConsensusClusterByK)
+                 consensusClustOutput=consensusClustOutput)
 
  return(output)
  

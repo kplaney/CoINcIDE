@@ -1,24 +1,102 @@
+library("ggplot2")
+library("s4vd")
 
-ISMB_lungSimROC <- function(sourceDir="/home/kplaney/gitRepos//IGP_network/igp_network/",
-                            saveDir = "/home/kplaney/ISMB/lung_sims/",numSimDatasets=10,tmpSaveName = paste0("tmp",rnorm(1)),
-                            eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),simMetric=c("centroid","correlation"),
+lungSimAdjMatrices <- function(
+                       saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
+                       eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
+                       noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),numRows=200,
+                       numWrapperSims=10,
+                       dataMatrixList,clustFeaturesList,clustMethod=c("naiv","km","hc"),pickKMethod=c("gap","consensus"),numSims=1000,maxNumClusters=30,
+                                                          outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
+                                                          hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
+                                                          consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
+                                                          bestKconsensusMethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),minClustConsensus=.9,
+                       edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+                                    "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
+                       sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
+                       outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
+  
+  
+  
+  if(length(numPerClust) != 4){
+    
+    stop("\nMust pick a cluster size for all 4 tissue types:\nyour numPerClust variable vector was not a length of 4.")
+  }  
+  
+
+  #just run n=1, i.e. zero data, once. do by hand.
+  
+  CoINcIDE_getAdjMatricesOutput <- list()
+  
+  for(n in 1:length(noiseVector)){
+    message(paste0("Loop ",n,"Noise level: ",noiseVector[n]))
+    #only run 1 simulation iteration for noise level o.
+    
+    if(n==1){
+      
+      numWrapperSims <- 1;
+      
+    }else if(n>1){
+      
+      numWrapperSims <- numWrapperSimsOrig;
+      
+    }
+
+    CoINcIDE_getAdjMatricesOutput[[n]] <- list()
+    
+    for(t in c(1:numWrapperSims)){
+
+      #don't save these: just recalc each time. this will save the last iteration.
+      lungSimData <- createLungSimDatasets(numSimDatasets=numSimDatasets,
+                                           eigenValueMin =eigenValueMin,simType=simType,
+                                           numPerClust = numPerClust,
+                                           stddevNoise=noiseVector[n],numRows=numRows);
+      
+      
+      if(clustMethod != "naive"){
+        
+        clustOutput <- clustMatrixListWrapper(dataMatrixList=lungSimData$dataMatrixList,clustFeaturesList=lungSimData$clustFeaturesList,clustMethod=clustMethod,pickKMethod=pickKMethod,numSims=numSims,maxNumClusters=maxNumClusters,
+                                         outputFile=outputFile,iter.max=iter.max,nstart=nstart,distMethod=distMethod,
+                                         hclustAlgorithm=hclustAlgorithm, 
+                                         consensusHclustAlgorithm=consensusHclustAlgorithm,
+                                         bestKconsensusMethod=bestKconsensusMethod,minClustConsensus=minClustConsensus)
+      
+      clustSampleIndexList <- clustOutput$clustSampleIndexList
+      clustFeatureIndexList <- clustOutput$clustFeatureIndexList
+      
+      }else{
+        
+        clustFeatureIndexList <- lungSimData$clustFeatureIndexList
+        clustSampleIndexList <- lungSimData$clustSampleIndexList
+        
+      }
+      
+      CoINcIDE_getAdjMatricesOutput[[n]][[t]] <-  CoINcIDE_getAdjMatrices(dataMatrixList=lungSimData$dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                               edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                               sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                               outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
+      
+    
+    
+    }
+    
+  }
+  
+  return(CoINcIDE_getAdjMatricesOutput)
+  
+}
+
+lungSimROC <- function(
+                            saveDir = "/home/kplaney/ISMB/lung_sims/",numSimDatasets=10,
+                            eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),,
                                                             noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
-                                                            numWrapperSims=10,numCores=2,numSims=1000
+                                                            numWrapperSims=10,numSims=1000,
+                       edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+                                    "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
+                       sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
+                       outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0
                           ){
-                              
-                              
-                              if(length(numPerClust) != 4){
-                                
-                                stop("\nMust pick a cluster size for all 4 tissue types:\nyour numPerClust variable vector was not a length of 4.")
-                              }  
-                              
-                              #library("doParallel");
-                              #registerDoParallel(cores=numCores);
-                              
-                              setwd(sourceDir);
-                              source("clust_robust.R");
 
-                              ROC <- list();
                               
                               #fabricate your true edge list
                               trueEdgeMatrix <- createTrueEdges(numRowClust=1,numColClust=4,numSimDatasets=numSimDatasets);
@@ -51,89 +129,34 @@ ISMB_lungSimROC <- function(sourceDir="/home/kplaney/gitRepos//IGP_network/igp_n
                                 numTotalClusters <- 4*numSimDatasets;
                                 
                               }
-                              
-                              numWrapperSimsOrig <- numWrapperSims;
-                              #just run n=1, i.e. zero data, once. do by hand.
-                              for(n in 1:length(noiseVector)){
-                                cat("\nLoop ",n,"Noise level: ",noiseVector[n],"\n")
-                                #only run 1 simulation iteration for noise level o.
+
+                              #TO DO: UPDATE FUNCTION INPUTS.
+                                CoINcIDE_getAdjMatricesOutputList <-  lungSimAdjMatrices(
+                                                                                                     saveDir = "/home/kplaney/ISMB/lung_sims/",numSimDatasets=10,
+                                                                                                     eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),,
+                                                                                                     noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
+                                                                                                     numWrapperSims=10,numSims=1000,
+                                                                                                     edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+                                                                                                                  "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
+                                                                                                     sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
+                                                                                                     outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0)
+                                  
+                                    
+                              ROC <- lapply(CoINcIDE_getAdjMatricesOutputList,FUN=function(CoINcIDE_getAdjMatricesOutput,....){
                                 
-                                if(n==1){
+                                ROC_one_noiseLevel <- lapply(CoINcIDE_getAdjMatricesOutput,FUN=function(CoINcIDE_getAdjMatricesUnit,.....){
                                   
-                                  numWrapperSims <- 1;
+                                  edgeList <- computeEdgeMatrix(CoINcIDE_getAdjMatricesUnit)
+                                  ROC_out <- compute_edge_ROC_metrics(trueEdges=trueEdgeMatrix,predEdges=edgeList,numTotalClusters=numTotalClusters);
                                   
-                                }else if(n>1){
-                                  
-                                  numWrapperSims <- numWrapperSimsOrig;
-                                  
-                                }
-                                ROC[[n]] <- list();
+                                },......)
+                               
                                 
-                                for(t in c(1:numWrapperSims)){
+                              },......)
                                 
-                                #will automatically return a list.
-                                  #bc save datasets here...Rparallel doesn't work!
-                                #ROC_tmp <-   foreach(c(1:numWrapperSims)) %dopar% {
-                                  
-                                  #must transpose for my clust robust methods...
-                                  #don't save these: just recalc each time. this will save the last iteration.
-                                  lungSimData <- createLungSimDatasets(numSimDatasets=numSimDatasets,
-                                                                       eigenValueMin =eigenValueMin,simType=simType,
-                                                                       numPerClust = numPerClust,
-                                                                       stddevNoise=noiseVector[n],numRows=200);
-                                  
-                                  if(simMetric=="centroid"){
-                                    
-                                    clustRobust_IGP <- findSimilarClusters(clustMatrixList=lungSimData$clustMatrixList,dataMatrixList=lungSimData$dataMatrixList,minClustSampleSize=10,resampleWithClustSamples=TRUE,compareMetric=c("correlation"),
-                                                                           normFeatureWise=c("none"),method=c("NN_distribution"),numSims=numSims,
-                                                                           minFractFeatureIntersect=.05,minNumFeatureIntersect=5,fract_nullMax=.1,
-                                                                           centroidType=c("mean"),outputFile="/home/kplaney/ISMB/lung_sims/tmp.txt",
-                                                                           nullClustTag =tmpSaveName ,sourceDir="/home/kplaney/gitRepos/IGP_network/igp_network/",
-                                                                           trueDiffMin=.3,intraSimilMax=.3,simil_pvalueMax=1,tempSaveDir=saveDir,
-                                                                           runIntraStabilityTests=FALSE,compareIntraInterDistributions=FALSE
-                                    );
-                                    
-                                    edge_IGPList <- computeEdgeMatrix(clustRobust_output=clustRobust_IGP,restrictEdgesByStudy=TRUE,method=c("NN_distribution"),
-                                                                      compareMetric=c("correlation"),edge_trueCorr_thresh=.3,edge_fractFeatIntersect_thresh=.05,
-                                                                      edge_numFeatIntersect_thresh=20,edge_IGP_thresh=.2,sourceDir="/home/kplaney/gitRepos/IGP_network/igp_network/",
-                                                                      edge_simil_overNull_pvalue_thresh=.05,clustMethodName="tmp")$edgeResults$edgeMatrix;
-                                    
-                                    #return this.
-                                    #ROC[[n]][[t]]  <-
-                                    ROC[[n]][[t]] <-     compute_edge_ROC_metrics(trueEdges=trueEdgeMatrix,predEdges=edge_IGPList,numTotalClusters=numTotalClusters);
-                                    
-                                  }else if(simMetric=="correlation"){
-                                    
-                                    clustRobust_corr <- findSimilarClusters(clustMatrixList=lungSimData$clustMatrixList,dataMatrixList=lungSimData$dataMatrixList,minClustSampleSize=10,resampleWithClustSamples=TRUE,compareMetric=c("correlation"),
-                                                                            normFeatureWise=c("none"),method=c("diff_distribution"),numSims=numSims,
-                                                                            minFractFeatureIntersect=.05,minNumFeatureIntersect=5,fract_nullMax=.1,
-                                                                            centroidType=c("mean"),outputFile="/home/kplaney/ISMB/lung_sims/tmp.txt",
-                                                                            nullClustTag =tmpSaveName ,sourceDir="/home/kplaney/gitRepos/IGP_network/igp_network/",
-                                                                            trueDiffMin=.3,intraSimilMax=.3,simil_pvalueMax=1,tempSaveDir=saveDir,
-                                                                            runIntraStabilityTests=FALSE,compareIntraInterDistributions=FALSE
-                                    );
-                                    
-                                    
-                                    edge_corrList <- computeEdgeMatrix(clustRobust_output=clustRobust_corr,restrictEdgesByStudy=TRUE,method=c("diff_distribution"),
-                                                                       compareMetric=c("correlation"),edge_trueCorr_thresh=.3,edge_fractFeatIntersect_thresh=.05,
-                                                                       edge_numFeatIntersect_thresh=20,edge_IGP_thresh=.2,sourceDir="/home/kplaney/gitRepos/IGP_network/igp_network/",
-                                                                       edge_simil_overNull_pvalue_thresh=.05,clustMethodName="tmp",saveDir="/home/kplaney")$edgeResults$edgeMatrix;
-                                    
-                                    
-                                    #return this.
-                                    #  ROC[[n]][[t]] <-
-                                    ROC[[n]][[t]]   <-    compute_edge_ROC_metrics(trueEdges=trueEdgeMatrix,predEdges=edge_corrList,numTotalClusters=numTotalClusters);
-                                    
+                                
+                          
                                   }
-                                  
-                                  
-                                  #loop of simulations/foreach
-                                }
-                                #loop n
-                                #if did R parallel.
-                                #ROC[[n]] <- ROC_tmp
-                              }
-                              
                               #convert to matrices
 
                               ROC_matrixFull <- do.call(rbind,lapply(ROC,FUN=function(ROC_unit){
@@ -164,8 +187,7 @@ ISMB_lungSimROC <- function(sourceDir="/home/kplaney/gitRepos//IGP_network/igp_n
                               colnames(ROC_matrixFull) <- c("sd_noise","PPV","TPR","FPR","FP","TP","FN","TN");
                               rownames(ROC_matrixFull) <- noiseVector;
                               
-                              #a simple plot
-                              library("ggplot2");
+
                               #only take first 12...
                               df <- data.frame(ROC_matrixFull);
                               #theme(plot.title = element_text(size = rel(2)))
@@ -205,7 +227,6 @@ createLungSimDatasets <-  function(numSimDatasets=10,
     }
     
   }
-  
   
   lungData <- createLungMatrixList()
   lungSimData <- simulateClusterData(numSimDatasets=numSimDatasets, stddevNoise= stddevNoise,method="eigen",eigenValueMin=eigenValueMin,clustMatrixList=lungData$clustMatrixList,numRows=numRows,numPerClust=numPerClust)
@@ -310,9 +331,9 @@ createLungSimDatasets <-  function(numSimDatasets=10,
 
 ##grab real lung data to base our simulations off of.
 createLungMatrixList <- function(){
-  #ref:
+  #ref from s4vd library:
   #Bhattacharjee, A., Richards, W. G., Staunton, J., Li, C., Monti, S., Vasa, P., Ladd, C.,<br> Beheshti, J., Bueno, R., Gillette, M., Loda, M., Weber, G., Mark, E. J., Lander,<br> E. S., Wong, W., Johnson, B. E., Golub, T. R., Sugarbaker, D. J., and Meyerson,<br> M. (2001). Classification of human lung carcinomas by mRNA expression profiling<br> reveals distinct adenocarcinoma subclasses. Proceedings of the National Academy<br> of Sciences of the United States of America. 
-  library("s4vd")
+
   data(lung200)
   #before use these in simulations, make correlations within and between each subtype.
   carcinoid_indices <- which(colnames(lung200)=="Carcinoid")

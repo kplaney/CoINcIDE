@@ -36,18 +36,26 @@ strEsets <- ls(pattern="^.*_eset$")
 #cd /home/kplaney/R/x86_64-redhat-linux-gnu-library
 #sudo wget http://www.bioconductor.org/packages/release/data/experiment/src/contrib/curatedOvarianData_1.3.5.tar.gz
 #tar xvzf curatedOvarianData_1.3.5.tar.gz
-#strEsets <- list.files("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/")
-#strEsets <- strEsets[-which(strEsets=="datalist")]
-#library("limma")
-#names(strEsets) <- strsplit2(dataSetNames,split=".rda")[,1]
-#now load all of this data. equivalent of data() call above if can install package.
+# strEsets <- list.files("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/")
+# #datalist is a text file...shouldn't be any other text files in this directory, only .rda files.
+# strEsets <- strEsets[-which(strEsets=="datalist")]
+# library("limma")
+# names(strEsets) <- strsplit2(strEsets,split=".rda")[,1]
+# #now load all of this data. equivalent of data() call above if can install package.
+# #is having trouble reading from a connection?? what's up...
+# #WTF..may have to manually step through this one..
+# #weird...now suddently dataset 16 isn't working? why only THIS one?
+# #makes me wonder if there is a space issue on the server.
+# #I had to re-download the datasets...
 # for (strEset in strEsets){
 #   
-#   load(strEset)
+#   load(paste0("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/",strEset))
 #   
 # }
-#now call strEset again like above:
-#strEsets <- ls(pattern="^.*_eset$")
+# #now call strEset again like above:
+# strEsets <- ls(pattern="^.*_eset$")
+
+##now back to common code for server or local computer:
 esets <- list()
 for (strEset in strEsets){
   
@@ -69,6 +77,8 @@ for (strEset in strEsets){
 indicesRemove <- na.omit(match(c("TCGA.RNASeqV2_eset","TCGA.mirna.8x15kv2_eset"),names(esets)))
 esets <- esets[-indicesRemove]
 
+#save for easier access next time:
+#save(esets, file="/home/kplaney/curatedOvarianData_esetList.RData.gzip",compress="gzip")
 #CHECK: remove any healthy samples. do this for ALL studies in case some have health tissue.
 #for example: TCGA has some normal samples
 table(pData(esets[["TCGA_eset"]])[,"batch"],pData(esets[["TCGA_eset"]])[,"sample_type"])
@@ -96,13 +106,47 @@ for(e in 1:length(esets)){
   }
   
 }
-
+message(paste("dataset indices to remove : ",indicesRemove))
 #gut check: in TCGA, should be only tumor samples now!
 if(any(unique(pData(esets[["TCGA_eset"]])[,"sample_type"]) != "tumor")){
   
   stop("\nNormal filtering appeared to not work.")
   
 }
+
+#check? any duplicated samples?
+#it looks like unique_patient_ID ids duplicated samples, NOT the actual expression colnames?
+#a little annoying - re-label the colnames to be this unique ID, if duplicated samples are found
+#but esets can't have duplicated column names.
+#in the end, looks like no samples were duplicated? 
+for(e in 1:length(esets)){
+  
+  if(!all(is.na(pData(exprSet)[ ,uniquePDataID]))){
+    #for certain datasets: this is actually all NA values. so don't use then!
+  if(any(duplicated(pData(esets[[e]])[,"unique_patient_ID"]))){
+    
+    if(any(duplicated(colnames(exprs(esets[[e]]))))){
+  
+    
+    message(paste0("Duplicated samples in study ",names(esets)[e]))
+  
+  }
+  
+}
+
+}
+#remove datasets that are too small? allow them for now.
+#now process, then grab meta-features
+#sounds like there SHOULD be some duplicated samples  in here.
+#want very lowly varying genes to be removed for Combat.
+#COME BACK: do variance filtering by batch for Combat.
+esets <- processExpressionSetList(exprSetList=esets,outputFileDirectory="/home/kplaney/ovarian_analysis/",
+                                  minVar=.001,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
+
+#just strictly limit TCGA dataset now - bc of combat
+#esets[["TCGA_eset"]] <- processExpressionSet(exprSet,esets[["TCGA_eset"]],
+#                                 outputFileDirectory="/home/kplaney/ovarian_analysis/",
+#                                  minVar=.1,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
 #look for batches - break these apart?
 #but it only looks like TCGA has actual site batches -
 #the rest look like the date the samples were collected?
@@ -120,12 +164,6 @@ for(e in 1:length(esets)){
   
 }
 
-#remove datasets that are too small? allow them for now.
-#now process, then grab meta-features
-#sounds like there SHOULD be some duplicated samples  in here.
-#want very lowly varying genes to be removed for Combat.
-esets <- processExpressionSetList(exprSetList=esets,outputFileDirectory="~/Desktop/",
-                                  minVar=.0001,featureDataFieldName="gene")
 
 #only split up TCGA into batches
 #na.omit: if any NA batch variables, then unique will return one "NA" 
@@ -146,11 +184,6 @@ table(pData(esets[["TCGA_eset"]])[,"batch"],pData(esets[["TCGA_eset"]])[,"summar
 #same trend for substage
 table(pData(esets[["TCGA_eset"]])[,"batch"],pData(esets[["TCGA_eset"]])[,"substage"])
 
-
-#check: any duplicated patients? careful because could they be in different batches
-#and thus not collapsed in the dataset loop later?
-#nope..
-any(duplicated(colnames(exprs(esets[["TCGA_eset"]]))))
 
 #let's see: is there even a discernable batch effect?
 
@@ -178,6 +211,7 @@ splitOutTCGABatches <- FALSE
 #}else{
   #just do batch correction
   #do this after removely very lowly varying genes.
+#DID NOT RUN: test later....
   outcomesAndCovariates <- pData(esets[["TCGA_eset"]])[,"batch",drop=FALSE]
   rownames(outcomesAndCovariates) <- colnames(exprs(esets[["TCGA_eset"]]))
   exprMatrix <- exprs(esets[["TCGA_eset"]])
@@ -200,12 +234,16 @@ names(dataMatrixList) <- names(esets)
 #run meta-feature analysis.
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),numFeatSelectByGlobalRank=1000,
-                                                   numTopFeatFromEachDataset=10,fractNATopFeatAllowedPerDataset=.2,selectMethod=c("median"),
-                                                   outputFile="~/Desktop//selectFeaturesMetaVarianceOut.txt")
+                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.2,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
 
 message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
 #remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
 dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+
+}
 
 
 clustFeaturesList <- list()
@@ -215,13 +253,36 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-clusterOut <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=30,algorithm="ward.D",
-                                         distMethod=c("euclidean"),outputFile="~/Desktop//cluster_hclustGap_output.txt",
+output <- list(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList)
+save(output,file="/home/kplaney/ovarian_analysis/curatedBreastData_proc_TCGAnoBatch.RData.gzip",compress="gzip")
+
+
+load("/home/kplaney/ovarian_analysis/curatedBreastData_proc_TCGAnoBatch.RData.gzip")
+dataMatrixList <- output$dataMatrixList
+clustFeaturesList <- output$clustFeaturesList
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+clusterOut_hclust <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=30,algorithm="ward.D",
+                                         distMethod=c("euclidean"),outputFile="/home/kplaney/ovarian_analysis//cluster_hclustGap_output.txt",
                                          corUse=c("everything"),numSims=100)
 
+clusterOut_kmeans <- clustMatrixListKmeansGap(dataMatrixList,clustFeaturesList,maxNumClusters=30,iter.max=30,nstart=25,numSims=100,algorithm="Hartigan-Wong",
+                                              outputFile="/home/kplaney/ovarian_analysis//cluster_kmeansGap_output.txt"
+                               )
+
+clusterOut_kmeansConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 30, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("km"),
+                                                                     hclustAlgorithm="ward.D", consensusHclustAlgorithm="ward.D",
+                                                                     corUse=c("everything"),
+                                                                     distMethod=c("euclidean"),
+                                                                     minClustConsensus=.7,bestKmethod=c("highestMinConsensus"))
+  
+clusterOut_hclustConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 30, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("hc"),
+                                                         hclustAlgorithm="ward.D", consensusHclustAlgorithm="ward.D",
+                                                                     corUse=c("everything"),
+                                                                     distMethod=c("euclidean"),
+                                                                     minClustConsensus=.7,bestKmethod=c("highestMinConsensus"))
 
 
-
+save(clusterOut_hclustConsensus,file="/home/kplaney/ovarian_analysis/clusterOut_hclustConsensus_noTCGAcombat.RData.gzip",compress="gzip")
 
 
 
