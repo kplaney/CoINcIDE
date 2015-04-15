@@ -7,6 +7,7 @@ datasetNames <- datasetNames[3]$results[,"Item"]
 
 #odd way to get a dataset list...I just downloaded the source file
 #and pull out their code.
+#hmmm...is this the case for all genes?? WTF?
 expandProbesets <- function (eset, sep = "///"){
   x <- lapply(featureNames(eset), function(x) strsplit(x, sep)[[1]])
   eset <- eset[order(sapply(x, length)), ]
@@ -121,11 +122,11 @@ if(any(unique(pData(esets[["TCGA_eset"]])[,"sample_type"]) != "tumor")){
 #in the end, looks like no samples were duplicated? 
 for(e in 1:length(esets)){
   
-  if(!all(is.na(pData(exprSet)[ ,uniquePDataID]))){
+  if(!all(is.na(pData(esets[[e]])[ ,"unique_patient_ID"]))){
     #for certain datasets: this is actually all NA values. so don't use then!
   if(any(duplicated(pData(esets[[e]])[,"unique_patient_ID"]))){
     
-    if(any(duplicated(colnames(exprs(esets[[e]]))))){
+    #if(any(duplicated(colnames(exprs(esets[[e]]))))){
   
     
     message(paste0("Duplicated samples in study ",names(esets)[e]))
@@ -135,6 +136,7 @@ for(e in 1:length(esets)){
 }
 
 }
+#}
 #remove datasets that are too small? allow them for now.
 #now process, then grab meta-features
 #sounds like there SHOULD be some duplicated samples  in here.
@@ -216,13 +218,12 @@ splitOutTCGABatches <- FALSE
   rownames(outcomesAndCovariates) <- colnames(exprs(esets[["TCGA_eset"]]))
   exprMatrix <- exprs(esets[["TCGA_eset"]])
   rownames(exprMatrix) <- featureNames(esets[["TCGA_eset"]])
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_batchCorrection.R")
   batchCorrect <- batchNormalization(countsMatrixNoNANoDup=exprMatrix,outcomesAndCovariates=outcomesAndCovariates,MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile="combatoutput.txt")
-  #NOTE: may have removed samples with NA batches, or in not large enough sample groups.  
-  exprs(esets[["TCGA_eset"]]]) <- expr
-  pData(esets[["TCGA_eset"]]]) <- pDat
-  protocolData(esets[["TCGA_eset"]]])@data <- data.frame(row.names=colnames(exprs(esets[[e]])))
-  #check: make sure is still a valid object
-  validObject(esets[["TCGA_eset"]]])
+  
+esets[["TCGA_eset"]] <- esets[["TCGA_eset"]][rownames(batchCorrect$GEN_Data_Corrected), colnames(batchCorrect$GEN_Data_Corrected)]
+featureNames(esets[["TCGA_eset"]] ) <- rownames(batchCorrect$GEN_Data_Corrected)
+  validObject(esets[["TCGA_eset"]])
     
 #}
 
@@ -254,28 +255,36 @@ for(d in 1:length(dataMatrixList)){
 }
 
 output <- list(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList)
-save(output,file="/home/kplaney/ovarian_analysis/curatedBreastData_proc_TCGAnoBatch.RData.gzip",compress="gzip")
+save(output,file="/home/kplaney/ovarian_analysis/curatedBreastData_proc.RData.gzip",compress="gzip")
 
 
-load("/home/kplaney/ovarian_analysis/curatedBreastData_proc_TCGAnoBatch.RData.gzip")
-dataMatrixList <- output$dataMatrixList
-clustFeaturesList <- output$clustFeaturesList
+load("/home/kplaney/ovarian_analysis/curatedBreastData_proc.RData.gzip")
+#remove end TCGA clusters
+dataMatrixList <- output$dataMatrixList[-c(24:37)]
+clustFeaturesList <- output$clustFeaturesList[c(24:37)]
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
-clusterOut_hclust <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=30,algorithm="ward.D",
+clusterOut_hclust <- clusterMatrixListHclustGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters=15,algorithm="ward.D",
                                          distMethod=c("euclidean"),outputFile="/home/kplaney/ovarian_analysis//cluster_hclustGap_output.txt",
                                          corUse=c("everything"),numSims=100)
 
-clusterOut_kmeans <- clustMatrixListKmeansGap(dataMatrixList,clustFeaturesList,maxNumClusters=30,iter.max=30,nstart=25,numSims=100,algorithm="Hartigan-Wong",
+save(clusterOut_hclust,file="/home/kplaney/ovarian_analysis/clusterOut_hclust_noTCGAcombat.RData.gzip",compress="gzip")
+
+
+clusterOut_kmeans <- clustMatrixListKmeansGap(dataMatrixList,clustFeaturesList,maxNumClusters=15,iter.max=30,nstart=25,numSims=100,algorithm="Hartigan-Wong",
                                               outputFile="/home/kplaney/ovarian_analysis//cluster_kmeansGap_output.txt"
                                )
 
-clusterOut_kmeansConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 30, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("km"),
+clusterOut_kmeansConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 15, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("km"),
                                                                      hclustAlgorithm="ward.D", consensusHclustAlgorithm="ward.D",
                                                                      corUse=c("everything"),
                                                                      distMethod=c("euclidean"),
                                                                      minClustConsensus=.7,bestKmethod=c("highestMinConsensus"))
-  
-clusterOut_hclustConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 30, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("hc"),
+ 
+
+save(clusterOut_kmeansConsensus,file="/home/kplaney/ovarian_analysis/clusterOut_kmeansConsensus_noTCGAcombat.RData.gzip",compress="gzip")
+
+
+clusterOut_hclustConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 15, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("hc"),
                                                          hclustAlgorithm="ward.D", consensusHclustAlgorithm="ward.D",
                                                                      corUse=c("everything"),
                                                                      distMethod=c("euclidean"),
@@ -285,8 +294,115 @@ clusterOut_hclustConsensus <- consensusClusterMatrixList(dataMatrixList,clustFea
 save(clusterOut_hclustConsensus,file="/home/kplaney/ovarian_analysis/clusterOut_hclustConsensus_noTCGAcombat.RData.gzip",compress="gzip")
 
 
+#compute edges
+fractFeatIntersectThresh=.7
+numFeatIntersectThresh=500
+clustSizeThresh=3
+clustSizeFractThresh=.05
+numParallelCores=8
+minTrueSimilThresh=.25
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+includeRefClustInNull=TRUE
+numSims=100
+sigMethod=c("centroid")
+edgeMethod=c("pearson")
 
 
+indEdgePvalueThresh=.3
+meanEdgePairPvalueThresh=.2
+minTrueSimilThresh = .25
+maxTrueSimilThresh=Inf
+
+
+###hclust consensus
+load("/home/kplaney/ovarian_analysis/curatedBreastData_proc_TCGAnoBatch.RData.gzip")
+dataMatrixList <- output$dataMatrixList
+load("/home/kplaney/ovarian_analysis/clusterOut_hclustConsensus_noTCGAcombat.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+#remove full TCGA dataset
+indexRemove <- which(names(dataMatrixList)=="TCGA_eset")
+dataMatrixList <- dataMatrixList[-indexRemove]
+clustSampleIndexList <- clusterOut_hclustConsensus$clustSampleIndexList[-indexRemove]
+clustFeatureIndexList <- clusterOut_hclustConsensus$clustFeatureIndexList[-indexRemove]
+
+
+test <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                    edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                    sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                    
+                                    outputFile="/home/kplaney/ovarian_analysis//CoINcIDE_hclustConsensus_messages.txt",fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
+
+hclustConsensus_getAdjMatricesOut_centroid <- test
+save(hclustConsensus_getAdjMatricesOut_centroid,file="/home/kplaney/ovarian_analysis/hclustConsensus_getAdjMatricesOut_centroid.RData.gzip",compress="gzip")
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_communityDetection.R")
+load("/home/kplaney/ovarian_analysis/hclustConsensus_getAdjMatricesOut_centroid.RData.gzip")
+testEdges <- assignFinalEdges(computeTrueSimilOutput=hclustConsensus_getAdjMatricesOut_centroid$computeTrueSimilOutput,
+                              pvalueMatrix=hclustConsensus_getAdjMatricesOut_centroid$pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
+                              meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
+                              minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                              minFractFeatureIntersect=minFractFeatureIntersect,fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
+                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir="/home/kplaney/ovarian_analysis/",fileTag="CoINcIDE_edges_hclustConsensus"
+)
+
+communityInfo <- findCommunities(edgeMatrix=testEdges$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=testEdges$filterEdgeOutput$edgeWeightMatrix,hclustConsensus_getAdjMatricesOut_centroid$clustIndexMatrix,fileTag="hclustConsensus_centroid",
+                                 saveDir="/home/kplaney/ovarian_analysis//",minNumUniqueStudiesPerCommunity=2,clustMethodName="hclustConsensus_centroid",
+                                 commMethod=c("edgeBetween"),
+                                 makePlots=TRUE,saveGraphData=FALSE)
+
+##kmeans consensus
+load("/home/kplaney/ovarian_analysis/clusterOut_kmeansConsensus_noTCGAcombat.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+load("/home/kplaney/ovarian_analysis/curatedBreastData_proc_TCGAnoBatch.RData.gzip")
+dataMatrixList <- output$dataMatrixList
+indexRemove <- which(names(dataMatrixList)=="TCGA_eset")
+dataMatrixList <- dataMatrixList[-indexRemove]
+clustSampleIndexList <- clusterOut_kmeansConsensus$clustSampleIndexList[-indexRemove]
+clustFeatureIndexList <- clusterOut_kmeansConsensus$clustFeatureIndexList[-indexRemove]
+
+test <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                
+                                outputFile="/home/kplaney/ovarian_analysis//CoINcIDE_kmeansConsensus_messages.txt",fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_communityDetection.R")
+
+testEdges <- assignFinalEdges(computeTrueSimilOutput=test$computeTrueSimilOutput,pvalueMatrix=test$pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
+                              meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
+                              minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                              minFractFeatureIntersect=minFractFeatureIntersect,fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
+                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir="/home/kplaney/ovarian_analysis/",fileTag="CoINcIDE_edges_kmeansConsensus"
+)
+
+
+##regular old hclust
+#####have not run yet:
+load("/home/kplaney/ovarian_analysis/clusterOut_hclust_noTCGAcombat.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+load("/home/kplaney/ovarian_analysis/curatedBreastData_proc_TCGAnoBatch.RData.gzip")
+dataMatrixList <- output$dataMatrixList
+indexRemove <- which(names(dataMatrixList)=="TCGA_eset")
+dataMatrixList <- dataMatrixList[-indexRemove]
+clustSampleIndexList <- clusterOut_hclust$clustSampleIndexList[-indexRemove]
+clustFeatureIndexList <- clusterOut_hclust$clustFeatureIndexList[-indexRemove]
+
+test <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                
+                                outputFile="/home/kplaney/ovarian_analysis//CoINcIDE_hclust_messages.txt",fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_communityDetection.R")
+
+testEdges <- assignFinalEdges(computeTrueSimilOutput=test$computeTrueSimilOutput,pvalueMatrix=test$pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
+                              meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
+                              minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                              minFractFeatureIntersect=minFractFeatureIntersect,fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
+                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir="/home/kplaney/ovarian_analysis/",fileTag="CoINcIDE_edges_hclust"
+)
 
 
 

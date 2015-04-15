@@ -1,5 +1,5 @@
 library("sva")
-
+library("matrixStats")
 batchNormalization <- function(countsMatrixNoNANoDup,outcomesAndCovariates,MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile="combatoutput.txt"){
   
   outputFile <- paste0(outputFile,"_",Sys.Date(),".txt");
@@ -85,7 +85,25 @@ BatchCorrection <- function(GEN_Data,BatchData,mod,batchColName,outputFile="./co
   #CombatResults=ComBat_NooutputFiles(GEN_Data,BatchDataSelected)
   #COME BACK: try filtering out low varying genes.
   #s long as don't put in numCovs argument, all variables will be treated as factors
-  CombatResults <- ComBat(dat=GEN_Data, batch=BatchDataSelected[,batchColName], mod=mod, par.prior=TRUE, prior.plots=FALSE);
+  
+  #final processing step: remove genes whose variance is near zero within any batch (not just globally)
+  rowIndicesRemove <- c()
+  for(b in 1:length(unique(BatchDataSelected[,batchColName]))){
+    
+    rowIndicesRemove <- append(rowIndicesRemove,which(rowVars(GEN_Data[,
+                                                               which(BatchDataSelected[,batchColName]==unique(BatchDataSelected[,batchColName])[b])])<=.001))
+    
+  }
+  
+  if(length(rowIndicesRemove)>0){
+    
+    GEN_Data <- GEN_Data[-rowIndicesRemove, ]
+    
+  }
+  
+  #par.prior=TRUE indicates parametric adjustments will be used
+  #need a numeric batch variable.
+  CombatResults <- ComBat(dat=GEN_Data, batch=BatchDataSelected[,batchColName], mod=mod, par.prior=TRUE, prior.plots=FALSE,numCovs=NULL);
   
   #GEN_Data_Corrected=CombatResults[,-1]
   #class(GEN_Data_Corrected) <- "numeric"
@@ -104,14 +122,26 @@ batchCorrection_MolecularData <- function(GEN_Data,BatchData,MinInBatch,combatMo
   
   if(length(which(BatchData[,batchColName]==0))>0){
     
-    GEN_Data <- GEN_Data[,-which(BatchData[,batchColName]==0)]
-    BatchDataSelected <- BatchData[-which(BatchData[,batchColName]==0),]
+    message("Removing samples with batch ID=0")
+    GEN_Data <- GEN_Data[,-which(BatchData[,batchColName]==0), drop=FALSE]
+    BatchDataSelected <- BatchData[-which(BatchData[,batchColName]==0), , drop=FALSE]
     
   }else{
     
     BatchDataSelected <- BatchData;
   }
   
+  # Remove samples with batch number NA
+  if(any(is.na((BatchData[,batchColName])))){
+    
+    message("Removing samples with NA batch ID")
+    GEN_Data <- GEN_Data[,-which(is.na(BatchData[,batchColName])), drop=FALSE]
+    BatchDataSelected <- BatchData[-which(is.na(BatchData[,batchColName])), , drop=FALSE]
+    
+  }else{
+    
+    BatchDataSelected <- BatchData;
+  }
   # remove batches that are too small     
   #MinInBatch=5
   #my colnames are NOT the GEN_data!

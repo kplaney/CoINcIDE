@@ -1,4 +1,4 @@
-
+library("matrixStats")
 createTestVarianceDataMatrixList  <- function(){
   
 testDataMatrixList <- list();

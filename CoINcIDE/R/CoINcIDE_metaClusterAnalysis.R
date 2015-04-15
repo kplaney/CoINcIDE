@@ -1,5 +1,5 @@
 community_metaGeneAnalysis <- function(community_membership,clusterMatrixList,genomeSize=10000,pvalueThresh=.05,
-                                       dataMatrices,dataM_sampleCol=FALSE,geneCommIntersect,geneCommUnion,detailedBiclustNames){
+                                       dataMatrices,dataM_sampleCol=FALSE,geneCommIntersect,geneCommUnion,detailedBiclustNames,logScale=TRUE){
 warning("Assumes that in each community, the intersecting or union genes are always in the same order");
 source("/home/kplaney/gitRepos/IGP_network/igp_network/clust_robust.R");
 
@@ -65,82 +65,43 @@ for(c in 1:length(comm_exprList$heatmaps_expr_union)){
   }
   if(index!=0){
     
-  sigGeneMatrix_hedgeG <- matrix(data=NA,nrow=length(comm_exprList$heatmaps_expr_union[[c]]),
-                                 ncol=nrow(comm_exprList$heatmaps_expr_union[[c]][[index]]),
-                                 dimnames=list(names(comm_exprList$heatmaps_expr_union[[c]]),
-                                               rownames(comm_exprList$heatmaps_expr_union[[c]][[index]]))); 
-  
-  sigGeneMatrix_hedgeG_se <- matrix(data=NA,nrow=length(comm_exprList$heatmaps_expr_union[[c]]),
-                                   ncol=nrow(comm_exprList$heatmaps_expr_union[[c]][[index]]),
-                                   dimnames=list(names(comm_exprList$heatmaps_expr_union[[c]]),
-                                                 rownames(comm_exprList$heatmaps_expr_union[[c]][[index]]))); 
-  #qvalue for down genes.
-  sigGeneMatrixUp <- matrix(data=NA,nrow=length(comm_exprList$heatmaps_expr_union[[c]]),
-                            ncol=nrow(comm_exprList$heatmaps_expr_union[[c]][[index]]),
-                            dimnames=list(names(comm_exprList$heatmaps_expr_union[[c]]),
-                                          rownames(comm_exprList$heatmaps_expr_union[[c]][[index]])));
-  #qvalue for down genes.                              
-  sigGeneMatrixDown <- matrix(data=NA,nrow=length(comm_exprList$heatmaps_expr_union[[c]]),
-                              ncol=nrow(comm_exprList$heatmaps_expr_union[[c]][[index]]),
-                              dimnames=list(names(comm_exprList$heatmaps_expr_union[[c]]),
-                                            rownames(comm_exprList$heatmaps_expr_union[[c]][[index]])));  
-  
   
   for(e in 1:length(comm_exprList$heatmaps_expr_union[[c]])){
     
     if(!is.null(comm_exprList$heatmaps_expr_union[[c]][[e]])){
       
+      #run SAMR for each gene within each dataset?
+      output <- samr()
       for(g in 1:nrow(comm_exprList$heatmaps_expr_union[[c]][[e]])){
+
         
-      #one-sided alternative "greater" is that x is shifted to the right of y
-        #        
-        #one-sided alternative "greater" is that x is shifted to the right of y
-        #taken from ttest.Pvalues() in metaGEM.R. I decided not to assume a normal distribution
-        #  summ <- get.ttest.P( study$expr, study$class )[ , c("P.up", "P.down")]
-        #get.ttest.P <- function(mat, g){
-        
-        ## test statistic and DF calculated using equal variance assumption
-        #this is just from the multtest package: performed tests on all rows at one.
-        #tstat <- mt.teststat( mat, g, test="t.equalvar" )
-        #df <- length(g) - 2
-        
-        #P.both <- 2*pt( abs(tstat), df=df, lower=FALSE )
-        #P.down <- pt( tstat, df=df, lower=TRUE )
-        #P.up   <- pt( tstat, df=df, lower=FALSE )
-        
-        #out <- cbind(P.both, P.down, P.up)
-        #rownames(out) <- rownames(mat)
-        #return(out)
-        #}
-        #I'd say using Wilcoxon rank test is better anyways!
-        #http://stats.stackexchange.com/questions/19681/when-to-use-the-wilcoxon-rank-sum-test-instead-of-the-unpaired-t-test
-        
-        sigGeneMatrixUp[e,g] <-    wilcox.test(comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="1")],
-                                               comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="0")],alternative="greater")$p.value;
-        
-        sigGeneMatrixDown[e,g] <-     wilcox.test(comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="1")],
-                                                  comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="0")],alternative="less")$p.value;
-        #this assumes variances between the two groups are the same for this gene...hedge's g sort of helps
-        #http://www.polyu.edu.hk/mm/effectsizefaqs/effect_size_equations2.html
-        #want hedge's g bc may have pretty different sample sizes
-        #adapted from Purvesh's code: getES() function.
-        mean_diff <- mean(comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="1")])-mean( comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="0")]);
-        sd1  <- sd(comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="1")]);  
-        sd2 <- sd(comm_exprList$heatmaps_expr_union[[c]][[e]][g,which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="0")]);
-        n1 <- length(which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="1"));
-        n2 <- length(which(colnames(comm_exprList$heatmaps_expr_union[[c]][[e]])=="0"));
-        pooled_sd   <- sqrt( ( (n1-1)*sd1^2 + (n2-1)*sd2^2 )/( n1 + n2 - 2 ) );
-        cf   <- 1 - 3/( 4*(n1 + n2) - 9 );
-        sigGeneMatrix_hedgeG[e,g]    <- cf * mean_diff/pooled_sd ;
-        sigGeneMatrix_hedgeG_se[e,g] <- sqrt( (n1+n2)/(n1*n2) + 0.5*(sigGeneMatrix_hedgeG[e,g])^2 /(n1+n2-3.94) );
+        sigGeneMatrixUp[e,g] <-    
+        sigGeneMatrixDown[e,g] <-    
                   
       }
       
     }
     #end of loop e.(studies in this community.) 
   }
+  
+  for each meta-cluster:
+  for(g in 1:allGenesTestedAcrossAllStudies){
+  ##now after do that for all studies: take s.d., calculate ES (relative difference), and take average q-value
+  
+    #The summary estimate is a weighted average. If weights are specified they are used, otherwise the
+    #reciprocal of the estimated variance is used.
+    ES <- meta.summaries(d=d, se=se, method=c("random"),
+                         logscale=logscale,
+                         conf.level=0.95);
+  #summarize wilcoxon rank comm_exprList using fisher's p-values: combine across all studes
+  qvalue_summ[g] <- fishersMethod(SAMR_qvalues[,g]);
+  gene_up[g] <- fraction that were deemed to be overexpressed by SAMR for all studies.
     
-  #remove any NA studies - ie where entire study was the cluster,
+  }
+}
+
+
+#remove any NA studies - ie where entire study was the cluster,
   #as these will have NA values then.
   if(any(is.na(sigGeneMatrix_hedgeG))){
     
@@ -177,8 +138,10 @@ for(c in 1:length(comm_exprList$heatmaps_expr_union)){
       #http://statweb.stanford.edu/~jtaylo/courses/stats203/notes/fixed+random.pdf
       d <- as.vector(tmp_hedgeG[,g]);
       se <- as.vector(tmp_hedgeG_se[,g]);
+      #The summary estimate is a weighted average. If weights are specified they are used, otherwise the
+      #reciprocal of the estimated variance is used.
       ES <- meta.summaries(d=d, se=se, method=c("random"),
-                                  logscale=TRUE,
+                                  logscale=logscale,
                                   conf.level=0.95);
       
       summ_hedgeG_ES[g] <- ES$summary;

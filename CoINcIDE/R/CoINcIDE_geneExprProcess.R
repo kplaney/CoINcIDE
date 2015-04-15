@@ -1,8 +1,8 @@
-
+library("impute")
+library("Biobase")
 
 createS4exprSet <- function(expr,phenoData,featureData,featureDataFieldName="gene"){
   
-  require("Biobase")
   #search for class.
   if((!missing(phenoData))&&(!missing(featureData))){
     
@@ -169,7 +169,7 @@ createExpressionSetList <- function(exprMatrixList,masterPhenoData,patientKey="G
   
 processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
                                      numTopVarGenes,minVarPercentile,maxVarPercentile=1,minVar,
-                                     featureDataFieldName="gene_symbol"){
+                                     featureDataFieldName="gene_symbol",uniquePDataID="unique_patient_ID"){
   
   outputFile = paste0(outputFileDirectory,
                       "/curatedBreastData_processExpressionSetMessages.txt")
@@ -182,7 +182,7 @@ processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
       
      exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
                         outputFileDirectory=outputFileDirectory,
-                        numTopVarGenes=numTopVarGenes,featureDataFieldName=featureDataFieldName)
+                        numTopVarGenes=numTopVarGenes,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
     
     }else if(!missing(minVarPercentile) && !missing(maxVarPercentile) 
              && missing(minVar)){
@@ -190,18 +190,18 @@ processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
       exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
                           outputFileDirectory=outputFileDirectory,
                           maxVarPercentile=maxVarPercentile,
-                          minVarPercentile=minVarPercentile,featureDataFieldName=featureDataFieldName)
+                          minVarPercentile=minVarPercentile,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
       
     }else if(!missing(minVar)){
       
       exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
-                          outputFileDirectory=outputFileDirectory,minVar=minVar,featureDataFieldName=featureDataFieldName)
+                          outputFileDirectory=outputFileDirectory,minVar=minVar,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
       
       
    }else{
       
       exprSetList[[e]] <- processExpressionSet(exprSetList[[e]],
-                          outputFileDirectory=outputFileDirectory,featureDataFieldName=featureDataFieldName)
+                          outputFileDirectory=outputFileDirectory,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
     
     }
    
@@ -214,7 +214,7 @@ processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
 #assumption:  your feature data has a column that labeled gene_symbol.
 processExpressionSet <- function(exprSet,outputFileDirectory="./",
                                  numTopVarGenes,minVarPercentile,
-                                 maxVarPercentile=1,minVar,featureDataFieldName="gene_symbol"){
+                                 maxVarPercentile=1,minVar,featureDataFieldName="gene_symbol",uniquePDataID="unique_patient_ID"){
   
   study <- list(expr=exprSet@assayData$exprs,
                 keys=fData(exprSet)[ ,featureDataFieldName],phenoData=pData(exprSet))
@@ -266,7 +266,21 @@ assay, pheno and feature slots.\n Proceed through data analysis with caution!")
   featureNames(exprSet@featureData) <- tmp$keys
   featureNames(exprSet@assayData) <- tmp$keys
   
-  tmp <-  removeDuplicatedPatients(exprMatrix=exprSet@assayData$exprs, 
+  exprMatrix <- exprSet@assayData$exprs
+  #eset does not allow duplicated patient names - so have to
+    #assign the unique IDs to this matrix.
+  if(length(na.omit(match(uniquePDataID,colnames(pData(exprSet))))) != 1){
+    
+    stop(paste0("\nColumn name ", uniquePDataID, " not found in pData data frame\n"))
+  
+  }
+  
+  if(!all(is.na(pData(exprSet)[ ,uniquePDataID]))){
+    #for certain datasets: this is actually all NA values. so don't use then!
+    colnames(exprMatrix) <- pData(exprSet)[ ,uniquePDataID]
+  
+  }
+  tmp <-  removeDuplicatedPatients(exprMatrix=exprMatrix, 
           outputFile=paste0(outputFileDirectory,
           "/curatedBreastData_processExpressionSetMessages.txt"), 
           varMetric = "everything")
@@ -1314,3 +1328,4 @@ exprSetListToMatrixList <- function(esetList,featureDataFieldName="gene_symbol")
   return(dataMatrixList)
   
 }
+

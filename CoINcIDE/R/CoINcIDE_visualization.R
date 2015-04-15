@@ -1,7 +1,8 @@
-
+library("limma");
+library("ggplot2");
 ###correlation heatmaps
 #png(filename=paste0(saveDir,paste0("sim",simNum,"_corr_heatmap_",Sys.Date(),".png")),
-    width = 700, height = 1000)
+    #width = 700, height = 1000)
 
 #if want no density plot: density.info="none",
 #heatmap.2(cor(t(simData$dataMatrixList[[1]])),Rowv=F,Colv=F,scale = c("none"), 
@@ -12,7 +13,47 @@
 #dev.off();
 
 ####
-advanced_networkPlots <- function(analysisOutput,
+
+
+
+#if(!is.null(analysisOutput$subtypePlots$subtype_dfMaster)){
+  
+#  clustSizes <- table(analysisOutput$subtypePlots$subtype_dfMaster[,"clust_numVar"]);
+  #put in order of attributes
+#  clustSizes <- clustSizes[match(analysisOutput$communityMembership$attrDF$clust,names(clustSizes))];
+#  attrDF <- cbind(analysisOutput$communityMembership$attrDF,clustSizes);
+  
+#}else{
+  
+#  attrDF <- analysisOutput$communityMembership$attrDF;
+#}
+
+
+##function to merge existing attributes in attrDF
+
+createPhenoMasterTableFromMatrixList <- function(esetList,dataMatrixList){
+  
+  if(!is.null(esetList)){
+    
+    #check first object index: is it actually an expression matrix?
+    if(validObject(esetList[[1]])){
+      
+      
+    }
+  }
+  
+}
+addClinicalVarToNodeAttributes <- function(communityMembership,clinicalTable,esetList){
+  
+  if(!missing(clinicalTable)){
+    
+    
+    
+  }
+  
+}
+#THEN: SAMR meta-analysis.
+advancedNetworkPlots <- function(communityMembership,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
                                   saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes){
   
@@ -25,63 +66,54 @@ advanced_networkPlots <- function(analysisOutput,
   #number of clusters (nodes) and # started out with.
   #let's add size of each cluster
   
-  network_stats <- c(length(unique(analysisOutput$communityMembership$attrDF$community)),
-                     length(unique(analysisOutput$communityMembership$attrDF$clust)),
-                     nrow(analysisOutput$adjMatricesList[[1]]),
-                     nrow(analysisOutput$communityMembership$edgeDF),
-                     length(unique(analysisOutput$communityMembership$attrDF$studyNum)));
+  network_stats <- c(length(unique(communityMembership$attrDF$community)),
+                     length(unique(communityMembership$attrDF$clust)),
+                     (length(communityMembership$clustLose)+ length(unique(communityMembership$attrDF$clust))),
+                     nrow(communityMembership$edgeDF),
+                     length(unique(communityMembership$attrDF$studyNum)));
   
   names(network_stats) <- c("numCommunities","numClusters","origNumClusters","numEdges",
                             "numStudies"); 
-  
-  if(!is.null(analysisOutput$subtypePlots$subtype_dfMaster)){
-    
-    clustSizes <- table(analysisOutput$subtypePlots$subtype_dfMaster[,"clust_numVar"]);
-    #put in order of attributes
-    clustSizes <- clustSizes[match(analysisOutput$communityMembership$attrDF$clust,names(clustSizes))];
-    attrDF <- cbind(analysisOutput$communityMembership$attrDF,clustSizes);
-    
-  }else{
-    
-    attrDF <- analysisOutput$communityMembership$attrDF;
-  }
-  
+
   if(missing(colorCodes)){
     
     if(brewPal==FALSE){
       #make own color ramp.
-      colorCodeF <- colorRampPalette(c("violet","blue","red"), bias = length(unique(attrDF[,"community"]))*2,
+      colorCodeF <- colorRampPalette(c("violet","blue","red"), bias = length(unique(communityMembership$attrDF[,"community"]))*2,
                                      space = "rgb", interpolate = "linear");
       #this will produce RGB representation in HEX, which cytoscape can take in.
       #if need plain old RGB: col2RGB(membership[,"colors"],alpha=FALSE);
-      colorCodes <- colorCodeF(length(unique(attrDF[,"community"])));
+      colorCodes <- colorCodeF(length(unique(communityMembership$attrDF[,"community"])));
       
     }else{
       #max is 11 colors
-      colorCodes <- rev(brewer.pal(length(unique(attrDF[,"community"])),brewPal));
+      colorCodes <- rev(brewer.pal(length(unique(communityMembership$attrDF[,"community"])),brewPal));
       
     }
     
   }
-  attrDF$color <- as.character(attrDF$color);
-  for(c in 1:length(unique(attrDF[,"community"]))){
+  #make sure is a character vector
+  communityMembership$attrDF$color <- as.character(communityMembership$attrDF$color);
+  
+  #replace colors from user-selected color palette.
+  for(c in 1:length(unique(communityMembership$attrDF[,"community"]))){
     
     
-    attrDF[which(attrDF$community==c),"color"] <- colorCodes[c];
+    communityMembership$attrDF[which(communityMembership$attrDF$community==c),"color"] <- colorCodes[c];
     
   }
   
-  undirGraph <- graph.data.frame(analysisOutput$communityMembership$edgeDF,directed=FALSE,vertices=attrDF)
+  undirGraph <- graph.data.frame(communityMembership$edgeDF,directed=FALSE,vertices=communityMembership$attrDF)
   
   
-  if(!is.null(analysisOutput$subtypePlots$subtype_dfMaster)){
+  if(!is.null(communityMembership$attrDF$size)){
     
-    V(undirGraph)$size <- clustSizes;
+    V(undirGraph)$size <- communityMembership$attrDF$size;
     
     #save plots
     png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),
         width = 700, height = 800,res=160);
-    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
+    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
          vertex.color= V(undirGraph)$color, edge.arrow.size=3);
     dev.off();
     
@@ -97,7 +129,7 @@ advanced_networkPlots <- function(analysisOutput,
   #without relative sizes
   png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),
       width = 700, height = 800,res=160);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(attrDF)),vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
+  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
        vertex.color= V(undirGraph)$color, edge.arrow.size=3);
   dev.off();
   #with study nums
@@ -107,7 +139,7 @@ advanced_networkPlots <- function(analysisOutput,
        vertex.color= V(undirGraph)$color, edge.arrow.size=3);
   dev.off();
   
-  output <- list(undirGraph=undirGraph,attrDF=attrDF,network_stats=network_stats);
+  output <- list(undirGraph=undirGraph,attrDF=communityMembership$attrDF,network_stats=network_stats);
   return(output);
   
 }
@@ -173,8 +205,8 @@ assignCentroidSubtype <- function(origDataMatrix,minNumGenes=30,centroidRData="/
 new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,origDataMatrices,saveDir="./",clustMethodName="clust method",
                                                 centroidSetName="pam50",centroidRData="/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData"){
   
-  
-  source("/home/kplaney/gitRepos/IGP_network/igp_network/clust_robust.R")
+
+
   #specify colors:
   subtypeColorMatrix <- data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97"))
   #hmm can I order the colors in the same way each time?? may not really need to anyways.
@@ -188,8 +220,7 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
     numTotalSamplesInStudy[[s]] <- nrow(origDataMatrices[[s]]);
     
   }
-  library("limma");
-  library("ggplot2");
+
   warning("\nThis code assumes your biclusters have genes in the columns and patients in the rows.\n")
   #library("RColorBrewer");
   biclustMasterList <- list();
@@ -938,337 +969,6 @@ communityIHC_plots <- function(community_membership,biclust,receptorMatrix,origD
   return(output);
 }
 
-advanced_networkPlots <- function(analysisOutput=output$corr_analysis_restrictEdges,
-                                  brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
-                                  saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes){
-  
-  library("igraph");
-  source("/home/kplaney/gitRepos/IGP_network/igp_network/clust_robust.R");
-  #study summary.
-  #number of edges
-  #number of studies
-  #number of communities.
-  #number of clusters (nodes) and # started out with.
-  #let's add size of each cluster
-  
-  network_stats <- c(length(unique(analysisOutput$communityMembership$attrDF$community)),
-                     length(unique(analysisOutput$communityMembership$attrDF$clust)),
-                     nrow(analysisOutput$adjMatricesList[[1]]),
-                     nrow(analysisOutput$communityMembership$edgeDF),
-                     length(unique(analysisOutput$communityMembership$attrDF$studyNum)));
-  
-  names(network_stats) <- c("numCommunities","numClusters","origNumClusters","numEdges",
-                            "numStudies"); 
-  
-  if(!is.null(analysisOutput$subtypePlots$subtype_dfMaster)){
-    
-    clustSizes <- table(analysisOutput$subtypePlots$subtype_dfMaster[,"clust_numVar"]);
-    #put in order of attributes
-    clustSizes <- clustSizes[match(analysisOutput$communityMembership$attrDF$clust,names(clustSizes))];
-    attrDF <- cbind(analysisOutput$communityMembership$attrDF,clustSizes);
-    
-  }else{
-    
-    attrDF <- analysisOutput$communityMembership$attrDF;
-  }
-  
-  if(missing(colorCodes)){
-    
-    if(brewPal==FALSE){
-      #make own color ramp.
-      colorCodeF <- colorRampPalette(c("violet","blue","red"), bias = length(unique(attrDF[,"community"]))*2,
-                                     space = "rgb", interpolate = "linear");
-      #this will produce RGB representation in HEX, which cytoscape can take in.
-      #if need plain old RGB: col2RGB(membership[,"colors"],alpha=FALSE);
-      colorCodes <- colorCodeF(length(unique(attrDF[,"community"])));
-      
-    }else{
-      #max is 11 colors
-      colorCodes <- rev(brewer.pal(length(unique(attrDF[,"community"])),brewPal));
-      
-    }
-    
-  }
-  attrDF$color <- as.character(attrDF$color);
-  for(c in 1:length(unique(attrDF[,"community"]))){
-    
-    
-    attrDF[which(attrDF$community==c),"color"] <- colorCodes[c];
-    
-  }
-  
-  undirGraph <- graph.data.frame(analysisOutput$communityMembership$edgeDF,directed=FALSE,vertices=attrDF)
-  
-  
-  if(!is.null(analysisOutput$subtypePlots$subtype_dfMaster)){
-    
-    V(undirGraph)$size <- clustSizes;
-    
-    #save plots
-    png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),
-        width = 700, height = 800,res=160);
-    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-    dev.off();
-    
-    
-    #with study numbers
-    png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_studyNumlabels_",Sys.Date(),".png"),
-        width = 700, height = 800,res=160);
-    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-    dev.off();
-    
-  }
-  #without relative sizes
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),
-      width = 700, height = 800,res=160);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(attrDF)),vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  #with study nums
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_studyNumlabels_",Sys.Date(),".png"),
-      width = 700, height = 800,res=160);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  
-  output <- list(undirGraph=undirGraph,attrDF=attrDF,network_stats=network_stats);
-  return(output);
-  
-}
-
-
-#######wrapper analysis functions
-#for now, requires you to have run the pam50 or intrinsic subtyping bc need "clust_numVar" - number of
-#samples in each cluster.in the future, perhaps allow to just pass in the clustMatrixList and calculate it from that.
-advanced_networkPlots <- function(analysisOutput=output$corr_analysis_restrictEdges,
-                                  brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
-                                  saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes){
-  
-  #study summary.
-
-  #number of edges
-  #number of studies
-  #number of communities.
-  #number of clusters (nodes) and # started out with.
-  #let's add size of each cluster
-  
-  network_stats <- c(length(unique(analysisOutput$communityMembership$attrDF$community)),
-                     length(unique(analysisOutput$communityMembership$attrDF$clust)),
-                     nrow(analysisOutput$adjMatricesList[[1]]),
-                     nrow(analysisOutput$communityMembership$edgeDF),
-                     length(unique(analysisOutput$communityMembership$attrDF$studyNum)));
-
-  names(network_stats) <- c("numCommunities","numClusters","origNumClusters","numEdges",
-                            "numStudies"); 
-  
-  if(!is.null(analysisOutput$subtypePlots$subtype_dfMaster)){
-    
-    clustSizes <- table(analysisOutput$subtypePlots$subtype_dfMaster[,"clust_numVar"]);
-    #put in order of attributes
-    clustSizes <- clustSizes[match(analysisOutput$communityMembership$attrDF$clust,names(clustSizes))];
-    attrDF <- cbind(analysisOutput$communityMembership$attrDF,clustSizes);
-    
-  }else{
-    
-    attrDF <- analysisOutput$communityMembership$attrDF;
-  }
-  
-  if(missing(colorCodes)){
-    
-  if(brewPal==FALSE){
-    #make own color ramp.
-    colorCodeF <- colorRampPalette(c("violet","blue","red"), bias = length(unique(attrDF[,"community"]))*2,
-                                   space = "rgb", interpolate = "linear");
-    #this will produce RGB representation in HEX, which cytoscape can take in.
-    #if need plain old RGB: col2RGB(membership[,"colors"],alpha=FALSE);
-    colorCodes <- colorCodeF(length(unique(attrDF[,"community"])));
-    
-  }else{
-    #max is 11 colors
-    colorCodes <- rev(brewer.pal(length(unique(attrDF[,"community"])),brewPal));
-    
-  }
-  
-  }
-  attrDF$color <- as.character(attrDF$color);
-  for(c in 1:length(unique(attrDF[,"community"]))){
-    
-    
-    attrDF[which(attrDF$community==c),"color"] <- colorCodes[c];
-    
-  }
-  
-  undirGraph <- graph.data.frame(analysisOutput$communityMembership$edgeDF,directed=FALSE,vertices=attrDF)
-  
-  
-  if(!is.null(analysisOutput$subtypePlots$subtype_dfMaster)){
-    
-  V(undirGraph)$size <- clustSizes;
-  
-  #save plots
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),
-      width = 700, height = 800);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  
-
-  #with study numbers
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_studyNumlabels_",Sys.Date(),".png"),
-      width = 700, height = 800);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  
-}
-  #without relative sizes
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),
-      width = 700, height = 800);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(attrDF)),vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  #with study nums
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_studyNumlabels_",Sys.Date(),".png"),
-      width = 700, height = 800);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  
-  output <- list(undirGraph=undirGraph,attrDF=attrDF,network_stats=network_stats);
-  return(output);
-  
-}
-
-
-#####
-computeEdgeMatrix <- function(clustRobust_output,restrictEdgesByStudy=TRUE,method=c("NN_distribution","diff_distribution"),
-                             compareMetric=c("correlation","euclidean"),edge_trueCorr_thresh=.3,edge_fractFeatIntersect_thresh=.05,
-                             edge_numFeatIntersect_thresh=20,edge_IGP_thresh=.7,sourceDir="/home/kplaney/gitRepos/IGP_network/igp_network/",
-                             edge_simil_overNull_pvalue_thresh=.05,clustMethodName="clustRobust",saveDir="/home/kplaney/"){
-  #setwd(sourceDir);
-  #source("clust_robust.R");
-  
-  ###reusable code:
-  clust_detailedNames <- clustRobust_output$clust_detailedNames;
-  
-  adjMatrix_fractFeat <- clustRobust_output$similMetrics$fractFeatIntersect;
-  adjMatrix_numFeat <- clustRobust_output$similMetrics$numFeatIntersect;
-  adjMatrix_simil <- clustRobust_output$similMetrics$simil;
-  adjMatrix_pvalue <- clustRobust_output$simil_overNull_pvalue;
-  
-  if(restrictEdgesByStudy){
-    library("limma");
-    for(r in 1:nrow(adjMatrix_simil)){
-      
-      #we use > in the edge finding algorithm.
-      compareIndices <- intersect(which(adjMatrix_simil[r,] > edge_trueCorr_thresh) , which(adjMatrix_pvalue[r,] < edge_simil_overNull_pvalue_thresh));
-      
-      if(length(compareIndices)>0){
-        
-        clust_names <- clust_detailedNames[compareIndices];
-        clust_names_by_study <- split(clust_names,f=strsplit2(clust_names,"_")[,2],drop=TRUE);
-        
-        for(c in 1:length(clust_names_by_study)){
-          
-          if(length(clust_names_by_study[[c]])>1){
-            #we have multiple matches
-            orig_indices <- as.numeric(strsplit2(clust_names_by_study[[c]],"_")[,1]);
-            #if a tie: then keep both - stay honest!
-            bestMatch <- which(adjMatrix_simil[r,orig_indices]==max(adjMatrix_simil[r,orig_indices]));
-            #remove this best index so that we don't set it to NA below.
-            orig_indices <- orig_indices[-bestMatch];
-            
-            #if a tie, only 2 in orig_indices: length will be zero.
-            if(length(orig_indices)>0){
-              #null out these indices now so won't get compared
-              adjMatrix_simil[r,orig_indices] <- NA;
-              adjMatrix_pvalue[r,orig_indices] <- NA;
-              
-            }
-            
-          }
-        }
-        
-        
-      }
-      # if(length(compareIndices)>0) 
-    }
-  }
-  
-  
-  if(method=="NN_distribution"){
-    
-    adjMatrix_IGP <- clustRobust_output$IGP;
-    
-  }
-  
-  #if IGP: also have IGP.
-  
-  
-  if(compareMetric=="correlation"){
-    
-    if(method=="diff_distribution"){
-      
-      adjMatricesList <- list(adjMatrix_simil,adjMatrix_fractFeat,adjMatrix_numFeat,
-                              adjMatrix_pvalue);
-      
-      
-      names(adjMatricesList) <- c("trueCorr","fractFeat","numFeat","corrOverNullpValue");
-      
-      
-      thresholdVector <- c(edge_trueCorr_thresh,edge_fractFeatIntersect_thresh,edge_numFeatIntersect_thresh,
-                           edge_simil_overNull_pvalue_thresh);
-      
-      #we want the edge pvalue to be insignificant so put a greater than...or just leave alone.
-      threshDir <- c(">",">",">","<");
-      
-    }else if(method=="NN_distribution"){
-      
-      adjMatricesList <- list(adjMatrix_IGP,adjMatrix_simil,adjMatrix_fractFeat,adjMatrix_numFeat,
-                              adjMatrix_pvalue);
-      
-      
-      names(adjMatricesList) <- c("IGP","trueCorr","fractFeat","numFeat","corrOverNullpValue");
-      
-      
-      thresholdVector <- c(edge_IGP_thresh,edge_trueCorr_thresh,edge_fractFeatIntersect_thresh,edge_numFeatIntersect_thresh,
-                           edge_simil_overNull_pvalue_thresh);
-      
-      #we want the edge pvalue to be insignificant so put a greater than...or just leave alone.
-      threshDir <- c(">",">",">",">","<",">");
-      
-    }else{
-      
-      stop("\nDid not pick an acceptable input for 'method' argument.")
-    }
-    
-  }else if(compareMetric=="euclidean"){
-    
-    stop("haven't coded up yet!")
-    #edge_distThresh <- 1000000;   
-  }
-  
-  #check for erroneous/empty matrices fed in:
-  for(a in 1:length(adjMatricesList)){
-    
-    if(is.null(dim(adjMatricesList[[a]]))){
-      
-      stop("\nYour adjacency matrix ",a, " is empty/is not 2D.\n");
-    }
-  }
-  
-
- edgeResults <- computeEdges(adjMatricesList=adjMatricesList,thresholdVector=thresholdVector,threshDir=threshDir,saveDir=saveDir,fileTag=clustMethodName);
-
- cat("\n",nrow(edgeResults$edgeMatrix) ,"clust-clust linkages found after initial thresholding.\n");
-
- output <- list(adjMatricesList=adjMatricesList,edgeResults=edgeResults,thresholdVector=thresholdVector,threshDir=threshDir);
-
- return(output);
-
-}
 
 analyzeClustRobust_output <- function(clustRobust_output,fullMatrixList,clustMatrixList,clustMethodName,saveDir,method=c("diff_distribution","NN_dist"),compareMetric=c("correlation","euclidean"),
                                                   edge_trueCorr_thresh=.3,edge_fractFeatIntersect_thresh=.05,edge_numFeatIntersect_thresh=20,edge_IGP_thresh=.7,

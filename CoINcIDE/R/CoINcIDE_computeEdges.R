@@ -99,6 +99,8 @@ message("This code assumes what you're clustering columns, and features are in t
 
   pvalueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
   cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
+  message(paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))," above minimum similarity threshold of ",minTrueSimilThresh))
+  cat("\n",paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))," above minimum similarity threshold of ",minTrueSimilThresh),append=TRUE,file=outputFile)
   
   for(n in 1:nrow(clustIndexMatrix)){
     
@@ -290,9 +292,16 @@ computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSample
             
           }
           
+          if(!all(rownames(nullClust) == rownames(refClust))){
+            
+            stop("In computeNullSimilVector: rownames of nullClust and refClust do not match up.")
+            
+          }
+          
+ 
           #compare simil against each cluster
           foreach(c=1:nrow(clustIndexMatrix), .combine='c') %dopar%{
-            
+         # for(c in 1:nrow(clustIndexMatrix))  {
             #debug: is doParallel keeping the same nullclust in this loop, and is each nullClust truly random?
 #             if(i==1){
 #               #these should all be equal
@@ -302,11 +311,11 @@ computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSample
             
             if(!is.na(trueSimilMatrix[refClustRowIndex,c])){ 
                 
-              if(trueSimilMatrix[refClustRowIndex,c] >= minTrueSimilThresh && trueSimilMatrix[refClustRowIndex,c] <= maxTrueSimilThresh)
+              if(trueSimilMatrix[refClustRowIndex,c] >= minTrueSimilThresh && trueSimilMatrix[refClustRowIndex,c] <= maxTrueSimilThresh){
               
               sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
               featureIndices <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
-              compareClust <- dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][featureIndices,sampleIndices]  
+              compareClust <- dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][featureIndices,sampleIndices,drop=FALSE]  
               
               if(sigMethod=="meanMatrix"){
                 
@@ -327,6 +336,12 @@ computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSample
             similValue <- NA
           
           }  
+          
+            }else{
+              
+              similValue <- NA
+              
+            }
         #end of inner foreach dopar 
         }
     #end of outer foreach dopar

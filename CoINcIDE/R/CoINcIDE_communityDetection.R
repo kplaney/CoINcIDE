@@ -17,7 +17,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
       #ROW is when this cluster was the reference cluster. p-value will by default be insignificant.
       #just replace with p-value in the other direction (columnwise)
       #(if both clusters in a pair were entire size of matrix, will have NA p-value still.)
-      pvalueMatrix[r, ] <-   pvalueMatrix[, r]
+      pvalueMatrix[, r] <-   pvalueMatrix[r, ]
       
     }
     if(computeTrueSimilOutput$clustSizeMatrix[r] <= clustSizeThresh || computeTrueSimilOutput$clustSizeFractMatrix[r] <= clustSizeFractThresh){
@@ -56,8 +56,10 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
                           pvalueMatrix,meanEdgePvalueMatrix,computeTrueSimilOutput$fractFeatIntersectMatrix,
                           computeTrueSimilOutput$numFeatIntersectMatrix)
   
+  names(adjMatricesList) <- c("simil","simil","meanPvalue","meanPvalue","fractFeatIntersect","numFeatIntersect")
+  
   thresholdVector <- c(minTrueSimilThresh,maxTrueSimilThresh,indEdgePvalueThresh,meanEdgePairPvalueThresh,
-                       fractFeatIntersect,numFeatIntersectThresh)
+                       fractFeatIntersectThresh,numFeatIntersectThresh)
   
   threshDir <- c(">=","<=","<=","<=",">=",">=")
   
@@ -68,7 +70,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   allClustRemoved <- filterEdgeOutput$clustRemoved
   
   output <- list(meanEdgePvalueMatrix=meanEdgePvalueMatrix,clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput,
-                 allClustRemoved=allClustRemoved)
+                 allClustRemoved=allClustRemoved,adjMatricesList=adjMatricesList)
   return(output)
   
 }
@@ -86,6 +88,12 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
   edgeMatrix <- matrix(data=NA,ncol=2);
   edgeWeightMatrix <- matrix(data=NA,ncol=length(adjMatricesList))
   
+  if(all(!is.na(names(adjMatricesList)))){
+    
+    colnames(edgeWeightMatrix) <- names(adjMatricesList)
+  
+  }
+  
   for(n in 1:nrow(adjMatricesList[[1]])){
     
     for(p in 1:ncol(adjMatricesList[[1]])){
@@ -102,7 +110,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
             #NOTE: will need to figure something else if doing a Euc dist...want > then.
             if(threshDir[a]==">="){
               
-              if(adjMatricesList[[a]][p,n] > thresholdVector[a] && adjMatricesList[[a]][n,p] > thresholdVector[a]){
+              if(adjMatricesList[[a]][p,n] >= thresholdVector[a] && adjMatricesList[[a]][n,p] >= thresholdVector[a]){
                 
                 pass <- TRUE;
                 
@@ -114,7 +122,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
               
             }else  if(threshDir[a]=="<="){
               
-              if(adjMatricesList[[a]][p,n] < thresholdVector[a] && adjMatricesList[[a]][n,p] < thresholdVector[a]){
+              if(adjMatricesList[[a]][p,n] <= thresholdVector[a] && adjMatricesList[[a]][n,p] <= thresholdVector[a]){
                 
                 pass <- TRUE;
                 
