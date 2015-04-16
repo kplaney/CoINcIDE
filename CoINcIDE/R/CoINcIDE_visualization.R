@@ -58,7 +58,7 @@ advancedNetworkPlots <- function(communityMembership,
                                   saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes){
   
   library("igraph");
-  source("/home/kplaney/gitRepos/IGP_network/igp_network/clust_robust.R");
+
   #study summary.
   #number of edges
   #number of studies
@@ -767,8 +767,8 @@ plot_subtypes_network <- function(clustRobust_output,analysisOutput,
                                   clustMethodName,saveDir="/home/kplaney/pre_proposal/",
                                   centroidRData="/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData"){
   
-  source("/home/kplaney/gitRepos/IGP_network/igp_network/pre_proposal_2015_new_communitySubtypeBreakdown_plots.R")
-  source("/home/kplaney/gitRepos/IGP_network/igp_network/pre_proposal_2015_advanced_networkPlots.R");
+  #source("/home/kplaney/gitRepos/IGP_network/igp_network/pre_proposal_2015_new_communitySubtypeBreakdown_plots.R")
+  
   
   commDF <- analysisOutput$communityMembership$attrDF;
   clustMatrixList <- clustRobust_output$clustMatrixList;
@@ -797,13 +797,13 @@ plot_subtypes_network <- function(clustRobust_output,analysisOutput,
 merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,clustMethodName,
                                                    saveDir,centroidRData="/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData",
                                                    clusterMatrixList){
-   source("/home/kplaney/gitRepos/IGP_network/igp_network/clust_robust.R")
+
    orig_fullSubtypeMatrix <- assignCentroidSubtype(origDataMatrix=t(mergedMatrixData$mergedExprMatrix),minNumGenes=30,centroidRData=centroidRData)
    
    minClustSize <- 10;
    subtypeDF <- data.frame();
    clusterCount <- 0;
-   source("/home/kplaney/gitRepos/IGP_network/igp_network/clust_robust.R");
+  
    minNumGenes <- 15;
    #there are only 10 intrinsic genes in here! so just do intrinsic...
    for(c in 1:length(clusterMatrixList[[1]])){

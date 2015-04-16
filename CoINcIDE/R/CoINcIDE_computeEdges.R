@@ -99,8 +99,9 @@ message("This code assumes what you're clustering columns, and features are in t
 
   pvalueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
   cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
-  message(paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))," above minimum similarity threshold of ",minTrueSimilThresh))
-  cat("\n",paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))," above minimum similarity threshold of ",minTrueSimilThresh),append=TRUE,file=outputFile)
+#this is a symmetric matrix (with diagonal as NA)...so only count half of it.
+  message(paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh)/2)," above minimum similarity threshold of ",minTrueSimilThresh))
+  cat("\n",paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh)/2)," above minimum similarity threshold of ",minTrueSimilThresh),append=TRUE,file=outputFile)
   
   for(n in 1:nrow(clustIndexMatrix)){
     

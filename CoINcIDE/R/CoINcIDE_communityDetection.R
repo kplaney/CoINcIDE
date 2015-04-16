@@ -1,9 +1,12 @@
-
+#library("network");
+library("igraph");
+library("limma");
+library("RColorBrewer")
 #######ANALYZE OUTPUT FUNCTIONS
 assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueThresh=.1,
                              meanEdgePairPvalueThresh=.05,
                              minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-                             minFractFeatureIntersect=0,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
+                             fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
                              clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges"
 ){
   
@@ -17,7 +20,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
       #ROW is when this cluster was the reference cluster. p-value will by default be insignificant.
       #just replace with p-value in the other direction (columnwise)
       #(if both clusters in a pair were entire size of matrix, will have NA p-value still.)
-      pvalueMatrix[, r] <-   pvalueMatrix[r, ]
+      pvalueMatrix[r, ] <-   pvalueMatrix[, r]
       
     }
     if(computeTrueSimilOutput$clustSizeMatrix[r] <= clustSizeThresh || computeTrueSimilOutput$clustSizeFractMatrix[r] <= clustSizeFractThresh){
@@ -29,6 +32,8 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
     
   }
   
+  message(length(clustSizeIndexRemove), " clusters dropped because they were below the clust size thresh clustSizeThresh
+          threshold of ",clustSizeThresh)
   #assign mean p-value matrix
   
   for(r in 1:nrow(meanEdgePvalueMatrix)){
@@ -69,6 +74,8 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   
   allClustRemoved <- filterEdgeOutput$clustRemoved
   
+  message("A total of ",length(allClustRemoved), " clusters removed because they have no significant edges.")
+  message("A total of ",length(union(unique(filterEdgeOutput$edgeMatrix[,2]),unique(filterEdgeOutput$edgeMatrix[,1]))), " clusters have significant edges.")
   output <- list(meanEdgePvalueMatrix=meanEdgePvalueMatrix,clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput,
                  allClustRemoved=allClustRemoved,adjMatricesList=adjMatricesList)
   return(output)
@@ -236,10 +243,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   dir.create(saveDir,showWarnings=TRUE);
   #add on community detection name.
   clustMethodName <- paste0(clustMethodName,"_commMethod_",commMethod);
-  #library("network");
-  library("igraph");
-  library("limma");
-  library("RColorBrewer")
+
   #  undirGraph <- graph.edgeMatrix(edgeMatrix,directed=FALSE);
   #igraph likes an edge list that is continous - i.e. if there's not an edge from node 10, it will still include node 10.
   # we don't wan't this! collapse down the node indices.
@@ -344,6 +348,10 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     #if need plain old RGB: col2RGB(membership[,"colors"],alpha=FALSE);
     colorCodes <- colorCodeF(length(unique(membership[,"community"])));
   
+  }else{
+    
+    colorCodes <- rep.int(NA,times=length(unique(membership[,"community"])))
+    
   }
   
   #let RcolorBrewer do the color mixing for you!
@@ -496,10 +504,85 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
   
   }
-  output <- list(numCommunities=finalNumCommunities,numCommunitiesOrig=numCommunitiesOrig,undirGraph=undirGraph,communityObject=comm,networkCommPlot=networkCommPlot,
-                 networkCommPlot_unpruned=networkCommPlot_full,ClustKey=graphKey,undirGraph_base=undirGraph_base,origNetworkPlot=origNetworkPlot,
+  output <- list(numCommunities=finalNumCommunities,numCommunitiesOrig=numCommunitiesOrig,undirGraph=undirGraph,communityObject=comm,
+                 ClustKey=graphKey,undirGraph_base=undirGraph_base,
                  edgeDF=igraph_edgeDF,attrDF=igraph_attrDF,undirGraph_full=undirGraph_full,edgeDF_full=igraph_edgeDF_full,attrDF_full=igraph_attrDF_full,
                  commMethod=commMethod,modularity=modularity,communityObject_full=comm,commLose=commLose,clustLose=clustLose);
   return(output);
   
 }
+
+##return a membership matrix
+
+returnSampleMemberMatrix <- function(clustSampleIndexList,dataMatrixList,communityAttrDF){
+  
+sampleNames <- c()
+for(d in 1:length(clustSamplesIndexList)){
+  
+  for(c in 1:length(clustSampleIndexList[[d]])){
+    
+    sampleNames <- append(sampleNames,colnames(dataMatrixList[[d]][ , clustSampleIndexList[[d]][[c]]]))
+    
+  }
+  
+}
+
+numTotalSamples <- length(sampleNames)
+
+sampleClustCommKey <- matrix(data=NA,ncol=4,nrow=numTotalSamples,dimnames=list(sampleNames, c("globalClustNum","studyNum","globalClustNum","community")))
+clustNum <- 1
+for(d in 1:length(clustSampleIndexList)){
+  
+  for(c in 1:length(clustSampleIndexList[[d]])){
+    
+    clustSampleNames <- colnames(dataMatrixList[[d]][ , clustSampleIndexList[[d]][[c]]])
+    #just take first match - all 
+    sampleClustCommKey[ clustSampleNames, "globalClustNum"] <- clustNum 
+    sampleClustCommKey[ clustSampleNames, "studyNum"] <- d
+
+    #was this in the final clustering?
+    if(length(which(communityInfo$attrDF[,"clust"]==clustNum))>0){
+      
+      commNum <- unique(communityInfo$attrDF[which(communityInfo$attrDF[,"clust"]==clustNum), "community"])
+      
+      if(length(commNum)!=1){
+        
+        stop("expected 1 unique community number per cluster, but returned greater than 1 or 0.")
+        
+      }
+      
+      sampleClustCommKey[ clustSampleNames,"community"] <- commNum
+      
+    }
+
+   clustNum <- clustNum + 1
+
+  }
+  
+}
+
+
+fullMemberMatrix <- matrix(data=0,ncol=numTotalSamples,nrow=numTotalSamples,dimnames=list(sampleNames,sampleNames))
+
+#if for some reason sample not included in this run (i.e. we were resampling only a % of full datasets), set these samples to zero.
+#also set to NA if the cluster was thresholded out or the community was too small based on user-defined thresholds and removed
+
+if(length(which(is.na(sampleClustCommKey[,"community"])))>0){
+  #there can be no shared membership across any samples for these samples that were not included in the final communities.
+  fullMemberMatrix[which(is.na(sampleClustCommKey[,"community"])), ] <- NA
+  fullMemberMatrix[,which(is.na(sampleClustCommKey[,"community"])) ] <- NA
+
+}
+
+commNums <- unique(sampleClustCommKey[,"community"])
+for(i in 1:length(commNums)){
+   
+  fullMemberMatrix[which(sampleClustCommKey[,"community"]==commNums[i]),which(sampleClustCommKey[,"community"]==commNums[i])] <- 1
+  
+}
+  
+output <- list(fullMemberMatrix=fullMemberMatrix,sampleClustCommKey=sampleClustCommKey)
+ return(output)
+
+}
+   

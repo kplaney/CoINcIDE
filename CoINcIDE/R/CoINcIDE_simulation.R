@@ -6,15 +6,15 @@ lungSimAdjMatrices <- function(
                        eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
                        noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),numRows=200,
                        numWrapperSims=10,
-                       dataMatrixList,clustFeaturesList,clustMethod=c("naiv","km","hc"),pickKMethod=c("gap","consensus"),numSims=1000,maxNumClusters=30,
+                       dataMatrixList,clustFeaturesList,clustMethod=c("naiv","km","hc"),pickKMethod=c("gap","consensus"),numSims=100,maxNumClusters=30,
                                                           outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
                                                           hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
                                                           consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
                                                           bestKconsensusMethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),minClustConsensus=.9,
                        edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                                     "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-                       sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
-                       outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
+                       sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,includeRefClustInNull=TRUE,
+fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
   
   
   
@@ -86,14 +86,13 @@ lungSimAdjMatrices <- function(
   
 }
 
-lungSimROC <- function(
-                            saveDir = "/home/kplaney/ISMB/lung_sims/",numSimDatasets=10,
-                            eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),,
+lungSimROC <- function(saveDir = "/home/kplaney/ISMB/lung_sims/",numSimDatasets=10,
+                            eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
                                                             noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
-                                                            numWrapperSims=10,numSims=1000,
+                                                            numWrapperSims=10,numSims=100,
                        edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                                     "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-                       sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
+                       sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,includeRefClustInNull=TRUE,
                        outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0
                           ){
 
