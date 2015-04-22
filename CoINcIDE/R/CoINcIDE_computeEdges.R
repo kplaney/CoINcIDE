@@ -8,17 +8,34 @@ library("limma")
 CoINcIDE_getAdjMatrices <- function(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
 edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
+sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.2,numSims=500,includeRefClustInNull=TRUE,
 
-outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
+outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+checkNA=FALSE){
   
+  
+  date <- Sys.time();
+  inputVariablesDF <- data.frame(date,edgeMethod,numParallelCores,minTrueSimilThresh,maxTrueSimilThresh,sigMethod,maxNullFractSize,numSims,
+                                 includeRefClustInNull,outputFile,fractFeatIntersectThresh,numFeatIntersectThresh,clustSizeThresh, clustSizeFractThresh,
+                                 checkNA);
+  
+  #capture.output prints the data correctly.
+  capture.output(paste0("\nRunning find similar clusters on ",Sys.time()," with the following inputs:\n"),append=TRUE,file=outputFile);
+  capture.output(inputVariablesDF,append=TRUE,file=outputFile);
+  #   
+  #check: if rownames are null.
+  #this can take a while to run if a long list of datasets.
+   if(checkNA){
     if(any(is.na(unlist(dataMatrixList)))){
     
-    warning("\nIn CoINcIDE_getAdjMatrices functions found NAs in a data matrix.
+    stop("\nIn CoINcIDE_getAdjMatrices functions found NAs in a data matrix.
              \nPlease impute all NAs using the function filterAndImputeSamples
              function or an imputation method of your choice.")
   
     }
+    
+    
+   }
     
   if(length(na.omit(match(edgeMethod,names(summary(pr_DB)[2]$distance))))!=1 && 
               all(is.na(match(edgeMethod,c("distCor","spearman","pearson","kendall"))))){
@@ -55,7 +72,7 @@ capture.output(paste0("\nRunning find CoINcIDE_getAdjMatrices on ",Sys.time()," 
 capture.output(inputVariablesDF,append=TRUE,file=outputFile);
 
 
-message("This code assumes what you're clustering columns, and features are in the rows.");
+message("This code assumes that you're clustering columns, and features are in the rows.");
 
   #grab total number of clusters
   clustDetailedNames <- array();
@@ -100,16 +117,17 @@ message("This code assumes what you're clustering columns, and features are in t
   pvalueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
   cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
 #this is a symmetric matrix (with diagonal as NA)...so only count half of it.
-  message(paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh)/2)," above minimum similarity threshold of ",minTrueSimilThresh))
-  cat("\n",paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh)/2)," above minimum similarity threshold of ",minTrueSimilThresh),append=TRUE,file=outputFile)
+  message(paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))/2," edges above minimum similarity threshold of ",minTrueSimilThresh))
+  cat("\n",paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))/2," edges above minimum similarity threshold of ",minTrueSimilThresh),append=TRUE,file=outputFile)
   
   for(n in 1:nrow(clustIndexMatrix)){
-    
+    #cluster N is our reference cluster.
   nullSimilMatrix <- computeNullSimilVector(refClustRowIndex=n,dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,numSims=numSims,
                                trueSimilMatrix=trueSimilData$similValueMatrix,numParallelCores=numParallelCores,sigMethod=sigMethod,edgeMethod=edgeMethod,includeRefClustInNull=includeRefClustInNull,
                           clustIndexMatrix=clustIndexMatrix,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh)
   
    
+  #cluster R is our comparison cluster.
    for(r in 1:nrow(clustIndexMatrix)){
 
      threshDir <- "greater"
@@ -145,7 +163,7 @@ message("This code assumes what you're clustering columns, and features are in t
     
   }
 
- output <- list(computeTrueSimilOutput=trueSimilData,pvalueMatrix=pvalueMatrix,clustIndexMatrix=clustIndexMatrix)
+ output <- list(computeTrueSimilOutput=trueSimilData,pvalueMatrix=pvalueMatrix,clustIndexMatrix=clustIndexMatrix,inputVariablesDF=inputVariablesDF)
  return(output)
 #EOF
 }
@@ -271,7 +289,7 @@ computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSample
         refDataMatrix <- dataMatrixList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]]
         sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
         featureIndices <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
-        refClust <- dataMatrixList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][featureIndices,sampleIndices]
+        refClust <- refDataMatrix[featureIndices,sampleIndices]
         
         #will return a matrix of numClusters x numFeatures
         #see documention on CRAN "nesting foreach loops"
@@ -442,6 +460,10 @@ computeClusterPairSimil_centroid <- function(compareClust,refCentroid,nullCentro
 #Votes: specific cluster, or none at all (how have none at all? perhaps if the probability outputted is very low.)
 
 #THEN: meta-variance code, kmeans.
+#REMOVE these if statements/debugging
+#make a separate function for each distance metric.
+#have a function that returns the correct computeClusterPairSimil function, based off
+#the edgeMethod
 computeClusterPairSimil <- function(refClust,compareClust,
                                     edgeMethod="correlation",centroidCompare=FALSE){
   
@@ -495,8 +517,7 @@ computeClusterPairSimil <- function(refClust,compareClust,
   }else if(edgeMethod=="distCor"){
     
     #number of rows must agree.
-    #I have found this metric does NOT actually work too well in separating
-    #gene expression clusters.
+
     if(!centroidCompare){
       
       clusterPairSimil <- dcor(refClust,compareClust,index=1.0)
@@ -517,5 +538,106 @@ computeClusterPairSimil <- function(refClust,compareClust,
   }
   return(clusterPairSimil)
 }
+
+# #try having this function returned instead? decide it ahead of time, and pass it as an input
+# #to any function that uses computeClusterPairSimil()
+# #the returned function will have these inputs: refClust,compareClust,
+# computeClusterPairSimilFunctionReturn <- function(
+#                                     edgeMethod,centroidCompare=FALSE){
+#   
+#   func <- function(refClust,compareClust){
+#   features <- intersect(rownames(refClust),rownames(compareClust))
+#   refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+#   compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+#   
+#   
+#   
+#    
+#   if(edgeMethod!="distCor"){
+#     
+#     
+#     if(!is.na(summary(pr_DB)[2]$distance[edgeMethod])){
+#       #distance or cor matrix?
+#       if(summary(pr_DB)[2]$distance[edgeMethod]){
+#         
+#         
+#         func <- function(refClust,compareClust){
+#           features <- intersect(rownames(refClust),rownames(compareClust))
+#           refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+#           compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+#         clusterPairSimil <-   dist(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
+#         
+#         return(clusterPairSimil)
+#         
+#         }
+#         
+#       }else{
+#         
+#         func <- function(refClust,compareClust){
+#           features <- intersect(rownames(refClust),rownames(compareClust))
+#           refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+#           compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+#         clusterPairSimil <- simil(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
+#         
+#         return(clusterPairSimil)
+#         
+#         }
+#         
+#       }
+#       
+#     }else{
+#       
+#       func <- function(refClust,compareClust){
+#         features <- intersect(rownames(refClust),rownames(compareClust))
+#         refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+#         compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+#       clusterPairSimil <- cor(refClust,compareClust,method=edgeMethod)
+#       
+#       return(clusterPairSimil)
+#       
+#       }
+#       
+#     }
+#     
+#   }else if(edgeMethod=="distCor"){
+#     
+#     #number of rows must agree.
+#     
+#     if(!centroidCompare){
+#       
+#       func <- function(refClust,compareClust){
+#         features <- intersect(rownames(refClust),rownames(compareClust))
+#         refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+#         compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+#       clusterPairSimil <- dcor(refClust,compareClust,index=1.0)
+#       
+#       return(clusterPairSimil)
+#       
+#     }else{
+#       #if the compareClust are actually two columns of centroids: want separate measurements for each one against each
+#       #sample in refClust
+#       func <- function(refClust,compareClust){
+#         features <- intersect(rownames(refClust),rownames(compareClust))
+#         refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+#         compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+#         
+#       clusterPairSimil <- matrix(data=NA,ncol=2,nrow=ncol(refClust))
+#       
+#       for(s in 1:ncol(refClust)){
+#         
+#         clusterPairSimil[s, ] <- cbind(dcor(refClust[,s],compareClust[,1],index=1.0),dcor(refClust[,s],compareClust[,2],index=1.0))
+#         
+#       }
+#       
+#       return(clusterPairSimil)
+#     }
+#     
+#     }
+#   }
+#   
+#   }
+#   return(function)
+# }
+# 
 
 

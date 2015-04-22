@@ -1,5 +1,10 @@
 library("limma");
 library("ggplot2");
+library("gplots")
+library("RColorBrewer")
+library("igraph");
+
+library("grid");
 ###correlation heatmaps
 #png(filename=paste0(saveDir,paste0("sim",simNum,"_corr_heatmap_",Sys.Date(),".png")),
     #width = 700, height = 1000)
@@ -31,33 +36,53 @@ library("ggplot2");
 
 ##function to merge existing attributes in attrDF
 
-createPhenoMasterTableFromMatrixList <- function(esetList,dataMatrixList){
+plotMetaAnalysis <- function(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
+                             saveDir="./",fileTag="test",
+                             plotTitle="Median rank\nacross all samples/studies",
+                             key.xlab=""){
+
   
-  if(!is.null(esetList)){
+  colorCodeF <-  colorRampPalette(c("black","blue","red"), bias = 4,
+                                  space = "rgb", interpolate = "linear");
+  colColorCodes <- colorCodeF(ncol(metaMatrix));
+  #new F for heatmap
+  #how separate out more????
+  #don't reverse: higher rank means higher value here. want higher values to be blue/cool.
+  colorCodeF <- brewer.pal(11,"RdBu")
+  
+  if(saveFile){
     
-    #check first object index: is it actually an expression matrix?
-    if(validObject(esetList[[1]])){
-      
-      
-    }
+    jpeg(filename=paste0(saveDir,"/",fileTag,"_metaHeatmap.jpeg"),
+         height=1000,width=700,quality=100,res=160);
+    #    #ColSideColors=colColorCodes,
+    heatmap.2(metaMatrix,
+              Rowv=FALSE,Colv=FALSE,cexRow=1,srtRow=45, trace="none",
+              key.title=plotTitle,key.xlab=key.xlab,scale="none",notecol="black",
+              col=colorCodeF)
+    
+    dev.off()
+  
   }
   
-}
-addClinicalVarToNodeAttributes <- function(communityMembership,clinicalTable,esetList){
-  
-  if(!missing(clinicalTable)){
+  if(plotToScreen){
     
-    
+    #ColSideColors=colColorCodes,
+    heatmap.2(metaMatrix,
+              Rowv=FALSE,Colv=FALSE,cexRow=1,trace="none",
+              key.title=plotTitle,key.xlab=key.xlab,scale="none",notecol="black",
+              col=colorCodeF,srtRow=45)
     
   }
-  
+
+
 }
+
 #THEN: SAMR meta-analysis.
 advancedNetworkPlots <- function(communityMembership,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
                                   saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes){
   
-  library("igraph");
+
 
   #study summary.
   #number of edges
@@ -202,43 +227,54 @@ assignCentroidSubtype <- function(origDataMatrix,minNumGenes=30,centroidRData="/
 ####
 #TO DO:  copy most of this function to allow to bucket by ANY sample attribute you input
 #(i.e. a column found in data frame you feed in.)
-new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,origDataMatrices,saveDir="./",clustMethodName="clust method",
-                                                centroidSetName="pam50",centroidRData="/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData"){
+#pam50 colors:  t(data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")))
+#(and name for subtypes-look up order in old clust robust code.)
+phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",fileTag="clust method",
+                                                variableColorMatrix=NULL,
+                                            
+                                                names()){
   
 
 
-  #specify colors:
-  subtypeColorMatrix <- data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97"))
-  #hmm can I order the colors in the same way each time?? may not really need to anyways.
-  #must tranpose for ggplot to read it correctly and THEN add names for this to work.
-  subtypeColorMatrix <- t(subtypeColorMatrix);
-  names(subtypeColorMatrix) <- c("LumB","LumA","Her2","Basal","Normal");
-  
-  numTotalSamplesInStudy <- list();
-  for(s in 1:length(origDataMatrices)){
+
+  if(!is.data.frame(sampleClustCommKey)){
     
-    numTotalSamplesInStudy[[s]] <- nrow(origDataMatrices[[s]]);
+    stop("sampleClustCommKey must be a data frame for ggplot. \nMake sure that numeric and character variables are not altered if you force it to be a data frame.")
+  }
+  
+  if(length(sampleClustCommKey[,phenoVar])==0){
+    
+    stop("phenoVar input does not appear to be a column name in the sampleClustCommKey data frame inputted.")
     
   }
-
-  warning("\nThis code assumes your biclusters have genes in the columns and patients in the rows.\n")
-  #library("RColorBrewer");
-  biclustMasterList <- list();
-  biclustMasterList_origStudies <- list();
   
-  #IS THIS WORKING?? cluster 83 should have way more patients!!
-  for(b in 1:length(biclust)){
+  if(is.null(variableColorMatrix)){
     
-    biclustMasterList <- append(biclustMasterList, biclust[[b]]);
-    biclustMasterList_origStudies <- append(biclustMasterList_origStudies,rep(b,length(biclust[[b]])));
+    numColors <- length(unique(sampleClustCommKey[,phenoVar]))
+    
+    if(numColors >12){
+      
+      warning("You have more than 12 unique values in your phenoVar variable and thus graded colors and not an RColorBrewer palette will be used.")
+      
+      colorCodeF <- colorRampPalette(c("violet","blue","red"), bias = numColors*2,
+                                     space = "rgb", interpolate = "linear");
+      #this will produce RGB representation in HEX, which cytoscape can take in.
+      #if need plain old RGB: col2RGB(membership[,"colors"],alpha=FALSE);
+      colorCodes <- colorCodeF(numColors)
+      
+    }else{
+      #this is a more distinct color palette
+      variableColorMatrix <- brewer.pal(numColors,"Dark2")
+    }
+ 
+    names(variableColorMatrix) <- unique(sampleClustCommKey[,phenoVar]);
   }
-  names(biclustMasterList) <- c(1:length(biclustMasterList));
-  
-  #now create lists by communities. re-name to master biclust # (or underscore?)
-  biclustCommunities <- list();
-  communityNames <- unique(community_membership[,"community"]);
-  communityStudyNums <- list();
-  
+  #pam50 colors:  t(data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")))
+
+
+
+  warning("\nThis code assumes your clusters have genes in the columns and patients in the rows.\n")
+
   
   subtype_plot <- list();
   subtype_dfList <- list();
@@ -246,7 +282,8 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
   subtype_plot_fract <- list();
   
   #remove the levels.
-  communityNames <- as.character(communityNames);
+  communityNames <- unique(sampleClustCommKey$community)
+  
   for(c in 1:length(communityNames)){
     
     #community indices are same as that in the master list (same as those in IGP matrices)
@@ -258,42 +295,12 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
     communityStudyNums[[c]] <- as.numeric(as.character(community_membership[which(community_membership[,"community"]==communityNames[c]), "studyNum"]));
     
     subtype_dfList[[c]] <- data.frame();
+
     
     
-    for(e in 1:length(biclustCommunities[[c]])){
-      
-      patIDs <- rownames(biclustCommunities[[c]][[e]]);
-      
-      studyNum <- rep.int(communityStudyNums[[c]][[e]],times=length(patIDs));
-      subtype <- assignCentroidSubtype(origDataMatrix=origDataMatrices[[communityStudyNums[[c]][e]]][patIDs,],minNumGenes=30,centroidRData=centroidRData)$subtypes[,"subtypeLabels"];
-      clust_numVar <- rep(clust_nums[e],length(subtype));
-      temp <- data.frame(patIDs,subtype,studyNum,clust_numVar);
-      subtype_dfList[[c]] <- rbind(subtype_dfList[[c]],temp); 
-      
-    }
-    
-    if(c >1){
-      
-      tmp <- data.frame(subtype_dfList[[c]],rep(c,times=nrow(subtype_dfList[[c]])));
-      colnames(tmp)[ncol(tmp)] <- "community";
-      
-      subtype_dfMaster <- rbind(subtype_dfMaster,tmp);
-      
-    }else{
-      
-      tmp <- data.frame(subtype_dfList[[c]],rep(c,times=nrow(subtype_dfList[[c]])));
-      colnames(tmp)[ncol(tmp)] <- "community";
-      subtype_dfMaster <- tmp;
-      #trying to create percentages.... a column for subtype, for the percentage, the community num,
-      #and the studNum
-      #subtype_dfSum <- data.frame(unique(subtype),table(subtype)/length(subtype),)
-      
-    }
-    
-    
-    subtype_plot[[c]] <-  ggplot(data=subtype_dfList[[c]],aes(x=subtype))+geom_histogram(aes(fill=subtype))+
-      labs(y="Number of samples" ,title=paste0(centroidSetName," subtypes for community ",c))+
-      scale_fill_manual(values = subtypeColorMatrix)+ labs(fill="subtype")+
+    subtype_plot[[c]] <-  ggplot(data=sampleClustCommKey[which(sampleClustCommKey$community==c), ],aes(x=phenoVar))+geom_histogram(aes(fill=phenoVar))+
+      labs(y="Number of samples" ,title=paste0(phenoVar," for community ",c))+
+      scale_fill_manual(values = variableColorMatrix)+ labs(fill=phenoVar)+
       theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
       theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=.9,hjust=1),axis.title.x=element_blank(),
             axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
@@ -301,9 +308,9 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
     
     
     #stacked bar for all studies.
-    subtype_plot_stacked[[c]] <- ggplot(data=subtype_dfList[[c]],aes(x=factor(studyNum)))+geom_bar(aes(fill=factor(subtype)))+
-      labs(y="Number of samples", x="Dataset number",title=paste0(centroidSetName," subtype by dataset for community ",c))+
-      scale_fill_manual(values = subtypeColorMatrix)+labs(fill="subtype")+
+    subtype_plot_stacked[[c]] <- ggplot(data=sampleClustCommKey[which(sampleClustCommKey$community==c), ],aes(x=factor(studyNum)))+geom_bar(aes(fill=factor(phenoVar)))+
+      labs(y="Number of samples", x="Dataset number",title=paste0(phenoVar," by dataset for community ",c))+
+      scale_fill_manual(values = variableColorMatrix)+labs(fill="phenoVar")+
       theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
       theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),
             axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
@@ -312,59 +319,59 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
     
     #calculate percentage
     df <- split(subtype_dfList[[c]],f=subtype_dfList[[c]]$studyNum);
-    subtype_fract <- lapply(df,FUN=function(e){
+    phenoVar_fract <- lapply(df,FUN=function(e){
       
       output <- table(e$subtype)/nrow(e);
       
     });
     
     
-    for(s in 1:length(subtype_fract)){
+    for(s in 1:length(phenoVar_fract)){
       
-      for(t in 1:length(subtype_fract[[s]])){
+      for(t in 1:length(phenoVar_fract[[s]])){
         
         if(t >1){
           
-          tmp <- rbind(tmp,data.frame(rep(names(subtype_fract)[s],round(subtype_fract[[s]][t]*100)),rep(names(subtype_fract[[s]])[t],round(subtype_fract[[s]][t]*100)),
+          tmp <- rbind(tmp,data.frame(rep(names(phenoVar_fract)[s],round(phenoVar_fract[[s]][t]*100)),rep(names(phenoVar_fract[[s]])[t],round(phenoVar_fract[[s]][t]*100)),
                                       rep(c,round(subtype_fract[[s]][t]*100))));
         }else{
           
-          tmp <- data.frame(rep(names(subtype_fract)[s],round(subtype_fract[[s]][t]*100)),rep(names(subtype_fract[[s]])[t],round(subtype_fract[[s]][t]*100)),
-                            rep(c,round(subtype_fract[[s]][t]*100)));
+          tmp <- data.frame(rep(names(phenoVar_fract)[s],round(phenoVar_fract[[s]][t]*100)),rep(names(phenoVar_fract[[s]])[t],round(phenoVar_fract[[s]][t]*100)),
+                            rep(c,round(phenoVar_fract[[s]][t]*100)));
         }
         
       }
       
       if(s >1){
         
-        subtype_fractDF  <- rbind(subtype_fractDF,tmp);
+        phenoVar_fractDF  <- rbind(phenoVar_fractDF,tmp);
         
       }else{
         
-        subtype_fractDF  <- tmp;
+        phenoVar_fractDF  <- tmp;
         
       }
       
     }
-    colnames( subtype_fractDF) <- c("studyNum","subtype","community");
+    colnames(phenoVar_fractDF) <- c("studyNum",phenoVar,"community");
     #now get percentages down to 100, not rounded to 101.
-    tmp <- table(subtype_fractDF$studyNum);
+    tmp <- table(phenoVar_fractDF$studyNum);
     
     for(t in 1:length(tmp)){
       
       if(tmp[t]==101){
         #need to remove patients (should be just 1) to make 100.
         
-        subtype_fractDF <-  subtype_fractDF[-which(subtype_fractDF$studyNum==names(tmp[t]))[1],];
+        phenoVar_fractDF <-  phenoVar_fractDF[-which(phenoVar_fractDF$studyNum==names(tmp[t]))[1],];
       }
       
     }
-    colnames( subtype_fractDF) <- c("studyNum","subtype","community");
+    colnames(phenoVar_fractDF) <- c("studyNum",phenoVar,"community");
     
-    subtype_plot_fract[[c]]<-  ggplot(data=subtype_fractDF,aes(x=studyNum))+geom_bar(aes(fill=factor(subtype)))+
-      labs(x="Dataset number",y="Composition of subtypes",title=paste0("Composition of ",centroidSetName," subtypes \nby dataset for community ",c))+
-      labs(fill="subtype")+
-      scale_fill_manual(values = subtypeColorMatrix)+  theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
+    phenoVar_plot_fract[[c]]<-  ggplot(data=phenoVar_fractDF,aes(x=studyNum))+geom_bar(aes(fill=factor(phenoVar)))+
+      labs(x="Dataset number",y="Composition of subtypes",title=paste0("Composition of ",phenoVar," \nby dataset for community ",c))+
+      labs(fill=phenoVar)+
+      scale_fill_manual(values = variableColorMatrix)+  theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
       theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),
             axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
             axis.title.x = element_text(colour = "black",size=18,vjust=0))+
@@ -373,27 +380,24 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
     if(c>1){
       
       
-      subtype_fractMaster <- rbind(subtype_fractMaster,subtype_fractDF);
+      phenoVar_fractMaster <- rbind(phenoVar_fractMaster,phenoVar_fractDF);
       
     }else{
       
-      subtype_fractMaster <- subtype_fractDF;
+      phenoVar_fractMaster <- phenoVar_fractDF;
       
     }
     
   }
+
   
-  #do a facetted plot by all communities too
-  subtype_dfMaster$community <- paste0("metacluster_",subtype_dfMaster$community);
-  
-  
-  library("grid");
+ 
   #stacked bar for all studies.
   #scales="free_x":  doesn't plot studies that are empty for that community.
-  subtype_plot_stackedALL <- ggplot(data=subtype_dfMaster,aes(x=community))+geom_bar(aes(fill=factor(subtype)))+
-    scale_fill_manual(values = subtypeColorMatrix)+
-    labs(y="Number of samples",x=element_blank(),title=paste0(centroidSetName,""))+theme_bw()+
-    labs(fill="subtype")+theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
+  phenoVar_plot_stackedALL <- ggplot(data=subtype_dfMaster,aes(x=community))+geom_bar(aes(fill=factor(phenoVar)))+
+    scale_fill_manual(values = variableColorMatrix)+
+    labs(y="Number of samples",x=element_blank(),title=phenoVar)+theme_bw()+
+    labs(fill="phenoVar")+theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
     theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
     theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=1,hjust=1),axis.title.x= element_text(colour = "black",size=20,vjust=1),
           axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
@@ -403,39 +407,38 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
   
   
   
-  png(filename=paste0(saveDir,"/",clustMethodName,"_","subtypePlot_stacked_",Sys.Date(),".png"),
+  png(filename=paste0(saveDir,"/",fileTag,"_","plot_stacked_",Sys.Date(),".png"),
       width = 700, height = 1000,res=160);
   
-  plot(subtype_plot_stackedALL);
+  plot( phenoVar_plot_stackedALL);
   dev.off();
   
   
   ##make some subtype breakdown, community stats
-  df <- subtype_dfMaster;
  
-  tmp <- split(df,f=df$community);
+  tmp <- split(sampleClustCommKey,f=df$community);
   
   for(t in 1:length(tmp)){
     
     if(t>1){
       
-      subtypeBreakdowns <- rbind(subtypeBreakdowns,data.frame(table(tmp[[t]][,c("subtype")]),nrow(tmp[[t]]),t,length(unique(tmp[[t]][,c("studyNum")])),length(unique(tmp[[t]][,c("clust_numVar")]))));
+      phenoVarBreakdowns <- rbind(subtypeBreakdowns,data.frame(table(tmp[[t]][,phenoVar]),nrow(tmp[[t]]),t,length(unique(tmp[[t]][,c("studyNum")])),length(unique(tmp[[t]][,c("clustNum")]))));
       
     }else{
       
-      subtypeBreakdowns <- data.frame(table(tmp[[t]][,c("subtype")]),nrow(tmp[[t]]),t,length(unique(tmp[[t]][,c("studyNum")])),length(unique(tmp[[t]][,c("clust_numVar")])));
+      phenoVarBreakdowns <- data.frame(table(tmp[[t]][,phenoVar]),nrow(tmp[[t]]),t,length(unique(tmp[[t]][,c("studyNum")])),length(unique(tmp[[t]][,c("clustNum")])));
     }
     
   }
   #COME BACK: add in # of studies?  this is already in network stats, though...
-  colnames(subtypeBreakdowns) <- c("subtype","number","communitySize","community","numStudyPerComm","numClustPerComm");
-  subtypeBreakdowns <- cbind(subtypeBreakdowns,subtypeBreakdowns$number/subtypeBreakdowns$communitySize);
-  colnames(subtypeBreakdowns) <- c("subtype","number","communitySize","community","numStudyPerComm","numClustPerComm","fract");
-  library("ggplot2");
-  #plot some piechars too.
-  p <- ggplot(subtypeBreakdowns, aes(x=1,y=fract, fill=subtype)) +facet_grid(.~community)+
+  colnames(phenoVarBreakdowns) <- c(phenoVar,"number","communitySize","community","numStudyPerComm","numClustPerComm");
+  phenoVarBreakdowns <- cbind(phenoVarBreakdownsphenoVarBreakdowns$number/phenoVarBreakdowns$communitySize);
+  colnames(phenoVarBreakdowns) <- c(phenoVar,"number","communitySize","community","numStudyPerComm","numClustPerComm","fract");
 
-    geom_bar(stat="identity", color='black') +scale_fill_manual(values = t(subtypeColorMatrix))+
+  #plot some piechars too.
+  p <- ggplot(phenoVarBreakdowns, aes(x=1,y=fract, fill=subtype)) +facet_grid(.~community)+
+
+    geom_bar(stat="identity", color='black') +scale_fill_manual(values = t(phenoVar))+
     # remove black diagonal line from legend
     guides(fill=guide_legend(override.aes=list(colour=NA))) + theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
     theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15));
@@ -445,18 +448,18 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
                                         axis.text.y=element_blank(), # the 0.75, 1.00, 1.25 labels.
                                         axis.text.x=element_blank())
   
-  png(filename = paste0(saveDir,"/",clustMethodName,"_pieCharts",Sys.Date(),".png"),
+  png(filename = paste0(saveDir,"/",fileTag,"_pieCharts",Sys.Date(),".png"),
       width = 1000, height = 500,res=160);
   plot(p);
   dev.off();
   
   #just take first match for each community - values will be same across an entire community.
-  communityStats <- subtypeBreakdowns[match(unique(subtypeBreakdowns$community),subtypeBreakdowns$community), ]
+  communityStats <- phenoVarBreakdowns[match(unique(phenoVarBreakdowns$community),subtypeBreakdowns$community), ]
   communityStats <- communityStats[ ,c("communitySize","community","numStudyPerComm","numClustPerComm")];
   rownames(communityStats) <- communityStats$community;
-  output <- list(subtypeColorMatrix=subtypeColorMatrix,subtype_dfMaster=subtype_dfMaster,subtype_plot_fract=subtype_plot_fract,
-                 subtype_plot_stacked=subtype_plot_stacked,subtype_plot=subtype_plot, subtype_plot_stackedALL= subtype_plot_stackedALL,
-                 pieChartPlot=p,communityStats=communityStats,subtypeBreakdowns=subtypeBreakdowns);
+  output <- list(phenoVar=phenoVar,phenoVar_plot_fract=phenoVar_plot_fract,
+                 phenoVar_plot_stacked=phenoVar_plot_stacked,phenoVar_plot=phenoVar_plot,phenoVar_plot_stackedALL= phenoVar_plot_stackedALL,
+                 pieChartPlot=p,communityStats=communityStats,phenoVarBreakdowns=phenoVarBreakdowns);
   return(output);
   
 }
@@ -465,7 +468,7 @@ new_communitySubtypeBreakdown_plots <- function(community_membership,biclust,ori
 #   
 #   
 #   #specify colors:
-#   subtypeColorMatrix <- data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97"))
+#   phenoVar <- data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97"))
 #   #hmm can I order the colors in the same way each time?? may not really need to anyways.
 #   #must tranpose for ggplot to read it correctly and THEN add names for this to work.
 #   subtypeColorMatrix <- t(subtypeColorMatrix);
@@ -856,7 +859,7 @@ merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,clustMethodN
    #must tranpose for ggplot to read it correctly and THEN add names for this to work.
    #subtypeColorMatrix <- t(subtypeColorMatrix);
    #names(subtypeColorMatrix) <- c("LumB","LumA","Her2","Basal","Normal");
-   library("grid");
+
    #stacked bar for all studies.
    #scales="free_x":  doesn't plot studies that are empty for that community.
    subtype_plot_stackedALL <- ggplot(data=subtypeDF,aes(x=community))+geom_bar(aes(fill=factor(subtype)))+
@@ -889,10 +892,9 @@ communityIHC_plots <- function(community_membership,biclust,receptorMatrix,origD
     numTotalSamplesInStudy[[s]] <- nrow(origDataMatrices[[s]]);
     
   }
-  library("limma");
-  library("ggplot2");
+
   warning("\nThis code assumes your biclusters have genes in the columns and patients in the rows.\n")
-  #library("RColorBrewer");
+
   biclustMasterList <- list();
   biclustMasterList_origStudies <- list();
   
@@ -969,110 +971,110 @@ communityIHC_plots <- function(community_membership,biclust,receptorMatrix,origD
   return(output);
 }
 
-
-analyzeClustRobust_output <- function(clustRobust_output,fullMatrixList,clustMatrixList,clustMethodName,saveDir,method=c("diff_distribution","NN_dist"),compareMetric=c("correlation","euclidean"),
-                                                  edge_trueCorr_thresh=.3,edge_fractFeatIntersect_thresh=.05,edge_numFeatIntersect_thresh=20,edge_IGP_thresh=.7,
-                                                  edge_simil_overNull_pvalue_thresh=.05,genomeSize=20000,sourceDir="/home/kplaney/gitRepos/IGP_network/igp_network/",
-                                                  commMethod="edgeBetween",minNumUniqueStudiesPerCommunity=3,
-                                                  restrictEdgesByStudy=TRUE,centroidRData="/home/data/breast_microarrayDB/pam50_centroids.RData",centroidSetName="pam50",runGSEA=TRUE,
-                                                  heatmaps=FALSE, makePlots=TRUE,saveGraphData=TRUE
-){
-  
-  #setwd(sourceDir);
-  #source("clust_robust.R");
-  
-  ###reusable code:
-  clust_detailedNames <- clustRobust_output$clust_detailedNames;
-
-  edgeOutput <- computeEdgeMatrix(clustRobust_output,restrictEdgesByStudy=restrictEdgesByStudy,method=method,
-                                  compareMetric=compareMetric,edge_trueCorr_thresh=edge_trueCorr_thresh,
-                                  edge_fractFeatIntersect_thresh=edge_fractFeatIntersect_thresh,clustMethodName=clustMethodName,
-                                  edge_numFeatIntersect_thresh=edge_numFeatIntersect_thresh,edge_IGP_thresh=edge_IGP_thresh,
-                                  edge_simil_overNull_pvalue_thresh=edge_simil_overNull_pvalue_thresh);
-              
-  adjMatricesList <-  edgeOutput$adjMatricesList;                                           
-  edgeResults <- edgeOutput$edgeResults;
-  thresholdVector <- edgeOutput$thresholdVector;
-  threshDir <- edgeOutput$threshDir;
-  #find communities 
-  communityMembership <- findCommunities(edgeMatrix=edgeResults$edgeMatrix,edgeWeightMatrix=edgeResults$edgeWeightMatrix,
-                                         clust_detailedNames=clust_detailedNames,fileTag=clustMethodName,saveDir=saveDir,
-                                         clustMethodName=clustMethodName,minNumUniqueStudiesPerCommunity=minNumUniqueStudiesPerCommunity,commMethod=commMethod,
-                                         makePlots=TRUE,saveGraphData=TRUE);
-  
-  cat("\n",communityMembership$numCommunities," final communities found.\n");
-  
-  if(runGSEA){
-    #use default ref gene list.
-    communityGeneSumm <- communityGeneSummary(community_membership=communityMembership$attrDF,
-                                              biclust=clustMatrixList,detailedBiclustNames=clust_detailedNames,genomeSize=genomeSize);
-    
-    #pick the top scoring gene lists
-    
-    rowIndices <- c();
-    
-    for(c in 1:communityMembership$numCommunities){
-      
-      if(c==1){
-        
-        rowIndices <- which(communityGeneSumm$qvalues_communityDF[,c]<=.05);
-        
-      }else{
-        
-        rowIndices <- union(rowIndices,which(communityGeneSumm$qvalues_communityDF[,c]<=.05));
-        
-      }
-      
-      
-    }
-    
-    bestRefGeneLists <- communityGeneSumm$refGeneListNames[rowIndices]; 
-    finalGSEATable <- communityGeneSumm$qvalues_communityDF[rowIndices,];
-    
-  }else{
-    
-    communityGeneSumm <- NA;
-    finalGSEATable <- NA;
-    bestRefGeneLists <- NA;
-    
-  }
-  
-  if(heatmaps){
-    
-    community_hmaps <- communityHeatmaps(communityMembership$attrDF,biclust=clustMatrixList,
-                                         dataMatrices=fullMatrixList,dataM_sampleCol=FALSE,
-                                         geneCommIntersect=communityGeneSumm$geneCommIntersect);
-    
-  }else{
-    
-    community_hmaps=NA;
-  }
-  
-  #if provide path to centroid RData object: also do centroid plots.
-  if(!missing(centroidRData)){
-    
-    subtypePlots <- communitySubtypeBreakdown_plots(community_membership=communityMembership$attrDF,biclust=clustMatrixList,
-                                                    origDataMatrices=fullMatrixList,saveDir=saveDir,clustMethodName=clustMethodName,
-                                                    centroidRData="/home/data/breast_microarrayDB/pam50_centroids.RData");
-    
-    
-    
-    output <- list(adjMatricesList=adjMatricesList,edgeResults=edgeResults,thresholdVector=thresholdVector,threshDir=threshDir,
-                   communityMembership=communityMembership,communityGeneSumm=communityGeneSumm,bestRefGeneLists=bestRefGeneLists,
-                   finalGSEATable=finalGSEATable,subtypePlots=subtypePlots,community_hmaps=community_hmaps);
-    
-  }else{
-    
-    output <- list(adjMatricesList=adjMatricesList,edgeResults=edgeResults,thresholdVector=thresholdVector,threshDir=threshDir,
-                   communityMembership=communityMembership,communityGeneSumm=communityGeneSumm,bestRefGeneLists=bestRefGeneLists,
-                   finalGSEATable=finalGSEATable,community_hmaps=community_hmaps);
-    
-  }
-  
-  return(output);
-  #save(clustRobust_output,file=paste0(saveDir,"/",clustMethodName,"_analysis.RData.gzip"),compress="gzip");
-  
-}
+# 
+# analyzeClustRobust_output <- function(clustRobust_output,fullMatrixList,clustMatrixList,clustMethodName,saveDir,method=c("diff_distribution","NN_dist"),compareMetric=c("correlation","euclidean"),
+#                                                   edge_trueCorr_thresh=.3,edge_fractFeatIntersect_thresh=.05,edge_numFeatIntersect_thresh=20,edge_IGP_thresh=.7,
+#                                                   edge_simil_overNull_pvalue_thresh=.05,genomeSize=20000,sourceDir="/home/kplaney/gitRepos/IGP_network/igp_network/",
+#                                                   commMethod="edgeBetween",minNumUniqueStudiesPerCommunity=3,
+#                                                   restrictEdgesByStudy=TRUE,centroidRData="/home/data/breast_microarrayDB/pam50_centroids.RData",centroidSetName="pam50",runGSEA=TRUE,
+#                                                   heatmaps=FALSE, makePlots=TRUE,saveGraphData=TRUE
+# ){
+#   
+#   #setwd(sourceDir);
+#   #source("clust_robust.R");
+#   
+#   ###reusable code:
+#   clust_detailedNames <- clustRobust_output$clust_detailedNames;
+# 
+#   edgeOutput <- computeEdgeMatrix(clustRobust_output,restrictEdgesByStudy=restrictEdgesByStudy,method=method,
+#                                   compareMetric=compareMetric,edge_trueCorr_thresh=edge_trueCorr_thresh,
+#                                   edge_fractFeatIntersect_thresh=edge_fractFeatIntersect_thresh,clustMethodName=clustMethodName,
+#                                   edge_numFeatIntersect_thresh=edge_numFeatIntersect_thresh,edge_IGP_thresh=edge_IGP_thresh,
+#                                   edge_simil_overNull_pvalue_thresh=edge_simil_overNull_pvalue_thresh);
+#               
+#   adjMatricesList <-  edgeOutput$adjMatricesList;                                           
+#   edgeResults <- edgeOutput$edgeResults;
+#   thresholdVector <- edgeOutput$thresholdVector;
+#   threshDir <- edgeOutput$threshDir;
+#   #find communities 
+#   communityMembership <- findCommunities(edgeMatrix=edgeResults$edgeMatrix,edgeWeightMatrix=edgeResults$edgeWeightMatrix,
+#                                          clust_detailedNames=clust_detailedNames,fileTag=clustMethodName,saveDir=saveDir,
+#                                          clustMethodName=clustMethodName,minNumUniqueStudiesPerCommunity=minNumUniqueStudiesPerCommunity,commMethod=commMethod,
+#                                          makePlots=TRUE,saveGraphData=TRUE);
+#   
+#   cat("\n",communityMembership$numCommunities," final communities found.\n");
+#   
+#   if(runGSEA){
+#     #use default ref gene list.
+#     communityGeneSumm <- communityGeneSummary(community_membership=communityMembership$attrDF,
+#                                               biclust=clustMatrixList,detailedBiclustNames=clust_detailedNames,genomeSize=genomeSize);
+#     
+#     #pick the top scoring gene lists
+#     
+#     rowIndices <- c();
+#     
+#     for(c in 1:communityMembership$numCommunities){
+#       
+#       if(c==1){
+#         
+#         rowIndices <- which(communityGeneSumm$qvalues_communityDF[,c]<=.05);
+#         
+#       }else{
+#         
+#         rowIndices <- union(rowIndices,which(communityGeneSumm$qvalues_communityDF[,c]<=.05));
+#         
+#       }
+#       
+#       
+#     }
+#     
+#     bestRefGeneLists <- communityGeneSumm$refGeneListNames[rowIndices]; 
+#     finalGSEATable <- communityGeneSumm$qvalues_communityDF[rowIndices,];
+#     
+#   }else{
+#     
+#     communityGeneSumm <- NA;
+#     finalGSEATable <- NA;
+#     bestRefGeneLists <- NA;
+#     
+#   }
+#   
+#   if(heatmaps){
+#     
+#     community_hmaps <- communityHeatmaps(communityMembership$attrDF,biclust=clustMatrixList,
+#                                          dataMatrices=fullMatrixList,dataM_sampleCol=FALSE,
+#                                          geneCommIntersect=communityGeneSumm$geneCommIntersect);
+#     
+#   }else{
+#     
+#     community_hmaps=NA;
+#   }
+#   
+#   #if provide path to centroid RData object: also do centroid plots.
+#   if(!missing(centroidRData)){
+#     
+#     subtypePlots <- communitySubtypeBreakdown_plots(community_membership=communityMembership$attrDF,biclust=clustMatrixList,
+#                                                     origDataMatrices=fullMatrixList,saveDir=saveDir,clustMethodName=clustMethodName,
+#                                                     centroidRData="/home/data/breast_microarrayDB/pam50_centroids.RData");
+#     
+#     
+#     
+#     output <- list(adjMatricesList=adjMatricesList,edgeResults=edgeResults,thresholdVector=thresholdVector,threshDir=threshDir,
+#                    communityMembership=communityMembership,communityGeneSumm=communityGeneSumm,bestRefGeneLists=bestRefGeneLists,
+#                    finalGSEATable=finalGSEATable,subtypePlots=subtypePlots,community_hmaps=community_hmaps);
+#     
+#   }else{
+#     
+#     output <- list(adjMatricesList=adjMatricesList,edgeResults=edgeResults,thresholdVector=thresholdVector,threshDir=threshDir,
+#                    communityMembership=communityMembership,communityGeneSumm=communityGeneSumm,bestRefGeneLists=bestRefGeneLists,
+#                    finalGSEATable=finalGSEATable,community_hmaps=community_hmaps);
+#     
+#   }
+#   
+#   return(output);
+#   #save(clustRobust_output,file=paste0(saveDir,"/",clustMethodName,"_analysis.RData.gzip"),compress="gzip");
+#   
+# }
 
 ##############
 #this code is also handy for some community numbers breakdowns.
@@ -1107,8 +1109,7 @@ pam50_pieCharts <- function(subtypeDataFrame,plotTitle,saveDir,saveName=plotTitl
   colnames(subtypeBreakdowns) <- c("subtype","number","communitySize","community","numStudyPerComm","numClustPerComm");
   subtypeBreakdowns <- cbind(subtypeBreakdowns,subtypeBreakdowns$number/subtypeBreakdowns$communitySize);
   colnames(subtypeBreakdowns) <- c("subtype","number","communitySize","community","numStudyPerComm","numClustPerComm","fract");
-  library("ggplot2");
-  
+
   p <- ggplot(subtypeBreakdowns, aes(x=1,y=fract, fill=subtype)) +facet_grid(.~community)+
     ggtitle(plotTitle) +
     geom_bar(stat="identity", color='black') +scale_fill_manual(values = subtypeColorMatrix)+
@@ -1262,259 +1263,259 @@ communityGeneSummary <- function(community_membership,biclust,detailedBiclustNam
 
 #######
 #communityMembership=communityMembership$attrDF
-communityHeatmaps <- function(community_membership,biclust,dataMatrices,dataM_sampleCol=FALSE,geneCommIntersect,
-                              geneCommUnion,
-                              fullHeatmaps=FALSE){
-  
-  #assumes studyNum is related to order of data matrices.
-  names(dataMatrices) <- c(1:length(dataMatrices));
-
-  warning("\nThis code assumes your *biclusters* have genes in the columns and patients in the rows.\n")
-  library("RColorBrewer");
-  biclustMasterList <- list();
-  biclustMasterList_origStudies <- list();
-  
-  for(b in 1:length(biclust)){
-    
-    biclustMasterList <- append(biclustMasterList, biclust[[b]]);
-    biclustMasterList_origStudies <- append(biclustMasterList_origStudies,rep(b,length(biclust[[b]])));
-  }
-  names(biclustMasterList) <- c(1:length(biclustMasterList));
-  
-  #now create lists by communities. re-name to master biclust # (or underscore?)
-  biclustCommunities <- list();
-  communityNames <- unique(community_membership[,"community"]);
-  communityStudyNums <- list();
-  
-  heatmaps_expr <- list();
-  heatmaps_corr <- list();
-  heatmaps_expr_intersect <- list();
-  heatmaps_corr_intersect <- list();
-  heatmaps_expr_union <- list();
-  heatmaps_corr_union <- list();
-  GSMID_names <- list();
-  expr_homogeneousClust <- list();
-
-  for(c in 1:length(communityNames)){
-    
-    expr_homogeneousClust[[c]] <- list();
-    #community indices are same as that in the master list (same as those in IGP matrices)
-    #CAREFUL: the levels make this weird...so just change to characters to match the names of the biclustMasterList.
-    biclustCommunities[[c]] <- biclustMasterList[as.character(community_membership[which(community_membership[,"community"]==communityNames[c]), "clust"]) ];
-    
-    communityStudyNums[[c]] <- community_membership[which(community_membership[,"community"]==communityNames[c]), "studyNum"];
-    heatmaps_expr[[c]] <- list();
-    heatmaps_corr[[c]] <- list();
-    heatmaps_expr_intersect[[c]] <-list();
-    heatmaps_corr_intersect[[c]] <- list();
-    heatmaps_expr_union[[c]] <-list();
-    heatmaps_corr_union[[c]] <- list();
-    GSMID_names[[c]] <- list();
-    
-    for(e in 1:length(biclustCommunities[[c]])){
-      
-    
-      #also only want genes in that biclust.
-      if(dataM_sampleCol){
-        
-        if(ncol(dataMatrices[[as.character(communityStudyNums[[c]][e])]])>nrow(biclustCommunities[[c]][[e]])){
-          
-        if(length(setdiff(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
-                          rownames(biclustCommunities[[c]][[e]])))==0){
-          
-          stop("\nNot intersecing bicluster and other patients correctly.")
-        }
-        
-        #BUT some should intersect!
-        if(length(intersect(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
-                          rownames(biclustCommunities[[c]][[e]])))==0){
-          
-          stop("\nNot intersecing bicluster and other patients correctly.")
-        }
-        
-        #DEBUG: is this OK?
-        #take full gene list.
-        comm_other <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][colnames(biclustCommunities[[c]][[e]]),setdiff(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
-                                                                                                               rownames(biclustCommunities[[c]][[e]]))];
-        
-        #keep full gene list in case need it later for union genes.
-        comm_otherFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][, setdiff(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
-                                                                                                                     rownames(biclustCommunities[[c]][[e]]))];
-        clustExprFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][ ,rownames(biclustCommunities[[c]][[e]])];
-        
-        }else{
-          #no "other" patients to test on!
-          comm_other <- NULL;
-          comm_otherFull <- NULL;
-          clustExprFull <- NULL;
-        }
-        
-      }else{
-        
-        #careful: need as.character to index these correctly! are we getting the EXACT same patients here? this should only be the case
-        #if the bicluster is the ENTIRE set of patients in the matrix.
-        if(nrow(dataMatrices[[as.character(communityStudyNums[[c]][e])]])>nrow(biclustCommunities[[c]][[e]])){
-          
-        if(length(setdiff(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])))==0){
-          
-          stop("\nNot intersecting bicluster and other patients correctly.");
-        }
-        
-        if(length(intersect(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])))==0){
-          
-          stop("\nNot intersecting bicluster and other patients correctly.");
-        }
-        
-        comm_other <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][setdiff(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])),
-                                                                 colnames(biclustCommunities[[c]][[e]])];
-        
-        #keep full gene list in case need it later for union genes.
-        comm_otherFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][setdiff(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])), ];
-        
-        clustExprFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][rownames(biclustCommunities[[c]][[e]]), ];
-        
-        }else{
-          #no "other" patients to test on!
-          comm_other <- NULL;
-          comm_otherFull <- NULL;
-        }
-      
-      }
-
-      
-      if(!is.null(comm_other)){
-        
-      #keep track of true patient names.
-      GSMID_names[[c]][[e]] <- append(rownames(clustExprFull),rownames(comm_otherFull));
-      #make binary in cluster or not sample names.
-      rownames(comm_other) <- rep(0,nrow(comm_other));
-      rownames(comm_otherFull) <- rep(0,nrow(comm_otherFull));
-      clustExpr <- biclustCommunities[[c]][[e]];
-      rownames(clustExpr) <-  rep(1,nrow(clustExpr));
-      rownames(clustExprFull) <-  rep(1,nrow(clustExprFull));
-      names(GSMID_names[[c]][[e]]) <- append(rownames(clustExprFull),rownames(comm_otherFull));
-      #want samples in column for visualization
-      #rev(brewer.pal(11,"RdBu")) for red=overexpression. blue is under.
-      
-      
-      if(fullHeatmaps){
-        
-      if(dataM_sampleCol){
-        
-       # heatmap(data.matrix(cbind(clustExpr,comm_other)), 
-        #        col = rev(brewer.pal(11,"RdBu")),Rowv=NA,Colv="Rowv",scale="none",
-        #        main=paste0("Expression heatmap for a cluster in community ",c ," \nvs rest of samples from study ",communityStudyNums[[c]][e]));
-        heatmaps_expr[[c]][[e]] <- data.matrix(cbind(clustExpr,comm_other));
-        
-        names(heatmaps_expr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
-                  
-        #heatmap(cor(t(data.matrix(cbind(clustExpr,comm_other)))), 
-        #        col = rev(brewer.pal(11,"RdBu")),Rowv=NA,Colv="Rowv",scale="none",
-        #        main=paste0("Correlation heatmap for a cluster in community ",c ," \nvs rest of samples from study ",communityStudyNums[[c]][e]));
-        heatmaps_corr[[c]][[e]] <- cor(t(data.matrix(cbind(clustExpr,comm_other)))); 
-                                           
-        names(heatmaps_corr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
-        
-      }else{
-        
-        heatmaps_expr[[c]][[e]] <- t(data.matrix(rbind(clustExpr,comm_other))); 
-        names(heatmaps_expr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                 
-        heatmaps_corr[[c]][[e]] <- cor(t(data.matrix(rbind(clustExpr,comm_other))));
-        names(heatmaps_corr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                  
-        
-      }
- 
-      #end of if want full heatmaps.
-    }
-      if(!missing(geneCommIntersect)){
-        #now only use the intersecting genes
-        
-        if(length(geneCommIntersect[[c]])>0){
-          
-        if(dataM_sampleCol){
-          
-          heatmaps_expr_intersect[[c]][[e]] <- data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommIntersect[[c]], ]);
-          names(heatmaps_expr_intersect[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                           
-          heatmaps_corr_intersect[[c]][[e]] <-  data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommIntersect[[c]], ]);
-          names(heatmaps_corr_intersect[[c]][[e]] ) <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                             
-        
-          #run Sam R here? or in a separate function?
-          }else{
-          
-          #cool...this finds better submatrices!!
-            #transposing this will make more sense when plot later.
-          heatmaps_expr_intersect[[c]][[e]] <- data.matrix(t(rbind(clustExprFull,comm_otherFull)[ ,geneCommIntersect[[c]]]));
-          names(heatmaps_expr_intersect[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                          
-          heatmaps_corr_intersect[[c]][[e]] <- cor(t(data.matrix(rbind(clustExprFull,comm_otherFull)[ ,geneCommIntersect[[c]]]))); 
-          names(heatmaps_corr_intersect[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
-        
-        }
-        
-      }
-      #if there are no other patients in the matrix besides the one in this bicluster.
-       names(heatmaps_expr_intersect[[c]])[e] <-  names(dataMatrices)[as.character(communityStudyNums[[c]][e])];
-      names(heatmaps_corr_intersect[[c]])[e] <-  names(dataMatrices)[as.character(communityStudyNums[[c]][e])];
-      
-      #if not missing intersect genes
-      }
-    
-      #NOW: do for UNION also.
-      if(!missing(geneCommUnion)){
-        #now only use the intersecting genes
-        #COME BACK: IF CERTAIN GENES JUST DON'T EXIST IN FULL DATASET:  USE MATCH THEN INSTEAD OF JUST SUBSETTING BY ENETIRE GENE LIST.
-        if(length(geneCommUnion[[c]])>0){
-          
-          if(dataM_sampleCol){
-            
-            heatmaps_expr_union[[c]][[e]] <- t(data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommUnion[[c]], ]));
-            names(heatmaps_expr_union[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                           
-            heatmaps_corr_union[[c]][[e]] <-  data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommUnion[[c]], ]);
-            names(heatmaps_corr_union[[c]][[e]] ) <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                             
-            
-            
-          }else{
-          
-            #cool...this finds better submatrices!!
-            heatmaps_expr_union[[c]][[e]] <- t(data.matrix(rbind(clustExprFull,comm_otherFull)[ ,geneCommUnion[[c]]]));
-            names(heatmaps_expr_union[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                          
-            heatmaps_corr_union[[c]][[e]] <- cor(t(data.matrix(rbind(clustExprFull,comm_otherFull)[ ,geneCommUnion[[c]]]))); 
-            names(heatmaps_corr_union[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
-            
-          }
-          
-        }
-     #if not missing union genes.
-      }
- #if cluster is not entire dataset
-    }else{
-      
-      #keep track of true patient names.
-      GSMID_names[[c]][[e]] <- rownames(biclustCommunities[[c]][[e]])
-
-      names(GSMID_names[[c]][[e]]) <- rep.int(1,times=nrow(biclustCommunities[[c]][[e]]));
-      #want samples in column for visualization
-      #rev(brewer.pal(11,"RdBu")) for red=overexpression. blue is under.
-      #just use all genes here for now.
-      #COME BACK: do intersecting genes too.
-      expr_homogeneousClust[[c]][[e]] <- data.matrix(dataMatrices[[as.character(communityStudyNums[[c]][e])]][rownames(biclustCommunities[[c]][[e]]), ]);
-      
-      names(expr_homogeneousClust[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
-          
-    
-  
-    }
-    
- #end of loop e. 
-  }
- #end of loop c
-  }
-  
-  
-  output <- list(studyNames=names(dataMatrices),GSMID_names=GSMID_names,heatmaps_expr_union=heatmaps_expr_union,
-                 heatmaps_expr_intersect=heatmaps_expr_intersect,heatmaps_expr=heatmaps_expr,
-                 heatmaps_corr_intersect=heatmaps_corr_intersect,heatmaps_corr=heatmaps_corr,
-                 biclustCommunities=biclustCommunities,heatmaps_corr_union=heatmaps_corr_union,
-                 expr_homogeneousClust=expr_homogeneousClust);
-  
-  return(output);
-}
+# communityHeatmaps <- function(community_membership,biclust,dataMatrices,dataM_sampleCol=FALSE,geneCommIntersect,
+#                               geneCommUnion,
+#                               fullHeatmaps=FALSE){
+#   
+#   #assumes studyNum is related to order of data matrices.
+#   names(dataMatrices) <- c(1:length(dataMatrices));
+# 
+#   warning("\nThis code assumes your *biclusters* have genes in the columns and patients in the rows.\n")
+#   library("RColorBrewer");
+#   biclustMasterList <- list();
+#   biclustMasterList_origStudies <- list();
+#   
+#   for(b in 1:length(biclust)){
+#     
+#     biclustMasterList <- append(biclustMasterList, biclust[[b]]);
+#     biclustMasterList_origStudies <- append(biclustMasterList_origStudies,rep(b,length(biclust[[b]])));
+#   }
+#   names(biclustMasterList) <- c(1:length(biclustMasterList));
+#   
+#   #now create lists by communities. re-name to master biclust # (or underscore?)
+#   biclustCommunities <- list();
+#   communityNames <- unique(community_membership[,"community"]);
+#   communityStudyNums <- list();
+#   
+#   heatmaps_expr <- list();
+#   heatmaps_corr <- list();
+#   heatmaps_expr_intersect <- list();
+#   heatmaps_corr_intersect <- list();
+#   heatmaps_expr_union <- list();
+#   heatmaps_corr_union <- list();
+#   GSMID_names <- list();
+#   expr_homogeneousClust <- list();
+# 
+#   for(c in 1:length(communityNames)){
+#     
+#     expr_homogeneousClust[[c]] <- list();
+#     #community indices are same as that in the master list (same as those in IGP matrices)
+#     #CAREFUL: the levels make this weird...so just change to characters to match the names of the biclustMasterList.
+#     biclustCommunities[[c]] <- biclustMasterList[as.character(community_membership[which(community_membership[,"community"]==communityNames[c]), "clust"]) ];
+#     
+#     communityStudyNums[[c]] <- community_membership[which(community_membership[,"community"]==communityNames[c]), "studyNum"];
+#     heatmaps_expr[[c]] <- list();
+#     heatmaps_corr[[c]] <- list();
+#     heatmaps_expr_intersect[[c]] <-list();
+#     heatmaps_corr_intersect[[c]] <- list();
+#     heatmaps_expr_union[[c]] <-list();
+#     heatmaps_corr_union[[c]] <- list();
+#     GSMID_names[[c]] <- list();
+#     
+#     for(e in 1:length(biclustCommunities[[c]])){
+#       
+#     
+#       #also only want genes in that biclust.
+#       if(dataM_sampleCol){
+#         
+#         if(ncol(dataMatrices[[as.character(communityStudyNums[[c]][e])]])>nrow(biclustCommunities[[c]][[e]])){
+#           
+#         if(length(setdiff(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
+#                           rownames(biclustCommunities[[c]][[e]])))==0){
+#           
+#           stop("\nNot intersecing bicluster and other patients correctly.")
+#         }
+#         
+#         #BUT some should intersect!
+#         if(length(intersect(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
+#                           rownames(biclustCommunities[[c]][[e]])))==0){
+#           
+#           stop("\nNot intersecing bicluster and other patients correctly.")
+#         }
+#         
+#         #DEBUG: is this OK?
+#         #take full gene list.
+#         comm_other <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][colnames(biclustCommunities[[c]][[e]]),setdiff(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
+#                                                                                                                rownames(biclustCommunities[[c]][[e]]))];
+#         
+#         #keep full gene list in case need it later for union genes.
+#         comm_otherFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][, setdiff(colnames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),
+#                                                                                                                      rownames(biclustCommunities[[c]][[e]]))];
+#         clustExprFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][ ,rownames(biclustCommunities[[c]][[e]])];
+#         
+#         }else{
+#           #no "other" patients to test on!
+#           comm_other <- NULL;
+#           comm_otherFull <- NULL;
+#           clustExprFull <- NULL;
+#         }
+#         
+#       }else{
+#         
+#         #careful: need as.character to index these correctly! are we getting the EXACT same patients here? this should only be the case
+#         #if the bicluster is the ENTIRE set of patients in the matrix.
+#         if(nrow(dataMatrices[[as.character(communityStudyNums[[c]][e])]])>nrow(biclustCommunities[[c]][[e]])){
+#           
+#         if(length(setdiff(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])))==0){
+#           
+#           stop("\nNot intersecting bicluster and other patients correctly.");
+#         }
+#         
+#         if(length(intersect(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])))==0){
+#           
+#           stop("\nNot intersecting bicluster and other patients correctly.");
+#         }
+#         
+#         comm_other <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][setdiff(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])),
+#                                                                  colnames(biclustCommunities[[c]][[e]])];
+#         
+#         #keep full gene list in case need it later for union genes.
+#         comm_otherFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][setdiff(rownames(dataMatrices[[as.character(communityStudyNums[[c]][e])]]),rownames(biclustCommunities[[c]][[e]])), ];
+#         
+#         clustExprFull <- dataMatrices[[as.character(communityStudyNums[[c]][e])]][rownames(biclustCommunities[[c]][[e]]), ];
+#         
+#         }else{
+#           #no "other" patients to test on!
+#           comm_other <- NULL;
+#           comm_otherFull <- NULL;
+#         }
+#       
+#       }
+# 
+#       
+#       if(!is.null(comm_other)){
+#         
+#       #keep track of true patient names.
+#       GSMID_names[[c]][[e]] <- append(rownames(clustExprFull),rownames(comm_otherFull));
+#       #make binary in cluster or not sample names.
+#       rownames(comm_other) <- rep(0,nrow(comm_other));
+#       rownames(comm_otherFull) <- rep(0,nrow(comm_otherFull));
+#       clustExpr <- biclustCommunities[[c]][[e]];
+#       rownames(clustExpr) <-  rep(1,nrow(clustExpr));
+#       rownames(clustExprFull) <-  rep(1,nrow(clustExprFull));
+#       names(GSMID_names[[c]][[e]]) <- append(rownames(clustExprFull),rownames(comm_otherFull));
+#       #want samples in column for visualization
+#       #rev(brewer.pal(11,"RdBu")) for red=overexpression. blue is under.
+#       
+#       
+#       if(fullHeatmaps){
+#         
+#       if(dataM_sampleCol){
+#         
+#        # heatmap(data.matrix(cbind(clustExpr,comm_other)), 
+#         #        col = rev(brewer.pal(11,"RdBu")),Rowv=NA,Colv="Rowv",scale="none",
+#         #        main=paste0("Expression heatmap for a cluster in community ",c ," \nvs rest of samples from study ",communityStudyNums[[c]][e]));
+#         heatmaps_expr[[c]][[e]] <- data.matrix(cbind(clustExpr,comm_other));
+#         
+#         names(heatmaps_expr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
+#                   
+#         #heatmap(cor(t(data.matrix(cbind(clustExpr,comm_other)))), 
+#         #        col = rev(brewer.pal(11,"RdBu")),Rowv=NA,Colv="Rowv",scale="none",
+#         #        main=paste0("Correlation heatmap for a cluster in community ",c ," \nvs rest of samples from study ",communityStudyNums[[c]][e]));
+#         heatmaps_corr[[c]][[e]] <- cor(t(data.matrix(cbind(clustExpr,comm_other)))); 
+#                                            
+#         names(heatmaps_corr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
+#         
+#       }else{
+#         
+#         heatmaps_expr[[c]][[e]] <- t(data.matrix(rbind(clustExpr,comm_other))); 
+#         names(heatmaps_expr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                 
+#         heatmaps_corr[[c]][[e]] <- cor(t(data.matrix(rbind(clustExpr,comm_other))));
+#         names(heatmaps_corr[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                  
+#         
+#       }
+#  
+#       #end of if want full heatmaps.
+#     }
+#       if(!missing(geneCommIntersect)){
+#         #now only use the intersecting genes
+#         
+#         if(length(geneCommIntersect[[c]])>0){
+#           
+#         if(dataM_sampleCol){
+#           
+#           heatmaps_expr_intersect[[c]][[e]] <- data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommIntersect[[c]], ]);
+#           names(heatmaps_expr_intersect[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                           
+#           heatmaps_corr_intersect[[c]][[e]] <-  data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommIntersect[[c]], ]);
+#           names(heatmaps_corr_intersect[[c]][[e]] ) <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                             
+#         
+#           #run Sam R here? or in a separate function?
+#           }else{
+#           
+#           #cool...this finds better submatrices!!
+#             #transposing this will make more sense when plot later.
+#           heatmaps_expr_intersect[[c]][[e]] <- data.matrix(t(rbind(clustExprFull,comm_otherFull)[ ,geneCommIntersect[[c]]]));
+#           names(heatmaps_expr_intersect[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                          
+#           heatmaps_corr_intersect[[c]][[e]] <- cor(t(data.matrix(rbind(clustExprFull,comm_otherFull)[ ,geneCommIntersect[[c]]]))); 
+#           names(heatmaps_corr_intersect[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
+#         
+#         }
+#         
+#       }
+#       #if there are no other patients in the matrix besides the one in this bicluster.
+#        names(heatmaps_expr_intersect[[c]])[e] <-  names(dataMatrices)[as.character(communityStudyNums[[c]][e])];
+#       names(heatmaps_corr_intersect[[c]])[e] <-  names(dataMatrices)[as.character(communityStudyNums[[c]][e])];
+#       
+#       #if not missing intersect genes
+#       }
+#     
+#       #NOW: do for UNION also.
+#       if(!missing(geneCommUnion)){
+#         #now only use the intersecting genes
+#         #COME BACK: IF CERTAIN GENES JUST DON'T EXIST IN FULL DATASET:  USE MATCH THEN INSTEAD OF JUST SUBSETTING BY ENETIRE GENE LIST.
+#         if(length(geneCommUnion[[c]])>0){
+#           
+#           if(dataM_sampleCol){
+#             
+#             heatmaps_expr_union[[c]][[e]] <- t(data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommUnion[[c]], ]));
+#             names(heatmaps_expr_union[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                           
+#             heatmaps_corr_union[[c]][[e]] <-  data.matrix(cbind(clustExprFull,comm_otherFull)[geneCommUnion[[c]], ]);
+#             names(heatmaps_corr_union[[c]][[e]] ) <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                             
+#             
+#             
+#           }else{
+#           
+#             #cool...this finds better submatrices!!
+#             heatmaps_expr_union[[c]][[e]] <- t(data.matrix(rbind(clustExprFull,comm_otherFull)[ ,geneCommUnion[[c]]]));
+#             names(heatmaps_expr_union[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);                                          
+#             heatmaps_corr_union[[c]][[e]] <- cor(t(data.matrix(rbind(clustExprFull,comm_otherFull)[ ,geneCommUnion[[c]]]))); 
+#             names(heatmaps_corr_union[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
+#             
+#           }
+#           
+#         }
+#      #if not missing union genes.
+#       }
+#  #if cluster is not entire dataset
+#     }else{
+#       
+#       #keep track of true patient names.
+#       GSMID_names[[c]][[e]] <- rownames(biclustCommunities[[c]][[e]])
+# 
+#       names(GSMID_names[[c]][[e]]) <- rep.int(1,times=nrow(biclustCommunities[[c]][[e]]));
+#       #want samples in column for visualization
+#       #rev(brewer.pal(11,"RdBu")) for red=overexpression. blue is under.
+#       #just use all genes here for now.
+#       #COME BACK: do intersecting genes too.
+#       expr_homogeneousClust[[c]][[e]] <- data.matrix(dataMatrices[[as.character(communityStudyNums[[c]][e])]][rownames(biclustCommunities[[c]][[e]]), ]);
+#       
+#       names(expr_homogeneousClust[[c]])[e] <- paste0("comm_",c,"study_",communityStudyNums[[c]][e]);
+#           
+#     
+#   
+#     }
+#     
+#  #end of loop e. 
+#   }
+#  #end of loop c
+#   }
+#   
+#   
+#   output <- list(studyNames=names(dataMatrices),GSMID_names=GSMID_names,heatmaps_expr_union=heatmaps_expr_union,
+#                  heatmaps_expr_intersect=heatmaps_expr_intersect,heatmaps_expr=heatmaps_expr,
+#                  heatmaps_corr_intersect=heatmaps_corr_intersect,heatmaps_corr=heatmaps_corr,
+#                  biclustCommunities=biclustCommunities,heatmaps_corr_union=heatmaps_corr_union,
+#                  expr_homogeneousClust=expr_homogeneousClust);
+#   
+#   return(output);
+# }

@@ -5,10 +5,10 @@ library("ConsensusClusterPlus")
 #for more specific options: use the individual clustMatrixList functions
 #note: for consenus clustering: need a high # sims otherwise will get NaN values in your consensus matrix (two samples were next chosen in the same resampling run.)
 clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=c("km","hc"),pickKMethod=c("gap","consensus"),numSims=1000,maxNumClusters=30,
-                                   outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
+                                   outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("euclidean","pearson","spearman", "binary", "maximum", "canberra", "minkowski"),
                                    hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
                                    consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
-                                   minMeanClustConsensus=.7){
+                                   minClustConsensus=.7, minMeanClustConsensus=.7,corUse="everything",pItem=.9){
   
   if(pickKMethod=="gap"){
     
@@ -27,29 +27,15 @@ clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=
     }
     
   }else if(pickKMethod=="consensus"){
-    
-    if(clustMethod=="kmeans"){
-      
-      clusterAlg <- "km"
-      
-    }else{
       
       clusterAlg <- clustMethod
-      
-    }
     
-    if(length( bestKconsensusMethod)>1){
-      
-      warning("In clustMatrixListWrapper: bestKconsensusMethod longer than 1; picking default \"highestMinConsensus\"")
-      bestKconsensusMethod <- "highestMinConsensus"
-      
-    }
-    
-    clusterOutputList <- consensusClusterMatrixList(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters = maxNumClusters, numSims=numSims, pItem=0.8, pFeature=1, clusterAlg=clusterAlg,
+    clusterOutputList <- consensusClusterMatrixList(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,maxNumClusters = maxNumClusters, 
+                                                    numSims=numSims, clusterAlg=clusterAlg,
                                            hclustAlgorithm=hclustAlgorithm, consensusHclustAlgorithm=consensusHclustAlgorithm,
-                                           corUse=corUse,iter.max=iter.max,nstart=nstart,
-                                           distMethod=distMethod,
-                                           minClustConsensus=minClustConsensus,bestKmethod=bestKconsensusMethod,
+                                           corUse=corUse,pItem=pItem,pFeature=1,
+                                           distMethod=distMethod,minMeanClustConsensus=minMeanClustConsensus,
+                                           minClustConsensus=minClustConsensus,
                                            outputFile=outputFile)
       
   }else if(is.numeric(pickKMethod)){
@@ -396,7 +382,7 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
 consensusClusterMatrixList <- function(dataMatrixList,clustFeaturesList,maxNumClusters = 30, numSims=10, pItem=0.8, pFeature=1, clusterAlg=c("hc","km","pam","kmdist"),
                                        hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
-distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),minMeanClustConsensus=.7,
+distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),minMeanClustConsensus=.7,minClustConsensus=.7,
 outputFile="./consensusOut.txt"){
   
  
@@ -411,28 +397,52 @@ outputFile="./consensusOut.txt"){
                                                      maxNumClusters=maxNumClusters, numSims=numSims, 
                                                      pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
                                               hclustAlgorithm=hclustAlgorithm, consensusHclustAlgorithm=consensusHclustAlgorithm,corUse=corUse,distMethod=distMethod,
-                                              minMeanClustConsensus=minMeanClustConsensus,outputFile=outputFile)
+                                              minMeanClustConsensus=minMeanClustConsensus,minClustConsensus=minClustConsensus,outputFile=outputFile)
     
-  }
+
   
-  clustSampleIndexList <- list()
-  clustFeatureIndexList <- list()
-  bestK <- list()
+}
+  clustSampleIndexList_consensusFrac <- list()
+  clustFeatureIndexList_consensusFrac <- list()
+  bestK_consensusFrac <- list()
+  clustSampleIndexList_meanConsensusCluster <- list()
+  clustFeatureIndexList_meanConsensusCluster <- list()
+  bestK_meanConsensusCluster <- list()
+  clustSampleIndexList_minConsensusCluster <- list()
+  clustFeatureIndexList_minConsensusCluster <- list()
+  bestK_minConsensusCluster <- list()
+  
   consensusInfo <- list()
   minConsensusClusterByK <- list()
+  meanConsensusClusterByK <- list()
   
   for(d in 1:length(outputList)){
     
-    clustSampleIndexList[[d]] <- outputList[[d]]$clustSampleIndexList
-    clustFeatureIndexList[[d]] <- outputList[[d]]$clustFeatureIndexList
-    bestK[[d]] <- outputList[[d]]$bestK
+    clustSampleIndexList_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$clustSampleIndexList
+    clustFeatureIndexList_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$clustFeatureIndexList
+    bestK_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$bestK
+    clustSampleIndexList_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$clustSampleIndexList
+    clustFeatureIndexList_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$clustFeatureIndexList
+    bestK_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$bestK
+    clustSampleIndexList_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$clustSampleIndexList
+    clustFeatureIndexList_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$clustFeatureIndexList
+    bestK_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$bestK
+    
     consensusInfo[[d]] <- outputList[[d]]$consensusCalc
     minConsensusClusterByK[[d]] <- outputList[[d]]$minConsensusClusterByK
+    meanConsensusClusterByK[[d]] <- outputList[[d]]$meanConsensusClusterByK
     
   }
    
-  output <- list(clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
-                 bestK=bestK,consensusInfo=consensusInfo,minConsensusClusterByK=minConsensusClusterByK)
+  output <- list(  clustSampleIndexList_consensusFrac=clustSampleIndexList_consensusFrac,clustFeatureIndexList_consensusFrac =clustFeatureIndexList_consensusFrac,
+                   bestK_consensusFrac=bestK_consensusFrac,
+                   clustSampleIndexList_meanConsensusCluster=clustSampleIndexList_meanConsensusCluster,
+                   clustFeatureIndexList_meanConsensusCluster=clustFeatureIndexList_meanConsensusCluster,
+                   bestK_meanConsensusCluster=bestK_meanConsensusCluster,clustSampleIndexList_minConsensusCluster=clustSampleIndexList_minConsensusCluster,
+                   clustFeatureIndexList_minConsensusCluster=clustFeatureIndexList_minConsensusCluster,
+                   bestK_meanConsensusCluster=bestK_meanConsensusCluster,consensusInfo=consensusInfo,minConsensusClusterByK=minConsensusClusterByK,
+                   meanConsensusClusterByK=meanConsensusClusterByK)
+  
   return(output)
   
 }
@@ -455,26 +465,26 @@ consensusClusterMatrix <- function(dataMatrix, clustFeatures,maxNumClusters = 30
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("euclidean","spearman","euclidean", "pearson","binary", "maximum", "canberra", "minkowski"),
 minMeanClustConsensus=.7,
-outputFile="./consensusOut.txt"){
+outputFile="./consensusOut.txt",minClustConsensus=.7){
   
  innerLinkage <- hclustAlgorithm
  finalLinkage <- consensusHclustAlgorithm
  
  
  if(length(distMethod)>1){
-   warning("Multiple inputs for innerLinkage used so setting to default \'euclidean\'")
+   warning("Multiple inputs for innerLinkage  so setting to default \'euclidean\'")
    distMethod <- "euclidean"
    
  }
  if(length(innerLinkage)>1){
    
-   warning("Multiple inputs for innerLinkage used so setting to default \'average\'")
+   warning("Multiple inputs for innerLinkage (hclust) method so setting to default \'average\'")
    innerLinkage <- "average"
  }
  
  if(length(finalLinkage)>1){
    
-   warning("Multiple inputs for finalLinkage used so setting to default \'average\'")
+   warning("Multiple inputs for finalLinkage so setting to default \'average\'")
    finalLinkage <- "average"
    
  }
@@ -524,16 +534,22 @@ outputFile="./consensusOut.txt"){
   #this probably means should stick with a lower k.
   #don't remove NAs here.
   meanConsensusClusterByK <- lapply(consensusByK,FUN=function(consensusUnit){mean(consensusUnit)})
+  minConsensusClusterByK <- lapply(consensusByK,FUN=function(consensusUnit){min(consensusUnit)})
   
   #is there at least one clustering that passes our minimum meanClust threshold?
    
+  #consensusFract calculation
   #are they all NAs?
-  if(!(all(unlist(meanConsensusClusterByK)=="NaN")) && any(unlist(meanConsensusClusterByK)>=minMeanClustConsensus)){
+ 
+ 
+ selectK_consensusFrac <- list()
+ selectK_minConsensusClust <- list()
+ selectK_meanConsensusClust <- list()
+  if(!(all(unlist(meanConsensusClusterByK)=="NaN")) && any(unlist(meanConsensusClusterByK)>=minMeanClustConsensus) && any(unlist(minConsensusClusterByK)>=minClustConsensus)){
+    
     meanBetweenConsensusClusterByK <- list()
     consensusFrac <- list()
     consensusMetric <- list()
-    consensusMetric[[1]] <- NA
-    consensusMetric[[2]] <- NA
     
     for(i in 2:K.max){
       
@@ -565,49 +581,90 @@ outputFile="./consensusOut.txt"){
   
   
     consensusFrac[[1]] <- NA
-    #which.max: Missing and NaN values are discarded.
-    bestK <- which.max(unlist(consensusFrac))
+
+    ##consensusFrac calculations
+    #which.max(): Missing and NaN values are discarded.
+    selectK_consensusFrac$bestK <- which.max(unlist(consensusFrac))
+    selectK_minConsensusClust$bestK <- which.max(unlist(minConsensusClusterByK))+1
+    selectK_meanConsensusClust$bestK <- which.max(unlist(meanConsensusClusterByK))+1
     
-    if(length(bestK)==0){
+    if(length(selectK_consensusFrac$bestK)==0){
       #all meanConsensus NAs returned; set K=1
-      bestK <- NA
+      selectK_consensusFrac$bestK <- 1
+      
+    }
+    
+    if(length(selectK_minConsensusClust$bestK)==0){
+      #all meanConsensus NAs returned; set K=1
+      selectK_minConsensusClust$bestK <- 1
+      
+    }
+    
+    if(length(selectK_meanConsensusClust$bestK)==0){
+      #all meanConsensus NAs returned; set K=1
+      selectK_meanConsensusClust$bestK <- 1
       
     }
 
   
   }else{
     #no clusterings passed the minMeanConsensus threshold
-    bestK <- 1
+    selectK_consensusFrac$bestK <- 1
     consensusFrac <- NA
     meanBetweenConsensusClusterByK <- NA
+    selectK_meanConsensusClust$bestK <- 1
+    selectK_minConsensusClust$bestK  <- 1
   }
  
- message(paste0("Best K is: ",bestK))
- cat(paste0("\nBest K as determined by ",clusterAlg, " and consensus metric  is: ", bestK ,"\n"),
+ message(paste0("Best K as determined by consensusFract is: ",selectK_consensusFrac$bestK))
+ cat(paste0("\nBest K as determined by ",clusterAlg, " and consensusFract  is: ", selectK_consensusFrac$bestKbestK ,"\n"),
      append=TRUE,file=outputFile);
- clustFeatureIndexList <- list()
- clustSampleIndexList <- list()
+ 
+ message(paste0("Best K as determined by meanConsensus is: ",selectK_meanConsensusClust$bestK))
+ cat(paste0("\nBest K as determined by ",clusterAlg, " and meanConsensus  is: ", selectK_meanConsensusClust$bestK ,"\n"),
+     append=TRUE,file=outputFile);
+ 
+ message(paste0("Best K as determined by minConsensus is: ",selectK_minConsensusClust$bestK))
+ cat(paste0("\nBest K as determined by ",clusterAlg, " and minConsensus  is: ", selectK_minConsensusClust$bestK ,"\n"),
+     append=TRUE,file=outputFile);
+ 
+ 
+packageClustOutput <-  function(listOutputObject){
   
-  if(bestK >1){
+ listOutputObject$clustFeatureIndexList <- list()
+ listOutputObject$clustSampleIndexList <- list()
+  
+  if(listOutputObject$bestK >1){
 
-  clusterAssignments <- consensusClustOutput[[bestK]]$consensusClass
+    listOutputObject$clusterAssignments <- consensusClustOutput[[listOutputObject$bestK]]$consensusClass
   
   }else{
     
-    clusterAssignments <- rep.int(1,times=ncol(dataset))
+    listOutputObject$clusterAssignments <- rep.int(1,times=ncol(dataset))
   }
   
- for(k in 1:bestK){
+ for(k in 1:listOutputObject$bestK){
    
-   clustFeatureIndexList[[k]] <- na.omit(match(clustFeatures,rownames(dataMatrix)))
-   clustSampleIndexList[[k]] <- which(clusterAssignments==k)
+   listOutputObject$clustFeatureIndexList[[k]] <- na.omit(match(clustFeatures,rownames(dataMatrix)))
+   listOutputObject$clustSampleIndexList[[k]] <- which(listOutputObject$clusterAssignments==k)
    
    
  }
-  output <- list(bestK=bestK,clustFeatureIndexList=clustFeatureIndexList,meanConsensusClusterByK=meanConsensusClusterByK,
-                 clustSampleIndexList=clustSampleIndexList, consensusCalc=icl,consensusByK=consensusByK,
+ 
+ return(listOutputObject)
+ 
+}
+
+selectK_consensusFrac <- packageClustOutput(selectK_consensusFrac)
+selectK_meanConsensusClust <- packageClustOutput(selectK_meanConsensusClust)
+selectK_minConsensusClust <- packageClustOutput(selectK_minConsensusClust)
+
+  output <- list(selectK_consensusFrac=selectK_consensusFrac, 
+                 selectK_meanConsensusClust=selectK_meanConsensusClust,
+                 meanConsensusClusterByK=meanConsensusClusterByK,selectK_minConsensusClust=selectK_minConsensusClust,
+                 consensusCalc=icl,consensusByK=consensusByK,
                  consensusClustOutput=consensusClustOutput,consensusFrac=consensusFrac,
-                 meanBetweenConsensusClusterByK=meanBetweenConsensusClusterByK)
+                 meanBetweenConsensusClusterByK=meanBetweenConsensusClusterByK,minConsensusClusterByK=minConsensusClusterByK)
 
 
  return(output)

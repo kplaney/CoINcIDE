@@ -1,0 +1,123 @@
+%\VignetteIndexEntry{Manual}
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+<<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@
+\title{Your experiment title here}
+\author{Your name}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\bibliographystyle{plain}
+\maketitle
+\tableofcontents
+\newpage
+\section{Data loading}
+This is an automated report for a CoINcIDE analysis. First of all, we load up our data just past the CoINcIDE_getAdjMatrices() function:
+
+<<>>=
+##grab data matrix list, clust features list
+CoINcIDE_rankFeatures <- "/home/kplaney/ovarian_analysis/metaFeatures_200.RData.gzip"
+load(CoINcIDE_rankFeatures)
+metaFeatures <- metaFeatures
+CoINcIDE_clusterOutput <-  "/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_200Features_2015-04-21.RData.gzip"
+load(CoINcIDE_clusterOutput)
+clusterOutput <- kmeansConsensus
+load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_communityDetection.R")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_visualization.R")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R")
+
+#now format just as a list of data matrices.
+dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
+
+names(dataMatrixList) <- names(esets)
+##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_meanConsensusCluster
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_meanConsensusCluster
+
+
+CoINcIDE_computeEdgesObject <- "/home/kplaney/ovarian_analysis/kmeansConsensus_200F_meanMatrix_distCor.RData.gzip"
+load(CoINcIDE_computeEdgesObject)
+output <- kmeansConsensus_200F_meanMatrix_distCor
+inputVariablesDF <- output$inputVariablesDF
+computeTrueSimilOutput <- output$computeTrueSimilOutput
+pvalueMatrix <- output$pvalueMatrix
+clustIndexMatrix <- output$clustIndexMatrix
+
+###inputs for edge detection
+meanEdgePairPvalueThresh <- .05
+indEdgePvalueThresh <- .1
+minTrueSimilThresh <- .7
+maxTrueSimilThresh <- Inf
+clustSizeFractThresh <- inputVariablesDF$clustSizeFractThresh
+clustSizeThresh <- inputVariablesDF$clustSizeThresh
+fractFeatIntersectThresh <- inputVariablesDF$fractFeatIntersectThresh
+  numFeatIntersectThresh <- inputVariablesDF$numFeatIntersectThresh
+saveDir <- "/home/kplaney/ovarian_analysis/"
+@
+
+\subsection{Input variables used to derive adjacency matrix}
+<<>>=
+message("Input variables used to derive the adjacency matrix:\n")
+inputVariablesDF
+message("There were ",nrow(clustIndexMatrix), " total input clusters from ",length(unique(clustIndexMatrix[,2])), " studies")
+message("The total number of input features was ",length(metaFeatures$finalFeatures))
+message("Across the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.1))," pvalues less than or equal to .1")
+message("Across the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.05))," pvalues less than or equal to .05")
+message("Across the entire square (symmetric) similarity matrix, there are ",length(which(computeTrueSimilOutput$similValueMatrix>=inputVariablesDF$minTrueSimilThresh))," similarities greater than or equal to ",inputVariablesDF$minTrueSimilThresh)
+message("Across the entire square (symmetric) similarity matrix, there are ",length(which(computeTrueSimilOutput$similValueMatrix>=.8))," similarities greater than or equal to ",.8)
+@
+
+\section{Network Analysis}
+
+<<>>=
+finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,pvalueMatrix=pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
+                              meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
+                              minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                              fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
+                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_"
+)
+
+commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,
+                                        clustIndexMatrix=output$clustIndexMatrix,fileTag="autoReport",
+                            saveDir=saveDir,minNumUniqueStudiesPerCommunity=3,clustMethodName="",
+                            commMethod=c("edgeBetween"),
+                            makePlots=TRUE,saveGraphData=FALSE,plotToScreen=TRUE)
+
+
+advancedNetworkPlots(communityMembership=commInfo,
+                                 brewPal = c("Set3"),
+                                 saveDir=saveDir,saveName="network")
+@
+
+\section{Gene meta-rank Analysis}
+<<>>=
+aggregateData <- returnSampleMemberMatrix(clustSampleIndexList,dataMatrixList,communityInfo=commInfo)
+binInfo <- binarizeMetaclustStudyStatus(aggregateData$sampleClustCommKey)
+rankInfo <- computeRankMatrix(metaClustSampleNames=binInfo$metaClustSampleNames,featureNames=metaFeatures$finalFeatures,dataMatrixList,
+                              sampleClustCommKey=aggregateData$sampleClustCommKey,onlyIntersectingFeat=TRUE)
+pvalueInfo <- computeFeaturePvalues(rankMatrix=rankInfo$rankMatrix,featureNames=rankInfo$filteredFeatures,groupings=rankInfo$groupings)
+metaMatrix <- commMedianRank(rankInfo$rankMatrix[which(pvalueInfo$fdr.qvalue<=.05),],rankInfo$groupings)
+plotMetaAnalysis(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
+                             saveDir=saveDir,fileTag="test",
+                             plotTitle="Median rank\nacross all samples/studies",
+                             key.xlab="")
+
+@
+\subsection{GSEA}
+
+\subsection{Survival}
+\end{document}

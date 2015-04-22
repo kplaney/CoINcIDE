@@ -237,9 +237,21 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
 
 findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag="IGPN_communityNodeAttributes_",
                             saveDir="./",minNumUniqueStudiesPerCommunity=3,clustMethodName="sparseBC",
-                            commMethod=c("fastGreedy","edgeBetween","walktrap","eigenvector","optimal","spinglass","multilevel"),
-                            makePlots=TRUE,saveGraphData=TRUE){
+                            commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel"),
+                            makePlots=TRUE,plotToScreen=FALSE,saveGraphData=TRUE,edgeWeightsColName=c(NULL,"meanPvalue"),nodeFontSize=1,nodePlotSize=10,
+                            findCommWithWeights=FALSE){
   
+  if(!is.null(edgeWeightsColName) && edgeWeightsColName != "meanPvalue"){
+    
+    stop("Please select NULL or \'meanPvalue\' for the variable edgeWeightsColName.")
+  }
+  
+  if(length(commMethod)>1){
+    
+    message("commMethod input variable longer than length 1; using default \'edgeBetween'\ method.")
+    commMethod <- "edgeBetween"
+  
+  }
   dir.create(saveDir,showWarnings=TRUE);
   #add on community detection name.
   clustMethodName <- paste0(clustMethodName,"_commMethod_",commMethod);
@@ -252,14 +264,18 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
   colnames(graphKey) <- c("orig_id","new_id");
   igraph_edgeMatrix <- matrix(data=NA,nrow=nrow(edgeMatrix),ncol=ncol(edgeMatrix));
+  igraph_weightMatrix <- matrix(data=NA,nrow=nrow(edgeWeightMatrix),ncol=ncol(edgeWeightMatrix));
   
   for(r in 1:nrow(graphKey)){
-    
+    #replace any id, whether it's in the first or second column
     igraph_edgeMatrix[which(edgeMatrix==graphKey[r,"orig_id"])] <- graphKey[r,"new_id"];
     
   }
   
-  
+  #add on weights: Additional columns in edgeMatrix are considered as edge attributes. 
+  igraph_edgeMatrix <- data.frame(igraph_edgeMatrix, edgeWeightMatrix)
+
+    
   clustNames <- union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]));
   studyNames <-  clustIndexMatrix[na.omit(match(clustNames,clustIndexMatrix[,1])) ,2];
   #order in same order as orig names.
@@ -268,16 +284,73 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   base_attr <- cbind(igraph_clustNames,studyNames);
   colnames(base_attr)[2] <- "studyNum";
   undirGraph_base <-  graph.data.frame(data.frame(igraph_edgeMatrix),directed=FALSE,vertices=data.frame(base_attr));
+
+  #scaling factor
+  if(!is.null(edgeWeightsColName)){
+    
+    plotEdgeWeights <- 3/(.5+ get.edge.attribute(graph=undirGraph_base,name=edgeWeightsColName))
+    
+  
+  if(length( plotEdgeWeights)==0){
+    
+    stop("\nEdge weights returned was a null lust.")
+  
+  }
+  
+  if(any(is.na(plotEdgeWeights))){
+    
+    stop("\nGetting NA edge weights.")
+  }
+  
+  E(undirGraph_base)$weights
+  
+  }
  
   if(makePlots){
     
-    png(filename=paste0(saveDir,clustMethodName,"_origNetworkPlot_",Sys.Date(),".png"),
+    if(!plotToScreen){
+      
+    png(filename=paste0(saveDir,clustMethodName,"_origNetworkPlot",Sys.Date(),".png"),
+        width = 700, height = 1000)
+    
+    origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+                            edge.arrow.size=3,main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
+                            ),xlab="#=Study Number");
+    
+    dev.off();
+    
+    if(!is.null(edgeWeightsColName)){
+    png(filename=paste0(saveDir,clustMethodName,"_origNetworkPlot_edgesScaled",Sys.Date(),".png"),
       width = 700, height = 1000)
-    origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=5,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=.5,
-       edge.arrow.size=3,main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
-                                                                            ),xlab="#=Study Number");
+    
+    origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+       edge.arrow.size=3,edge.width = plotEdgeWeights,edge.color="black", main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
+                                                                            ),xlab="#=Study Number, edge weight = inverse p-value");
    
     dev.off();
+    
+    }
+    
+    }else{
+      
+      origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+                              edge.arrow.size=3,main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
+                              ),xlab="#=Study Number");
+      
+      
+      
+      if(!is.null(edgeWeightsColName)){
+
+        origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+                                edge.arrow.size=3,edge.width = plotEdgeWeights,edge.color="black", main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
+                                ),xlab="#=Study Number, edge weight = inverse p-value");
+        
+
+      }
+      
+      
+      
+    }
     
   }
   #commMethod=c("fastGreedy","edgeBetween","walktrap","eigenvector","optimal","spinglass","multilevel")
@@ -285,29 +358,31 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   if(commMethod=="fastgreedy"){
     
   comm <- fastgreedy.community(undirGraph_base,merges=TRUE,modularity=TRUE,
-                                     membership=TRUE);
+                                     membership=TRUE,weights=NULL);
 
   }else if(commMethod=="edgeBetween"){
     
     #note: can actually use weights here.
+    #IF wanted weights: put it here, but only finding communities by weights does not result in clear clusters.
+    #weights=E(undirGraph_base)$weights
     comm <- edge.betweenness.community(undirGraph_base,directed=FALSE,merges=TRUE,modularity=TRUE,
-                                 membership=TRUE);
+                                 membership=TRUE,weights=NULL);
     
     
   }else if(commMethod=="walktrap"){
     #steps=4 is default
     comm <- walktrap.community(undirGraph_base,merges=TRUE,modularity=TRUE,
-                               membership=TRUE,steps=4);
+                               membership=TRUE,steps=4,weights=NULL);
     
   }else if(commMethod=="eigenvector"){
     
     
-    comm <- leading.eigenvector.community(undirGraph_base,steps = -1);
+    comm <- leading.eigenvector.community(undirGraph_base,steps = -1,weights=NULL);
     
   }else if(commMethod=="optimal"){
     
     #maximizing the modularity measure over all possible partitions
-    comm <- optimal.community(undirGraph_base);
+    comm <- optimal.community(undirGraph_base,weights=NULL);
     
   }else if(commMethod=="spinglass"){
     
@@ -318,7 +393,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
   }else if(commMethod=="multilevel"){
     
-    comm <- multilevel.community(undirGraph_base);
+    comm <- multilevel.community(undirGraph_base,weights=NULL);
     
   }else{
     
@@ -407,14 +482,25 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
   if(makePlots){
   
+    if(!plotToScreen){
     png(filename=paste0(saveDir,clustMethodName,"_communityPlotFull_",Sys.Date(),".png"),
       width = 700, height = 1000);
-    networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.size=5,vertex.label.color="black",vertex.label.cex=.5,
+    networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
                                vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
                                                                                                      numCommunitiesOrig," communities of any size found \nusing method ",clustMethodName,
                                                                                                      "with community detection ",commMethod,"."),xlab="color=community, #=study");
   
     dev.off();
+    
+    }else{
+      
+      networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
+                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
+                                                                                                         numCommunitiesOrig," communities of any size found \nusing method ",clustMethodName,
+                                                                                                         "with community detection ",commMethod,"."),xlab="color=community, #=study");
+      
+      
+    }
     
   }
   #NOW prune down...
@@ -470,11 +556,13 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   finalNumCommunities <- length(unique(igraph_attrDF[,"community"]));
   
   if(makePlots){
+    
+    if(!plotToScreen){
     #COME BACK: update resolutions, colors.
     png(filename=paste0(saveDir,clustMethodName,"_communityPlotPruned_",Sys.Date(),".png"),
       width = 700, height = 1000);
   
-    networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=5,vertex.label.color="black",vertex.label.cex=.5,
+    networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
                           vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
                                                                                            finalNumCommunities," pruned communities found using method ",clustMethodName, "with community detection ",
                                                                                            commMethod,"."),xlab="color=community, #=study");
@@ -482,7 +570,17 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
     dev.off();
   
+    }else{
+      
+      networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
+                              vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
+                                                                                               finalNumCommunities," pruned communities found using method ",clustMethodName, "with community detection ",
+                                                                                               commMethod,"."),xlab="color=community, #=study");
+      
+    }
   }
+  
+  
   
   }
   
@@ -514,10 +612,10 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
 
 ##return a membership matrix
 
-returnSampleMemberMatrix <- function(clustSampleIndexList,dataMatrixList,communityAttrDF){
+returnSampleMemberMatrix <- function(clustSampleIndexList,dataMatrixList,communityInfo){
   
 sampleNames <- c()
-for(d in 1:length(clustSamplesIndexList)){
+for(d in 1:length(clustSampleIndexList)){
   
   for(c in 1:length(clustSampleIndexList[[d]])){
     
@@ -529,16 +627,21 @@ for(d in 1:length(clustSamplesIndexList)){
 
 numTotalSamples <- length(sampleNames)
 
-sampleClustCommKey <- matrix(data=NA,ncol=4,nrow=numTotalSamples,dimnames=list(sampleNames, c("globalClustNum","studyNum","globalClustNum","community")))
 clustNum <- 1
+
+globalClustNum <- c()
+studyClustNum <- c()
+studyNum <- c()
+community <- c()
 for(d in 1:length(clustSampleIndexList)){
   
   for(c in 1:length(clustSampleIndexList[[d]])){
-    
-    clustSampleNames <- colnames(dataMatrixList[[d]][ , clustSampleIndexList[[d]][[c]]])
+
     #just take first match - all 
-    sampleClustCommKey[ clustSampleNames, "globalClustNum"] <- clustNum 
-    sampleClustCommKey[ clustSampleNames, "studyNum"] <- d
+    globalClustNum <- append(globalClustNum,rep.int(clustNum,times=length(clustSampleIndexList[[d]][[c]])))
+    studyClustNum <- append(studyClustNum,rep.int(c,times=length(clustSampleIndexList[[d]][[c]])) )
+    studyNum <- append(studyNum,rep.int(d,times=length(clustSampleIndexList[[d]][[c]])) )
+
 
     #was this in the final clustering?
     if(length(which(communityInfo$attrDF[,"clust"]==clustNum))>0){
@@ -551,7 +654,11 @@ for(d in 1:length(clustSampleIndexList)){
         
       }
       
-      sampleClustCommKey[ clustSampleNames,"community"] <- commNum
+      community <- append(community,rep.int(commNum,times=length(clustSampleIndexList[[d]][[c]])) )
+      
+    }else{
+      
+      community <- append(community,rep.int(NA,times=length(clustSampleIndexList[[d]][[c]])) )
       
     }
 
@@ -561,6 +668,8 @@ for(d in 1:length(clustSampleIndexList)){
   
 }
 
+sampleClustCommKey <- data.frame(sampleNames,globalClustNum,studyClustNum,studyNum,community)
+colnames(sampleClustCommKey) <- c("sampleName","globalClustNum","studyClustNum","studyNum","community")
 
 fullMemberMatrix <- matrix(data=0,ncol=numTotalSamples,nrow=numTotalSamples,dimnames=list(sampleNames,sampleNames))
 

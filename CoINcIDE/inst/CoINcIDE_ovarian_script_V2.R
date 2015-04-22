@@ -23,23 +23,16 @@ expandProbesets <- function (eset, sep = "///"){
 }
 
 
-add.surv.y <- function(X) Surv(X$days_to_death, X$vital_status=="deceased")
-## -----------------------------------------------------------------------------
-##load the esets
-## -----------------------------------------------------------------------------
-
-delim <- ":" 
-
-data(list=data(package=package.name)[[3]][,3])
-
-strEsets <- ls(pattern="^.*_eset$")
+#locally:
+#data(list=data(package=package.name)[[3]][,3])
+#strEsets <- ls(pattern="^.*_eset$")
 #ON SERVER: just download the tarbell to get package, code
 #cd /home/kplaney/R/x86_64-redhat-linux-gnu-library
 #sudo wget http://www.bioconductor.org/packages/release/data/experiment/src/contrib/curatedOvarianData_1.3.5.tar.gz
 #tar xvzf curatedOvarianData_1.3.5.tar.gz
-# strEsets <- list.files("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/")
+ strEsets <- list.files("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/")
 # #datalist is a text file...shouldn't be any other text files in this directory, only .rda files.
-# strEsets <- strEsets[-which(strEsets=="datalist")]
+ strEsets <- strEsets[-which(strEsets=="datalist")]
 # library("limma")
 # names(strEsets) <- strsplit2(strEsets,split=".rda")[,1]
 # #now load all of this data. equivalent of data() call above if can install package.
@@ -48,21 +41,28 @@ strEsets <- ls(pattern="^.*_eset$")
 # #weird...now suddently dataset 16 isn't working? why only THIS one?
 # #makes me wonder if there is a space issue on the server.
 # #I had to re-download the datasets...
-# for (strEset in strEsets){
-#   
-#   load(paste0("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/",strEset))
-#   
-# }
-# #now call strEset again like above:
-# strEsets <- ls(pattern="^.*_eset$")
+for (strEset in strEsets){
+  #loading each dataset:
+  load(paste0("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/",strEset))
+  
+}
+#now call strEset again like above:
+strEsets <- ls(pattern="^.*_eset$")
 
 ##now back to common code for server or local computer:
+
+#ERROR: still not removing all of these??
+#UBD///GABBR1 in final output...
 esets <- list()
 for (strEset in strEsets){
   
   eset <- get(strEset)
   ##Split out rows without unique gene name
-  eset <- expandProbesets(eset)
+  eset <- expandProbesets(eset, sep = "///")
+  if(length(grep("///",rownames(exprs(eset))))>0){
+    
+    stop("Not collapsing probes correcting.")
+  }
   esets[[strEset]] <- eset
   
 }
@@ -80,14 +80,14 @@ esets <- esets[-indicesRemove]
 
 #save for easier access next time:
 #save(esets, file="/home/kplaney/curatedOvarianData_esetList.RData.gzip",compress="gzip")
-#CHECK: remove any healthy samples. do this for ALL studies in case some have health tissue.
+#remove any healthy samples. do this for ALL studies in case some have healthy tissue.
 #for example: TCGA has some normal samples
 table(pData(esets[["TCGA_eset"]])[,"batch"],pData(esets[["TCGA_eset"]])[,"sample_type"])
 indicesRemove <- c()
 
 for(e in 1:length(esets)){
   
-  #are these all primary tumor? I wish they had kept the full TCGA labels.
+  #choose only primary tumor samples.
   pDat <- pData(esets[[e]])[which(pData(esets[[e]])["sample_type"]=="tumor"),]
   expr <- exprs(esets[[e]])[ ,which(pData(esets[[e]])["sample_type"]=="tumor")]
   
@@ -136,12 +136,16 @@ for(e in 1:length(esets)){
   }
   
 }
+
+#COME BACK:  filter by primary site? 
+head(pData(esets[["TCGA_eset"]])[,"primarysite"])
+
+
 #}
 #remove datasets that are too small? allow them for now.
 #now process, then grab meta-features
 #sounds like there SHOULD be some duplicated samples  in here.
 #want very lowly varying genes to be removed for Combat.
-#COME BACK: do variance filtering by batch for Combat.
 esets <- processExpressionSetList(exprSetList=esets,outputFileDirectory="/home/kplaney/ovarian_analysis/",
                                   minVar=.001,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
 
@@ -198,19 +202,66 @@ featureNames(esets[["TCGA_eset"]] ) <- rownames(batchCorrect$GEN_Data_Corrected)
 validObject(esets[["TCGA_eset"]])
 
 
+save(esets,file="/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip",compress="gzip")
+
+####
+###select features
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
 
 
 #now format just as a list of data matrices.
 dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
 
 names(dataMatrixList) <- names(esets)
-#run meta-feature analysis.
+###save this dataMatrixList now.
+
+#ran meta-feature analysis for 1000,500,1000,2000 features.
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
-                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),numFeatSelectByGlobalRank=1000,
-                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.2,selectMethod=c("median"),
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=200,
+                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
                                                    outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
 
 message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+#(saved each one after ran)
+save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_200.RData.gzip",compress="gzip")
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=500,
+                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_500.RData.gzip",compress="gzip")
+
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=1000,
+                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_1000.RData.gzip",compress="gzip")
+
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=2000,
+                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_2000.RData.gzip",compress="gzip")
+
+
+
+##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
 #remove datasets with too many missing top gene features
 if(length(metaFeatures$datasetListIndicesToRemove)>0){
   
@@ -226,29 +277,409 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-output <- list(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList)
-save(output,file="/home/kplaney/ovarian_analysis/curatedOvarianData_proc.RData.gzip",compress="gzip")
-
-load("/home/kplaney/ovarian_analysis/curatedOvarianData_proc.RData.gzip")
-dataMatrixList <- output$dataMatrixList
-clustFeaturesList <- output$clustFeaturesList
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
-clusterOut_kmeansConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 15, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("km"),
-                                                         corUse=c("everything"),
-                                                         distMethod=c("euclidean"),
-                                                         minMeanClustConsensus=.7,outputFile=paste0("/home/kplaney/ovarian_analysis/kmeansConsensus_",Sys.Date(),".txt"))
 
-#use average linkage for hclust: may work better with unevenly sized clusters?
-#looks like ward's or average is best: http://www.stat.sc.edu/~hitchcock/compare_hier_fda.pdf, http://www.biomedcentral.com/1471-2105/13/S10/S7
-#BUT ward.D and ward.D2 really overshoot k; so use average instead.
-clusterOut_hlustEuclidConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 15, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("hc"),
-                                                         corUse=c("everything"),
-                                                         distMethod=c("euclidean"),hclustAlgorithm="average",
-                                                         minMeanClustConsensus=.7,outputFile=paste0("/home/kplaney/ovarian_analysis/hclustEuclidConsensus_",Sys.Date(),".txt"))
+kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList=clustFeaturesList,clustMethod=c("km"),
+                                          pickKMethod=c("consensus"),
+                                          numSims=500,maxNumClusters=10,
+                               outputFile="/home/kplaney/ovarian_analysis/test.txt",iter.max=30,nstart=25,distMethod=c("euclidean"),
+                               hclustAlgorithm=c("average"),
+                               consensusHclustAlgorithm=c("average"),
+                               minClustConsensus=.7, minMeanClustConsensus=.7,corUse="everything",pItem=.9)
+
+numFeatures <- 2000
+save(kmeansConsensus,file=paste0("/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+hclustConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList=clustFeaturesList,clustMethod=c("hc"),
+                                          pickKMethod=c("consensus"),
+                                          numSims=500,maxNumClusters=10,
+                                          outputFile="/home/kplaney/ovarian_analysis/test.txt",iter.max=30,nstart=25,distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("ward.D2"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.7,corUse="everything",
+                                          pItem=.9)
+
+numFeatures <- 1000
+save(hclustConsensus,file=paste0("/home/kplaney/ovarian_analysis/curatedOvarianData_hclustConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
 
 
-clusterOut_hlustSpearmanConsensus <- consensusClusterMatrixList(dataMatrixList,clustFeaturesList,maxNumClusters = 15, numSims=100, pItem=0.8, pFeature=1, clusterAlg=c("hc"),
-                                                              corUse=c("everything"),
-                                                              distMethod=c("spearman"),hclustAlgorithm="ward.D2",
-                                                              minMeanClustConsensus=.7,outputFile=paste0("/home/kplaney/ovarian_analysis/hclustSpearmanConsensus_",Sys.Date(),".txt"))
+
+
+
+####meta-cluster
+fractFeatIntersectThresh=.8
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=8
+minTrueSimilThresh=.25
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.25
+includeRefClustInNull=TRUE
+numSims=500
+
+###k-means, 200 features.
+
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_200Features_2015-04-21.RData.gzip")
+load("/home/kplaney/ovarian_analysis/metaFeatures_200.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+
+#now format just as a list of data matrices.
+dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
+
+names(dataMatrixList) <- names(esets)
+##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_meanConsensusCluster
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_meanConsensusCluster
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+numFeatIntersectThresh=150
+sigMethod=c("centroid")
+edgeMethod=c("pearson")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_200F_centroid_pearson_2014_04_21.txt"
+
+kmeansConsensus_200F_centroid_pearson <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                        edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                        sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                        outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                        numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+numFeatIntersectThresh=150
+sigMethod=c("centroid")
+edgeMethod=c("spearman")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_200F_centroid_spearman_2014_04_21.txt"
+
+kmeansConsensus_200F_centroid_spearman <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                 edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                 sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                 outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                 numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+numFeatIntersectThresh=150
+sigMethod=c("centroid")
+edgeMethod=c("distCor")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_200F_centroid_distCor_2014_04_21.txt"
+
+kmeansConsensus_200F_centroid_distCor <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                  edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                  sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                  outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                  numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+numFeatIntersectThresh=150
+sigMethod=c("meanMatrix")
+edgeMethod=c("pearson")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_200F_meanMatrix_pearson_2014_04_21.txt"
+
+kmeansConsensus_200F_meanMatrix_pearson <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                 edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                 sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                 outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                 numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+numFeatIntersectThresh=150
+sigMethod=c("meanMatrix")
+edgeMethod=c("spearman")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_200F_meanMatrix_spearman_2014_04_21.txt"
+
+kmeansConsensus_200F_meanMatrix_spearman <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                  edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                  sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                  outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                  numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+numFeatIntersectThresh=150
+sigMethod=c("meanMatrix")
+edgeMethod=c("distCor")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_200F_meanMatrix_distCor_2014_04_21.txt"
+
+kmeansConsensus_200F_meanMatrix_distCor <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                 edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                 sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                 outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                 numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+################
+###k-means, 500 features
+fractFeatIntersectThresh=.8
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=8
+minTrueSimilThresh=.25
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.25
+includeRefClustInNull=TRUE
+numFeatIntersectThresh=450
+numSims=500
+
+
+
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_500Features_2015-04-21.RData.gzip")
+load("/home/kplaney/ovarian_analysis/metaFeatures_500.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+
+#now format just as a list of data matrices.
+dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
+
+names(dataMatrixList) <- names(esets)
+##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_meanConsensusCluster
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_meanConsensusCluster
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+sigMethod=c("centroid")
+edgeMethod=c("pearson")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_500F_centroid_pearson_2014_04_21.txt"
+
+kmeansConsensus_500F_centroid_pearson <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                 edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                 sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                 outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                 numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+numFeatIntersectThresh=150
+sigMethod=c("centroid")
+edgeMethod=c("spearman")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_500F_centroid_spearman_2014_04_21.txt"
+
+kmeansConsensus_500F_centroid_spearman <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                  edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                  sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                  outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                  numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+sigMethod=c("centroid")
+edgeMethod=c("distCor")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_500F_centroid_distCor_2014_04_21.txt"
+
+kmeansConsensus_500F_centroid_distCor <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                 edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                 sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                 outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                 numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+numFeatIntersectThresh=150
+sigMethod=c("meanMatrix")
+edgeMethod=c("pearson")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_500F_meanMatrix_pearson_2014_04_21.txt"
+
+kmeansConsensus_500F_meanMatrix_pearson <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                   edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                   sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                   outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                   numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+sigMethod=c("meanMatrix")
+edgeMethod=c("spearman")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_500F_meanMatrix_spearman_2014_04_21.txt"
+
+kmeansConsensus_500F_meanMatrix_spearman <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                    edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                    sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                    outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                    numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+minTrueSimilThresh=.5
+sigMethod=c("meanMatrix")
+edgeMethod=c("distCor")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_500F_meanMatrix_distCor_2014_04_21.txt"
+
+kmeansConsensus_500F_meanMatrix_distCor <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                   edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                   sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                   outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                   numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+###k-means, 1000 features
+fractFeatIntersectThresh=.8
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=8
+minTrueSimilThresh=.25
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.25
+includeRefClustInNull=TRUE
+numSims=500
+numFeatIntersectThresh=850
+
+###k-means, 1000 features.
+
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_1000Features_2015-04-21.RData.gzip")
+load("/home/kplaney/ovarian_analysis/metaFeatures_1000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+
+#now format just as a list of data matrices.
+dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
+
+names(dataMatrixList) <- names(esets)
+##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_meanConsensusCluster
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_meanConsensusCluster
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+sigMethod=c("centroid")
+edgeMethod=c("pearson")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_1000F_centroid_pearson_2014_04_21.txt"
+
+kmeansConsensus_1000F_centroid_pearson <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                 edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                 sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                 outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                 numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+sigMethod=c("centroid")
+edgeMethod=c("spearman")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_1000F_centroid_spearman_2014_04_21.txt"
+
+kmeansConsensus_1000F_centroid_spearman <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                  edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                  sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                  outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                  numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+sigMethod=c("centroid")
+edgeMethod=c("distCor")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_1000F_centroid_distCor_2014_04_21.txt"
+
+kmeansConsensus_1000F_centroid_distCor <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                 edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                 sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                 outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                 numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+sigMethod=c("meanMatrix")
+edgeMethod=c("pearson")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_1000F_meanMatrix_pearson_2014_04_21.txt"
+
+kmeansConsensus_1000F_meanMatrix_pearson <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                   edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                   sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                   outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                   numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+sigMethod=c("meanMatrix")
+edgeMethod=c("spearman")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_1000F_meanMatrix_spearman_2014_04_21.txt"
+
+kmeansConsensus_1000F_meanMatrix_spearman <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                    edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                    sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                    outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                    numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+minTrueSimilThresh=.5
+sigMethod=c("meanMatrix")
+edgeMethod=c("distCor")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_1000F_meanMatrix_distCor_2014_04_21.txt"
+
+kmeansConsensus_1000F_meanMatrix_distCor <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                   edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                   sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                   outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                   numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+####2000 features
+fractFeatIntersectThresh=.8
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=8
+minTrueSimilThresh=.25
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.25
+includeRefClustInNull=TRUE
+numSims=500
+numFeatIntersectThresh=1800
+
+###k-means, 2000 features.
+
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_2000Features_2015-04-21.RData.gzip")
+load("/home/kplaney/ovarian_analysis/metaFeatures_2000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+
+#now format just as a list of data matrices.
+dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
+
+names(dataMatrixList) <- names(esets)
+##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_meanConsensusCluster
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_meanConsensusCluster
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+minTrueSimilThresh=.5
+sigMethod=c("meanMatrix")
+edgeMethod=c("distCor")
+outputFile <- "/home/kplaney/ovarian_analysis/kmeansConsensus_2000F_meanMatrix_distCor_2014_04_21.txt"
+
+kmeansConsensus_2000F_meanMatrix_distCor <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                    edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                    sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                    outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                    numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
