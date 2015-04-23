@@ -682,4 +682,5 @@ kmeansConsensus_2000F_meanMatrix_distCor <- CoINcIDE_getAdjMatrices(dataMatrixLi
                                                                     outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
                                                                     numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
 
-
+##TCGA clusters (add to clinical data frame)
+"/home/kplaney/ovarian_analysis/gdac.broadinstitute.org_OV-TP.Aggregate_Molecular_Subtype_Clusters.Level_4.2014101700.0.0/OV-TP.mergedcluster.txt"

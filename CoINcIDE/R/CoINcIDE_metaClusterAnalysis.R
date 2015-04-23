@@ -4,18 +4,31 @@ library("Biobase")
 
 #to do survival, other ggplot stuff (and advanced network plots.)
 
+
 createPhenoMasterTableFromMatrixList <- function(esetList,dataMatrixList,sampleKeyColName="unique_patient_ID"){
   
-  if(!is.null(esetList)){
+  message("This function assumes samples/patient clinical data rows are not duplicated")
+  
+  if(!missing(esetList)){
     
-    #check first object index: is it actually an expression matrix?
+    #check first object index: is it actually an expression object 
+    #only a high-level check; not checking all objects in list.
     if(validObject(esetList[[1]])){
       
       for(d in 1:length(esetList)){
         
         if(d>1){
           
-          phenoMasterDF <- join(phenoMasterDF,pData(esetList[[d]]),match="all",type="full",by=sampleKeyColName)
+          if(all(colnames(phenoMasterDF)==colnames(pData(esetList[[d]])))){
+            
+            #just do rbind - faster than join.
+            phenoMasterDF <- rbind(phenoMasterDF,pData(esetList[[d]]))
+            
+          }else{
+            
+            phenoMasterDF <- join(phenoMasterDF,pData(esetList[[d]]),match="all",type="full",by=sampleKeyColName)
+            
+          }
           
         }else{
           
@@ -26,13 +39,30 @@ createPhenoMasterTableFromMatrixList <- function(esetList,dataMatrixList,sampleK
       }
       
     }
-  }else{
+    
+  }else if(!missing(dataMatrixList)){
     
     for(d in 1:length(dataMatrixList)){
       
+      
+      if(is.null(dataMatrixList[[d]]$phenoData)){
+        
+        stop(paste0("Index ",d,"dataMatrixList[[d]]$phenoData is null. Clinical (pheno) data should have this list index name."))
+        
+      }
+      
       if(d>1){
         
-        phenoMasterDF <- join(phenoMasterDF,dataMatrixList[[d]]$phenoData,match="all",type="full",by=sampleKeyColName)
+        if(all(colnames(phenoMasterDF)==colnames(pData(esetList[[d]])))){
+          
+          #just do rbind - faster than join.
+          phenoMasterDF <- rbind(phenoMasterDF,dataMatrixList[[d]]$phenoData)
+          
+        }else{
+          
+          phenoMasterDF <- join(phenoMasterDF,dataMatrixList[[d]]$phenoData,match="all",type="full",by=sampleKeyColName)
+          
+        }
         
       }else{
         
@@ -51,13 +81,131 @@ createPhenoMasterTableFromMatrixList <- function(esetList,dataMatrixList,sampleK
 
 addClinicalVarToNodeAttributes <- function(sampleClustCommKey,phenoMasterDF){
   
-  if(!missing(clinicalTable)){
-    
-    
-    
-  }
+  #do by study, in case sample names from matrix are actually duplicated.
   
 }
+
+#NOTE: groupings need names
+survivalAnalysis <- function(saveNameTag = "codingGenes",outcomesVarBinary="os_event",outcomesVarCont = "os_days_to_event",
+                             sampleClustCommPhenoData,CutoffPointYears=5,uniquePatientID="unique_patient_ID",
+                             groupingTerm="community"){
+
+  
+  #only take samples with the groupingTerm you're looking at.
+  sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
+  #remove samples with NA values.
+  groupings <- sampleClustCommPhenoData[, groupingTerm]
+  groupings <- groupings[which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary]))];
+  outcomesData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary])),];
+  
+  #keep samples with NA days to event for now?
+  groupings <- groupings[which(!is.na(outcomesData[,outcomesVarCont]))];
+  outcomesData <- outcomesData[which(!is.na(outcomesData[,outcomesVarCont])),];
+  
+  outcomesDataShort <- data.frame(cbind(as.numeric(outcomesData[,outcomesVarBinary]),as.numeric(outcomesData[,outcomesVarCont]));
+  
+  #sometimes the names are duplicated across studies - remove this line
+  #rownames(outcomesDataShort ) <- outcomesData[,uniquePatientID];
+  colnames(outcomesDataShort) <- c("Censoring","TimeToLastContactOrEvent")
+  
+  nonCensoredTerm=1
+  censoredTerm=0
+  Survival <- outcomesDataShort
+  #creating the survival objects with the time and censoring variables
+  OverallSurvival <- Surv(Survival$TimeToLastContactOrEvent,Survival$Censoring==nonCensoredTerm);
+  #KP:
+  #creating a survival object cutoff at a certain point
+  CutoffPoint <- CutoffPointYears*365;
+  CutoffSamples=Survival$TimeToLastContactOrEvent>CutoffPoint & !is.na(Survival$TimeToLastContactOrEvent)
+  SurvivalCutoff=Survival
+  SurvivalCutoff$TimeToLastContactOrEvent[CutoffSamples]=CutoffPoint
+  SurvivalCutoff$Censoring[CutoffSamples]=censoredTerm
+  #"Surv" creates a survival object. really for binary outcomes data.
+  OverallSurvivalCutoff=Surv(SurvivalCutoff$TimeToLastContactOrEvent,SurvivalCutoff$Censoring==nonCensoredTerm)
+  
+  results<-array(dim=c(1,13))
+  #dataMatrix <- data.matrix(data);
+  ########################################################
+  # cox survival
+  ########################################################
+  
+  ########################################################
+  
+  # STEP 1: Cox model on complete survival data + kaplan meier
+  #Fits a Cox proportional hazards regression model.
+  #***add in Rx info??
+  #plot.survfit: can plot this data after using survfit.coxph
+  #ex for plotting survival data: > leukemia.surv <- survfit(Surv(time, status) ~ x, data = aml) 
+  #> plot(leukemia.surv, lty = 2:3) 
+  #here: run test <- cox.zph(coxfit), plot.cox.zph(test)
+  #COME BACK: include therapy too coxph( Surv(time, status) ~ therapy + ReceptorA + ReceptorB , data= sample.data) 
+  #hmmm...not working?? is this because most patients died?
+  coxfit=coxph(OverallSurvival~as.factor(groupings), data=Survival)
+  plot.cox.zph(cox.zph(coxfit))
+  
+  tmp=summary(coxfit)
+  #results[i,1]=tmp$logtest[3]  
+  
+  results[i,1]=tmp$waldtest[3]
+  results[i,2]=exp(coxfit$coefficients)
+  results[i,3]=tmp$conf.int[3]
+  results[i,4]=tmp$conf.int[4]
+  results[i,5]=tmp$coefficients[4] # the zscore
+  
+  #kaplan meier...is this correct?
+  kmfit=survdiff(OverallSurvival ~ groupings)
+  results[i,6]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)
+  
+  #calculate the sign of the survival relationship
+  mfit=survfit(OverallSurvival ~ groupings)
+  plot(mfit)
+  mfit.summary=summary(mfit)
+  
+  ########################################################
+  # STEP 2: Cox model on survival data with CUTOFF + kaplan meier
+  
+  coxfit=coxph(OverallSurvivalCutoff~as.factor(groupings), data= SurvivalCutoff)
+   
+  tmp=summary(coxfit)
+  results[8]=tmp$waldtest[3]
+  results[9]=exp(coxfit$coefficients)
+  results[10]=tmp$conf.int[3]
+  results[11]=tmp$conf.int[4]
+  results[12]=tmp$coefficients[4] # the zscore
+  
+  #The survfit function from the survival package computes the Kaplan-Meier estimator for truncated and/or censored data
+  #survfit: This function creates survival curves from either a formula (e.g. the Kaplan-Meier), a previously fitted Cox model, or a previously fitted accelerated failure time model.
+  kmfit=survdiff(OverallSurvivalCutoff ~ groupings)
+  results[13]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)  
+  
+  #calculate the sign of the survival relationship
+  mfit=survfit(OverallSurvival ~ groupings)
+  mfit.summary=summary(mfit)
+  plot(mfit)
+  
+  ########################################################
+  #STEP 3:  covariate modeling....
+  #COME BACK.
+}
+
+########################################################
+# writing to file
+########################################################
+#write.table(results,Args[7],sep="\t")
+
+#ADD FDR TESTING!
+ColumnLabels= c('Overall-WaldTest', 'Overall-HR','Overall-HRlower' ,'Overall-HRupper' ,'Overall-Zscore', 'Overall-KMtest' ,
+                'Cutoff-WaldTest', 'Cutoff-HR' ,'Cutoff-HRlower' ,'Cutoff-HRupper' ,'Cutoff-Zscore', 'Cutoff-KMtest' );
+
+colnames(results) <- ColumnLabels;
+rownames(results) <- colnames(dataMatrix);
+
+
+
+return(list(results=results,Survival=Survival,SurvivalCutoff=SurvivalCutoff))
+
+} 
+
 
 
 binarizeMetaclustStudyStatus <- function(sampleClustCommKey){
@@ -171,14 +319,14 @@ computeRankMatrix <- function(metaClustSampleNames,featureNames,dataMatrixList,s
   }
   communityNames <- names(metaClustSampleNames)[which(names( metaClustSampleNames)!="")]
   
-  groupings <- c()
+  groupings <- 
   for(c in 1:length(communityNames)){
     
     sampleNames <- unlist(metaClustSampleNames[[communityNames[c]]])
     
     rankMatrix <- matrix(data=NA,nrow=length(featureNames),ncol=length(sampleNames),dimnames=list(featureNames,sampleNames))
     
-    groupings <- append(groupings,rep.int(communityNames[c],times=length(sampleNames)))
+
     if(length(names(metaClustSampleNames[[communityNames[c]]]))==0){
       
       stop("No names on metaClustSampleNames[[c]]")
@@ -192,6 +340,10 @@ computeRankMatrix <- function(metaClustSampleNames,featureNames,dataMatrixList,s
       fullStudyMatrix <- dataMatrixList[[as.numeric(studyNames[s])]]
       tmp <- fullStudyMatrix[na.omit(match(featureNames,rownames(fullStudyMatrix))) ,metaClustSampleNames[[communityNames[c]]][[studyNames[s]]] ,drop=FALSE]
       
+      groupings <- rbind(groupings,data.frame(rep.int(communityNames[c],times=length( metaClustSampleNames[[communityNames[c]]])), 
+                                              rep.int(studyNames[s],times=length( metaClustSampleNames[[communityNames[c]]])).
+                                              metaClustSampleNames[[communityNames[c]]]))
+                                   
       if(nrow(tmp)==0){
         
         stop("After selecting for feature names and samples, no data rows left.")
@@ -220,7 +372,7 @@ computeRankMatrix <- function(metaClustSampleNames,featureNames,dataMatrixList,s
     #end of community looping.
   }
   
-  groupings <- groupings
+  colnames(groupings) <- c("community","studyNum","sampleName")
   output <- list(rankMatrix=finalRankMatrix,groupings=groupings,filteredFeatures=featureNames)
   return(output)
   
@@ -233,7 +385,7 @@ computeFeaturePvalues <- function(rankMatrix,featureNames,groupings){
   for(r in 1:nrow(rankMatrix)){
     #REMOVE which features are NA.
     rankArray <- rankMatrix[r,which(!is.na(rankMatrix[r,]))]
-    groups <- groupings[which(!is.na(rankMatrix[r,]))]
+    groups <- groupings[which(!is.na(rankMatrix[r,])),"community"]
     #what if a whole community is removed??
     featureTests[r] <- kruskal.test(rankArray,g=as.numeric(groups))$p.value
     
@@ -260,7 +412,7 @@ commMedianRank <- function(rankMatrix,groupings){
   
   for(c in 1:length(commNames)){
     
-    featureMedians[ ,c] <- rowMedians(rankMatrix[,which(groupings==commNames[c])],na.rm=TRUE)
+    featureMedians[ ,c] <- rowMedians(rankMatrix[,which(groupings[,"community"]==commNames[c])],na.rm=TRUE)
     
   }
   
@@ -358,126 +510,7 @@ commMedianRank <- function(rankMatrix,groupings){
 # }
 # 
 # 
-# survivalAnalysis <- function(saveNameTag = "codingGenes",outcomesVarBinary="os_event",outcomesVarCont = "os_days_to_event",
-#                              featureMatrix,outcomesAndCovariates,CutoffPointYears=5){
-#   
-#   library("fdrtool")
-#   library("survival")
-#   #make sure indices are matched up
-#   #make sure indices are matched up. may have less patients in counts matrix if subsetted is.
-#   outcomesAndCovariates<- outcomesAndCovariates[na.omit(match(colnames(featureMatrix),outcomesAndCovariates[,"bcr_aliquot_uuid"])),]
-#   #outcomesAndCovariatesDebug <-  outcomesAndCovariates
-#   
-#   groupings <- groupings[which(!is.na(outcomesAndCovariates[,outcomesVarBinary]))];
-#   outcomesData <- outcomesAndCovariates[which(!is.na(outcomesAndCovariates[,outcomesVarBinary])),];
-#   
-#   #keep samples with NA days to event for now?
-#   groupings <- groupings[which(!is.na(outcomesData[,outcomesVarCont]))];
-#   outcomesData <- outcomesData[which(!is.na(outcomesData[,outcomesVarCont])),];
-#   
-#   outcomesDataShort <- data.frame(cbind(as.numeric(outcomesData[,outcomesVarBinary]),as.numeric(outcomesData[,outcomesVarCont])));
-#   
-#   rownames(outcomesDataShort ) <- outcomesData[,"bcr_aliquot_uuid"];
-#   colnames(outcomesDataShort) <- c("Censoring","TimeToLastContactOrEvent")
-#   
-#   nonCensoredTerm=1
-#   censoredTerm=0
-#   Survival <- outcomesDataShort;
-#   #creating the survival objects with the time and censoring variables
-#   OverallSurvival <- Surv(Survival$TimeToLastContactOrEvent,Survival$Censoring==nonCensoredTerm);
-#   #KP:
-#   #creating a survival object cutoff at a certain point
-#   CutoffPoint <- CutoffPointYears*365;
-#   CutoffSamples=Survival$TimeToLastContactOrEvent>CutoffPoint & !is.na(Survival$TimeToLastContactOrEvent)
-#   SurvivalCutoff=Survival
-#   SurvivalCutoff$TimeToLastContactOrEvent[CutoffSamples]=CutoffPoint
-#   SurvivalCutoff$Censoring[CutoffSamples]=censoredTerm
-#   #"Surv" creates a survival object. really for binary outcomes data.
-#   OverallSurvivalCutoff=Surv(SurvivalCutoff$TimeToLastContactOrEvent,SurvivalCutoff$Censoring==nonCensoredTerm)
-#   
-#   #dataMatrix <- data.matrix(data);
-#   ########################################################
-#   # cox survival
-#   ########################################################
-#   
-#   
-#   results<-array(dim=c(1,12))
-#   
-#   ########################################################
-#   
-#   # STEP 1: Cox model on complete survival data + kaplan meier
-#   #Fits a Cox proportional hazards regression model.
-#   #***add in Rx info??
-#   #plot.survfit: can plot this data after using survfit.coxph
-#   #ex for plotting survival data: > leukemia.surv <- survfit(Surv(time, status) ~ x, data = aml) 
-#   #> plot(leukemia.surv, lty = 2:3) 
-#   #here: run test <- cox.zph(coxfit), plot.cox.zph(test)
-#   coxfit=coxph(OverallSurvival~as.factor(groupings), data=Survival)
-#   
-#   tmp=summary(coxfit)
-#   #results[i,1]=tmp$logtest[3]  
-#   
-#   results[i,1]=tmp$waldtest[3]
-#   results[i,2]=exp(coxfit$coefficients)
-#   results[i,3]=tmp$conf.int[3]
-#   results[i,4]=tmp$conf.int[4]
-#   results[i,5]=tmp$coefficients[4] # the zscore
-#   
-#   #kaplan meier...is this correct?
-#   kmfit=survdiff(OverallSurvival ~ groupings)
-#   results[i,6]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)
-#   
-#   #calculate the sign of the survival relationship
-#   mfit=survfit(OverallSurvival ~ groupings)
-#   mfit.summary=summary(mfit)
-#   
-#   ########################################################
-#   # STEP 2: Cox model on survival data with CUTOFF + kaplan meier
-#   
-#   coxfit=coxph(OverallSurvivalCutoff~as.factor(groupings), data= SurvivalCutoff)
-#   
-#   tmp=summary(coxfit)
-#   results[i,8]=tmp$waldtest[3]
-#   results[i,9]=exp(coxfit$coefficients)
-#   results[i,10]=tmp$conf.int[3]
-#   results[i,11]=tmp$conf.int[4]
-#   results[i,12]=tmp$coefficients[4] # the zscore
-#   
-#   #The survfit function from the survival package computes the Kaplan-Meier estimator for truncated and/or censored data
-#   #survfit: This function creates survival curves from either a formula (e.g. the Kaplan-Meier), a previously fitted Cox model, or a previously fitted accelerated failure time model.
-#   kmfit=survdiff(OverallSurvivalCutoff ~ groupings)
-#   results[i,13]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)  
-#   
-#   #calculate the sign of the survival relationship
-#   mfit=survfit(OverallSurvival ~ groupings)
-#   mfit.summary=summary(mfit)
-#   
-#   ########################################################
-#   #STEP 3:  covariate modeling
-#   
-#   # removed the cox modeling of the binary version of continuous variables?, not really useful, artificial creation of variables anyway
-#   
-# }
-# 
-# ########################################################
-# # writing to file
-# ########################################################
-# #write.table(results,Args[7],sep="\t")
-# 
-# #ADD FDR TESTING!
-# ColumnLabels= c('Overall-WaldTest', 'Overall-HR','Overall-HRlower' ,'Overall-HRupper' ,'Overall-Zscore', 'Overall-KMtest' ,
-#                 'Cutoff-WaldTest', 'Cutoff-HR' ,'Cutoff-HRlower' ,'Cutoff-HRupper' ,'Cutoff-Zscore', 'Cutoff-KMtest' );
-# 
-# colnames(results) <- ColumnLabels;
-# rownames(results) <- colnames(dataMatrix);
-# 
-# 
-# 
-# return(list(results=results,Survival=Survival,SurvivalCutoff=SurvivalCutoff))
-# 
-# } 
-# 
-# 
+
 # 
 # #heatmap(finalRankMatrix,Rowv=NA,Colv=NA)
 # community_metaGeneAnalysis <- function(community_membership,clusterMatrixList,genomeSize=10000,pvalueThresh=.05,

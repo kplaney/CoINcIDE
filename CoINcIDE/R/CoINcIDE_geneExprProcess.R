@@ -1,6 +1,7 @@
 library("impute")
 library("Biobase")
 
+
 createS4exprSet <- function(expr,phenoData,featureData,featureDataFieldName="gene"){
   
   #search for class.
@@ -1329,3 +1330,114 @@ exprSetListToMatrixList <- function(esetList,featureDataFieldName="gene_symbol")
   
 }
 
+merge_datasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC','none','combat'),NA_genesRemove=TRUE,
+                              outputFile="./mergeDatasets"){
+  
+  dataMatrixList <- list();
+  numDatasets <- 0;
+  removeDatasetIndices <- c()
+  for(d in 1:length(datasetList)){
+    
+
+    if(nrow(datasetList[[d]]$expr) >= minNumGenes){
+      
+      if(ncol(datasetList[[d]]$expr)>= minNumPatients){
+        
+        numDatasets <- numDatasets + 1;
+        
+        if(batchNormalize=='BMC'){
+          
+          dataMatrixList[[numDatasets]] <- data.matrix(datasetList[[d]]$expr) - rowMeans(data.matrix(datasetList[[d]]$expr),na.rm=TRUE,dims=1)
+          
+        }else if(batchNormalize=='none' || batchNormalize=='combat'){
+          
+          dataMatrixList[[numDatasets]] <-  data.matrix(datasetList[[d]]$expr);
+          
+        }
+        
+        names(dataMatrixList)[numDatasets] <- names(datasetList)[d];
+        #add genes!
+        if(length(datasetList[[d]]$keys)==0){
+          
+          warning("\nNeed to supply a 'keys' variable for genes in your list. Just using rownames instead - check these!");
+          datasetList[[d]]$keys <- rownames(datasetList[[d]]$expr);
+          
+        }
+        
+        rownames(dataMatrixList[[numDatasets]]) <- datasetList[[d]]$keys;
+        
+      }else{
+        
+        removeDatasetIndices <- append (removeDatasetIndices,d)
+      }
+      
+    }else{
+      
+      removeDatasetIndices <- append (removeDatasetIndices,d)
+    }
+    
+    
+  }
+  
+  rm(list="datasetList");
+  study <- c();
+  GSMID <- c();
+  
+  cat("\nFound ",numDatasets," passing the input thresholds.\n")
+  
+  for(d in 1:length(dataMatrixList)){
+    study <- append(study,rep(names(dataMatrixList)[d],ncol(dataMatrixList[[d]])));
+    #study <- c(1:length(datasetList[[d]]$class));
+    GSMID <- append(GSMID,colnames(dataMatrixList[[d]]));
+    
+    
+    if(d>=2){
+      
+      #I tried the regular old merge() function and it crashed the server!
+      #merge() also orders your patients/samples/column in a weird way?
+      #besides, it takes only 1 extra line of code to do it myself...
+      tmp <- data.matrix(dataMatrixList[[d]]);
+      intersectGenes <- intersect(rownames(tmp),rownames(mergedExprMatrix));
+      
+      if(NA_genesRemove){
+        
+        if(length(which(is.na(intersectGenes)))>0){
+          #don't want to match up on NA genes!
+          intersectGenes <- intersectGenes[-which(is.na(intersectGenes))];
+          
+        }
+        
+      }
+      
+      mergedExprMatrix <- cbind(mergedExprMatrix[na.omit(match(intersectGenes,rownames(mergedExprMatrix))), ],
+                                tmp[na.omit(match(intersectGenes,rownames(tmp))), ]);
+      
+      
+    }else if(d==1){
+      
+      mergedExprMatrix <- data.matrix(dataMatrixList[[d]]);
+      
+    }
+    
+  }
+  
+  sampleData <-  data.frame(study,GSMID)
+  colnames(sampleData) <- c('batch','GSMID')
+  
+  if(bathNormalize=='combat'){
+
+    combatOut <- batchNormalization(countsMatrixNoNANoDup=mergedExprMatrix,outcomesAndCovariates=sampleData,
+                       MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile=outputFile)
+    
+    if(!is.null(combatOut$GEN_Data_Corrected)){
+      
+      mergedExprMatrix <- combatOut$GEN_Data_Corrected
+      sampleData <- sampleData[na.omit(match(BatchDataSelected[,"batch"],sampleData[,"batch"])), ]
+      
+    }
+  }
+  
+  output <- list(mergedExprMatrix=mergedExprMatrix,sampleData=sampleData, removeDatasetIndices= removeDatasetIndices);
+  return(output);
+  
+}

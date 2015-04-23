@@ -545,26 +545,37 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
  selectK_consensusFrac <- list()
  selectK_minConsensusClust <- list()
  selectK_meanConsensusClust <- list()
+ selectK_PAC <- list()
   if(!(all(unlist(meanConsensusClusterByK)=="NaN")) && any(unlist(meanConsensusClusterByK)>=minMeanClustConsensus) && any(unlist(minConsensusClusterByK)>=minClustConsensus)){
     
     meanBetweenConsensusClusterByK <- list()
     consensusFrac <- list()
     consensusMetric <- list()
+    PAC <- list()
     
+    N <- nrow(consensusClustOutput[[i]]$consensusMatrix)
     for(i in 2:K.max){
+      #technically could just take mean - is a symmetric matrix. diag=FALSE bc it is zero here.
+      upperTri <- consensusClustOutput[[i]]$consensusMatrix[upper.tri(consensusClustOutput[[i]]$consensusMatrix,diag=FALSE)]
+      #http://www.nature.com/srep/2014/140827/srep06207/full/srep06207.html
+      #basically looking at the numbers between 0 and 1
+      #paper uses .9, ,.1 indices for gene expression.
+      
+      PAC[[i]] <- length(upperTri[which(upperTri<=.9)])/(N*(N-1)/2) - length(upperTri[which(upperTri<=.1)])/(N*(N-1)/2) 
+      #return NaN if there are NaN values.
       
       #calculate between sum of squares
       sampleAssignments <- consensusClustOutput[[i]]$consensusClass
       
       tmp <- consensusClustOutput[[i]]$consensusMatrix
       for(c in 1:i){
-        
+        #zero out samples that are in the same cluster.
         tmp[which(sampleAssignments==c),which(sampleAssignments==c)] <- 0
         
       }
       #technically could just take mean - is a symmetric matrix. diag=FALSE bc it is zero here.
       upperTri <- tmp[upper.tri(tmp,diag=FALSE)]
-      #return NaN if there are NaN values.
+    #return NaN if there are NaN values.
       #the # of upperTri that is zero will always be the same; samples can only belong to one cluster.
       meanBetweenConsensusClusterByK[[i]] <- mean(upperTri)
       #meanConsensusClusterByK: indices start at 1, even though that's for k=2
@@ -587,6 +598,7 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
     selectK_consensusFrac$bestK <- which.max(unlist(consensusFrac))
     selectK_minConsensusClust$bestK <- which.max(unlist(minConsensusClusterByK))+1
     selectK_meanConsensusClust$bestK <- which.max(unlist(meanConsensusClusterByK))+1
+    selectK_PAC$bestK  <- min(unlit(PAC))
     
     if(length(selectK_consensusFrac$bestK)==0){
       #all meanConsensus NAs returned; set K=1
@@ -605,6 +617,12 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
       selectK_meanConsensusClust$bestK <- 1
       
     }
+    
+    if(length( selectK_PAC$bestK)==0){
+      #all meanConsensus NAs returned; set K=1
+      selectK_PAC$bestK <- 1
+      
+    }
 
   
   }else{
@@ -612,8 +630,10 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
     selectK_consensusFrac$bestK <- 1
     consensusFrac <- NA
     meanBetweenConsensusClusterByK <- NA
+    PAC <- NA
     selectK_meanConsensusClust$bestK <- 1
     selectK_minConsensusClust$bestK  <- 1
+    selectK_PAC$bestK <- 1
   }
  
  message(paste0("Best K as determined by consensusFract is: ",selectK_consensusFrac$bestK))
@@ -626,6 +646,11 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
  
  message(paste0("Best K as determined by minConsensus is: ",selectK_minConsensusClust$bestK))
  cat(paste0("\nBest K as determined by ",clusterAlg, " and minConsensus  is: ", selectK_minConsensusClust$bestK ,"\n"),
+     append=TRUE,file=outputFile);
+ 
+ 
+ message(paste0("Best K as determined by PAC is: ",selectK_PAC$bestK))
+ cat(paste0("\nBest K as determined by ",clusterAlg, " and PAC  is: ", selectK_PAC$bestK) ,"\n"),
      append=TRUE,file=outputFile);
  
  
@@ -658,13 +683,14 @@ packageClustOutput <-  function(listOutputObject){
 selectK_consensusFrac <- packageClustOutput(selectK_consensusFrac)
 selectK_meanConsensusClust <- packageClustOutput(selectK_meanConsensusClust)
 selectK_minConsensusClust <- packageClustOutput(selectK_minConsensusClust)
+selectK_PAC <- packageClustOutput(selectK_PAC)
 
-  output <- list(selectK_consensusFrac=selectK_consensusFrac, 
+  output <- list(selectK_consensusFrac=selectK_consensusFrac, selectK_PAC=selectK_PAC 
                  selectK_meanConsensusClust=selectK_meanConsensusClust,
                  meanConsensusClusterByK=meanConsensusClusterByK,selectK_minConsensusClust=selectK_minConsensusClust,
                  consensusCalc=icl,consensusByK=consensusByK,
                  consensusClustOutput=consensusClustOutput,consensusFrac=consensusFrac,
-                 meanBetweenConsensusClusterByK=meanBetweenConsensusClusterByK,minConsensusClusterByK=minConsensusClusterByK)
+                 meanBetweenConsensusClusterByK=meanBetweenConsensusClusterByK,minConsensusClusterByK=minConsensusClusterByK,PAC=PAC)
 
 
  return(output)
