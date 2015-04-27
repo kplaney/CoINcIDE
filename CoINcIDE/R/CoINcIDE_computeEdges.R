@@ -744,14 +744,14 @@ computeNullSimilVector_centroid <-   function(refClustRowIndex,clustSimilMatrixL
 #                 refSampleIndices,   compareSampleIndices])
 #               similNull <- colMeans(clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]][nullClustIndices, compareSampleIndices])
 #   
-#               fractNullSimil <- length(which(similNull>similTrue))/length(similTrue)
+#               fractNullSimil <- length(which(similNull>=similTrue))/length(similTrue)
 #               
 #             }else if(!is.null( clustSimilMatrixList[[paste0(compareStudyNum,"_",refStudyNum)]])){
 #               
 #               similTrue <- rowMeans(clustSimilMatrixList[[paste0(paste0(compareStudyNum,"_",refStudyNum))]][compareSampleIndices,refSampleIndices])
 #               similNull <- rowMeans(clustSimilMatrixList[[paste0(paste0(compareStudyNum,"_",refStudyNum))]][compareSampleIndices,nullClustIndices])
 #           
-#               fractNullSimil  <- length(which(similNull>similTrue))/length(similTrue)
+#               fractNullSimil  <- length(which(similNull>=similTrue))/length(similTrue)
 #               
 #                 }else{
 #               
@@ -809,16 +809,12 @@ computeClusterPairSimil_dcor <- function(compareClust,centroidMatrix,edgeMethod=
       }
       
                    
-    for (i in 1:nrow(similMatrix)) {
-    
-            sampleClass[i] <- which.max(similMatrix[i,])
-    
-    } 
-      
-    fract <- length(which(sampleClass==2))/ncol(compareClust)
+     fract <- length(which(clusterPairSimil[,2]>=clusterPairSimil[,1]))/nrow(clusterPairSimil)
     
   }
-  return(clusterPairSimil)
+
+  return(fract)
+
 }
 
 ########
@@ -837,27 +833,21 @@ computeClusterPairSimil_matrixStats <- function(compareMatrix,centroidMatrix,
         
         clusterPairSimil <-   dist(t(compareMatrix),t(centroidMatrix),method=edgeMethod,by_rows=TRUE)
               
-     for (i in 1:nrow(similMatrix)) {
-    
-            sampleClass[i] <- which.min(similMatrix[i,])
-    
-      }
+     
+        fract <- length(which(clusterPairSimil[,2]<=clusterPairSimil[,1]))/nrow(clusterPairSimil)
         
       }else{
         
         clusterPairSimil <- simil(t(compareMatrix),t(centroidMatrix),method=edgeMethod,by_rows=TRUE)
               
-     for (i in 1:nrow(similMatrix)) {
-    
-            sampleClass[i] <- which.max(similMatrix[i,])
-    
-      }
+     fract <- length(which(clusterPairSimil[,2]>=clusterPairSimil[,1]))/nrow(clusterPairSimil)
         
       }
 
-       fract <- length(which(sampleClass==2))/ncol(compareClust)
+
     
   return(fract)
+  
 }
 
 ##############
@@ -872,14 +862,7 @@ computeClusterPairSimil_cor <- function(compareMatrix,centroidMatrix,
         
     clusterPairSimil <- cor(compareMatrix,centroidMatrix,method=edgeMethod,by_rows=TRUE)
               
-     for (i in 1:nrow(similMatrix)) {
-    
-            sampleClass[i] <- which.max(similMatrix[i,])
-    
-      }
-
-
-    fract <- length(which(sampleClass==2))/ncol(compareClust)
+    fract <- length(which(clusterPairSimil[,2]>=clusterPairSimil[,1]))/nrow(clusterPairSimil)
     
   return(fract)
 
