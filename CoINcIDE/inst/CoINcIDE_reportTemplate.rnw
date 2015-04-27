@@ -60,7 +60,7 @@ clustIndexMatrix <- output$clustIndexMatrix
 ###inputs for edge detection
 meanEdgePairPvalueThresh <- .05
 indEdgePvalueThresh <- .1
-minTrueSimilThresh <- .7
+minTrueSimilThresh <- .8
 maxTrueSimilThresh <- Inf
 clustSizeFractThresh <- inputVariablesDF$clustSizeFractThresh
 clustSizeThresh <- inputVariablesDF$clustSizeThresh
@@ -110,6 +110,7 @@ binInfo <- binarizeMetaclustStudyStatus(aggregateData$sampleClustCommKey)
 rankInfo <- computeRankMatrix(metaClustSampleNames=binInfo$metaClustSampleNames,featureNames=metaFeatures$finalFeatures,dataMatrixList,
                               sampleClustCommKey=aggregateData$sampleClustCommKey,onlyIntersectingFeat=TRUE)
 pvalueInfo <- computeFeaturePvalues(rankMatrix=rankInfo$rankMatrix,featureNames=rankInfo$filteredFeatures,groupings=rankInfo$groupings)
+message("There are",length(which(pvalueInfo$fdr.qvalue<=.05)), " genes with an FDR corrected p-value below .05 whose ranks significantly differed among all of the meta-clusters (using Kruskal's test)")
 metaMatrix <- commMedianRank(rankInfo$rankMatrix[which(pvalueInfo$fdr.qvalue<=.05),],rankInfo$groupings)
 plotMetaAnalysis(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
                              saveDir=saveDir,fileTag="test",
@@ -120,4 +121,13 @@ plotMetaAnalysis(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
 \subsection{GSEA}
 
 \subsection{Survival}
+<<>>=
+load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
+createPhenoMasterTableFromMatrixList(esetList,sampleKeyColName="unique_patient_ID")
+#for ovarian: not a big difference if neo or adjuvant
+survivalAnalysis <- function(saveNameTag = "survivalAnalysis",outcomesVarBinary="os_event",outcomesVarCont = "os_days_to_event",
+                             sampleClustCommPhenoData,CutoffPointYears=5,uniquePatientID="unique_patient_ID",
+                             groupingTerm="community",addRX=FALSE)
+
+@
 \end{document}

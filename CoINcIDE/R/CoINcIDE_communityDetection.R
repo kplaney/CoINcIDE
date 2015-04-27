@@ -238,7 +238,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
 findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag="IGPN_communityNodeAttributes_",
                             saveDir="./",minNumUniqueStudiesPerCommunity=3,clustMethodName="sparseBC",
                             commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel"),
-                            makePlots=TRUE,plotToScreen=FALSE,saveGraphData=TRUE,edgeWeightsColName=c(NULL,"meanPvalue"),nodeFontSize=1,nodePlotSize=10,
+                            makePlots=TRUE,plotToScreen=FALSE,saveGraphData=TRUE,edgeWeightsColName=c(NULL),nodeFontSize=1,nodePlotSize=10,
                             findCommWithWeights=FALSE){
   
   if(!is.null(edgeWeightsColName) && edgeWeightsColName != "meanPvalue"){
@@ -332,24 +332,24 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     }
     
     }else{
-      
-      origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
-                              edge.arrow.size=3,main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
-                              ),xlab="#=Study Number");
-      
-      
-      
-      if(!is.null(edgeWeightsColName)){
-
-        origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
-                                edge.arrow.size=3,edge.width = plotEdgeWeights,edge.color="black", main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
-                                ),xlab="#=Study Number, edge weight = inverse p-value");
-        
-
-      }
-      
-      
-      
+      #don't plot for right now  - ugly!
+#       origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+#                               edge.arrow.size=3,main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
+#                               ),xlab="#=Study Number");
+#       
+#       
+#       
+#       if(!is.null(edgeWeightsColName)){
+# 
+#         origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+#                                 edge.arrow.size=3,edge.width = plotEdgeWeights,edge.color="black", main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
+#                                 ),xlab="#=Study Number, edge weight = inverse p-value");
+#         
+# 
+#       }
+#       
+#       
+#       
     }
     
   }

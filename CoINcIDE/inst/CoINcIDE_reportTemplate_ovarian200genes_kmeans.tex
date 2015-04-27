@@ -1,0 +1,19 @@
+%\VignetteIndexEntry{Manual}
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\RequirePackage{/usr/lib64/R/library/BiocStyle/sty/Bioconductor}
+
+\AtBeginDocument{\bibliographystyle{/usr/lib64/R/library/BiocStyle/sty/unsrturl}}\title{Your experiment title here}
+\author{Your name}
+\usepackage{Sweave}
+\begin{document}
+\input{CoINcIDE_reportTemplate_ovarian200genes_kmeans-concordance}
+\bibliographystyle{plain}
+\maketitle
+\tableofcontents
+\newpage
+\section{Data loading}
+This is a report for the curatedOvarianData meta-clustering. Initial clustering was done using k-means and selecting k via the maximum mean cluster consensus (I found this gave stable results, but I am still exploring 1 other metric.) First, I loaded up my data just past the CoINcIDE" "getAdjMatrices() function (that's the function that takes  a really long time to run and is hogging up server space, as this is the part that computes the edge p-values):
+

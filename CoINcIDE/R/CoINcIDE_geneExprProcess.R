@@ -1339,32 +1339,25 @@ merge_datasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 
   for(d in 1:length(datasetList)){
     
 
-    if(nrow(datasetList[[d]]$expr) >= minNumGenes){
+    if(nrow(datasetList[[d]]) >= minNumGenes){
       
-      if(ncol(datasetList[[d]]$expr)>= minNumPatients){
+      if(ncol(datasetList[[d]])>= minNumPatients){
         
         numDatasets <- numDatasets + 1;
         
         if(batchNormalize=='BMC'){
           
-          dataMatrixList[[numDatasets]] <- data.matrix(datasetList[[d]]$expr) - rowMeans(data.matrix(datasetList[[d]]$expr),na.rm=TRUE,dims=1)
+          dataMatrixList[[numDatasets]] <- data.matrix(datasetList[[d]]) - rowMeans(data.matrix(datasetList[[d]]),na.rm=TRUE,dims=1)
           
         }else if(batchNormalize=='none' || batchNormalize=='combat'){
           
-          dataMatrixList[[numDatasets]] <-  data.matrix(datasetList[[d]]$expr);
+          dataMatrixList[[numDatasets]] <-  data.matrix(datasetList[[d]]);
           
         }
         
         names(dataMatrixList)[numDatasets] <- names(datasetList)[d];
-        #add genes!
-        if(length(datasetList[[d]]$keys)==0){
-          
-          warning("\nNeed to supply a 'keys' variable for genes in your list. Just using rownames instead - check these!");
-          datasetList[[d]]$keys <- rownames(datasetList[[d]]$expr);
-          
-        }
-        
-        rownames(dataMatrixList[[numDatasets]]) <- datasetList[[d]]$keys;
+
+        rownames(dataMatrixList[[numDatasets]]) <- rownames(datasetList[[d]])
         
       }else{
         
@@ -1381,14 +1374,14 @@ merge_datasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 
   
   rm(list="datasetList");
   study <- c();
-  GSMID <- c();
+  sampleName <- c();
   
   cat("\nFound ",numDatasets," passing the input thresholds.\n")
   
   for(d in 1:length(dataMatrixList)){
     study <- append(study,rep(names(dataMatrixList)[d],ncol(dataMatrixList[[d]])));
     #study <- c(1:length(datasetList[[d]]$class));
-    GSMID <- append(GSMID,colnames(dataMatrixList[[d]]));
+    sampleName <- append(sampleName,colnames(dataMatrixList[[d]]));
     
     
     if(d>=2){
@@ -1421,10 +1414,10 @@ merge_datasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 
     
   }
   
-  sampleData <-  data.frame(study,GSMID)
-  colnames(sampleData) <- c('batch','GSMID')
+  sampleData <-  data.frame(study,sampleName)
+  colnames(sampleData) <- c('batch','sampleName')
   
-  if(bathNormalize=='combat'){
+  if(batchNormalize=='combat'){
 
     combatOut <- batchNormalization(countsMatrixNoNANoDup=mergedExprMatrix,outcomesAndCovariates=sampleData,
                        MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile=outputFile)

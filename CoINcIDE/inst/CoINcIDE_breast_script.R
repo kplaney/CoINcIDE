@@ -23,22 +23,23 @@ names(dataMatrixList) <- names(esets)
 
 #also merge this one
 output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('none'));
-save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar01_18_studies_no_norm.RData.gzip",compress="gzip")
+save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_no_norm.RData.gzip",compress="gzip")
 
+#have NOT run these last two yet:
 output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC'));
-save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar01_18_studies_BMC_norm.RData.gzip",compress="gzip")
+save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_BMC_norm.RData.gzip",compress="gzip")
 
 output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('combat'));
-save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar01_18_studies_combat_norm.RData.gzip",compress="gzip")
+save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_combat_norm.RData.gzip",compress="gzip")
 
 #NOW: also remove these smaller datasets from the esets list before save
 
-if(lengthoutput$datasetRemoveIndices>0)){
+if(length(output$removeDatasetIndices>0)){
   
-  dataMatrixList <- dataMatrixList[-output$datasetRemoveIndices]
+  dataMatrixList <- dataMatrixList[-output$removeDatasetIndices]
   
 }
-save(dataMatrixList,file="/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_min10kGenes_min40Samples.RData.gzip",compress="gzip")
+save(dataMatrixList,file="/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip",compress="gzip")
 
 
 
@@ -318,7 +319,7 @@ for(d in 1:length(dataMatrixList)){
 
 
 kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList=clustFeaturesList,clustMethod=c("km"),
-                                          pickKMethod=c("consensus"),
+                                          pickKMethod=c("consensus"),iter.max=15,nstart=15,
                                           numSims=500,maxNumClusters=15,
                                           outputFile="/home/kplaney/breast_analysis/test.txt",iter.max=30,nstart=25,distMethod=c("euclidean"),
                                           hclustAlgorithm=c("average"),
@@ -330,18 +331,14 @@ kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList=clust
 ####CoINcIDE (not merged) with pam50 short for comparison
 
 #NOTE: pam50GeneShort comes from merged matrix clustering up above
-
-load("/home/data/breast_microarrayDB/pam50_centroids.RData")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+#load("/home/data/breast_microarrayDB/pam50_centroids.RData")
 load("/home/data/breast_microarrayDB/output/ISMB/kmeans_merged_pam50Short.RData.gzip");
 
 pam50Short <- output$pam50GeneShort;
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
-numFeatures <- "pam50"
-load("/home/kplaney/breast_analysis/curatedBreastData_esets_proc.RData.gzip")
-#now format just as a list of data matrices.
-dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
+numFeatures <- "pam50Short"
 
-names(dataMatrixList) <- names(esets)
 
 
 #COME BACK: remove clusters with too few pam50 genes?
@@ -349,22 +346,71 @@ names(dataMatrixList) <- names(esets)
 clustFeaturesList <- list()
 for(d in 1:length(dataMatrixList)){
   
-  clustFeaturesList[[d]] <- pam50GeneShort
+  clustFeaturesList[[d]] <- pam50Short
   
 }
 
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                          pickKMethod=c("consensus"),iter.max=20,nstart=15,
+                                          numSims=500,maxNumClusters=10,
+                                          outputFile="/home/kplaney/breast_analysis/test.txt",distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("average"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.85,corUse="everything",pItem=.9)
 
-kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList=clustFeaturesList,clustMethod=c("km"),
+
+save(kmeansConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+#original run:
+load("/home/data/breast_microarrayDB/output/pam50_subtypes/pam50Short_kmeans_allStudies.RData.gzip")
+
+
+hclustConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
+                                          pickKMethod=c("consensus"),
+                                          numSims=100,maxNumClusters=15,
+                                          outputFile="/home/kplaney/breast_analysis/hc_test.txt",iter.max=30,nstart=25,distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("ward.D"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.8,corUse="everything",pItem=.9)
+
+
+
+hclustConsensus <- clustMatrixListWrapper(dataMatrix,clustFeaturesList,clustMethod=c("hc"),
+                                          pickKMethod=c("consensus"),
+                                          numSims=100,maxNumClusters=15,
+                                          outputFile="/home/kplaney/breast_analysis/hc_test.txt",iter.max=30,nstart=25,distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("ward.D"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.8,corUse="everything",pItem=.9)
+
+hclustConsensus <- clustMatrixListWrapper(dataMatrix,clustFeaturesList,clustMethod=c("kmeans"),
+                                          pickKMethod=c("gap"),
+                                          numSims=50,maxNumClusters=15,
+                                          outputFile="/home/kplaney/breast_analysis/hc_test.txt",iter.max=30,nstart=25,distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("ward.D"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.8,corUse="everything",pItem=.9)
+
+
+
+clustSamplesIndexList <- list()
+dataMatrixList <- output$dataMatrixList
+for(d in 1:length(dataMatrixList)){
+  
+  for(c in 1:length(output$clustMatrixListpam50Short[[d]])){
+    
+    clustSamplesIndexList[[d]] <- na.omit(match(colnames(output$clustMatrixListpam50Short[[d]][[c]])),rownames(dataMatrixList[[d]]))
+    
+  }
+  
+}
+
+kmeansConsensus <- clustMatrixListWrapper(dataMatrix,clustFeaturesList,clustMethod=c("km"),
                                           pickKMethod=c("consensus"),
                                           numSims=500,maxNumClusters=15,
                                           outputFile="/home/kplaney/breast_analysis/test.txt",iter.max=30,nstart=25,distMethod=c("euclidean"),
                                           hclustAlgorithm=c("average"),
                                           consensusHclustAlgorithm=c("average"),
-                                          minClustConsensus=.7, minMeanClustConsensus=.7,corUse="everything",pItem=.9)
-
-
-save(kmeansConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
-
-
-
+                                          minClustConsensus=.7, minMeanClustConsensus=.8,corUse="everything",pItem=.9)
 

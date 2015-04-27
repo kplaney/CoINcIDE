@@ -36,23 +36,18 @@ library("grid");
 
 ##function to merge existing attributes in attrDF
 
-plotMetaAnalysis <- function(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
+plotMetaFeatureRank <- function(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
                              saveDir="./",fileTag="test",
                              plotTitle="Median rank\nacross all samples/studies",
                              key.xlab=""){
 
-  
-  colorCodeF <-  colorRampPalette(c("black","blue","red"), bias = 4,
-                                  space = "rgb", interpolate = "linear");
-  colColorCodes <- colorCodeF(ncol(metaMatrix));
-  #new F for heatmap
-  #how separate out more????
-  #don't reverse: higher rank means higher value here. want higher values to be blue/cool.
+  #don't reverse: higher rank means higher value here. want higher rank values to be blue/cool,
+  #as this means they had lower expression.
   colorCodeF <- brewer.pal(11,"RdBu")
   
   if(saveFile){
     
-    jpeg(filename=paste0(saveDir,"/",fileTag,"_metaHeatmap.jpeg"),
+    jpeg(filename=paste0(saveDir,"/",fileTag,"_metaRankHeatmap.jpeg"),
          height=1000,width=700,quality=100,res=160);
     #    #ColSideColors=colColorCodes,
     heatmap.2(metaMatrix,
@@ -77,6 +72,44 @@ plotMetaAnalysis <- function(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
 
 }
 
+plotMetaFeatureES <- function(ESMatrix,saveFile=FALSE,plotToScreen=TRUE,
+                              saveDir="./",fileTag="test",
+                              plotTitle="Significant Positive \nEffect size",
+                              key.xlab=""){
+  
+  
+  #set NA to zero values.
+  ESMatrix[which(is.na(ESMatrix))] <- 0
+  #let NA/zero to be light gray.
+  colorCodeF <-  colorRampPalette(c("gray94","pink","red"), bias = 4,
+                                  space = "rgb", interpolate = "linear");
+  
+  if(saveFile){
+    
+    jpeg(filename=paste0(saveDir,"/",fileTag,"_metaESHeatmap.jpeg"),
+         height=1000,width=700,quality=100,res=160);
+    #    #ColSideColors=colColorCodes,
+    heatmap.2(ESMatrix,
+              Rowv=FALSE,Colv=FALSE,cexRow=1,srtRow=45, trace="none",
+              key.title=plotTitle,key.xlab=key.xlab,scale="none",notecol="black",
+              col=colorCodeF)
+    
+    dev.off()
+    
+  }
+  
+  if(plotToScreen){
+    
+    #ColSideColors=colColorCodes,
+    heatmap.2(ESMatrix,
+              Rowv=FALSE,Colv=FALSE,cexRow=1,trace="none",
+              key.title=plotTitle,key.xlab=key.xlab,scale="none",notecol="black",
+              col=colorCodeF,srtRow=45)
+    
+  }
+  
+  
+}
 #THEN: SAMR meta-analysis.
 advancedNetworkPlots <- function(communityMembership,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
@@ -230,9 +263,7 @@ assignCentroidSubtype <- function(origDataMatrix,minNumGenes=30,centroidRData="/
 #pam50 colors:  t(data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")))
 #(and name for subtypes-look up order in old clust robust code.)
 phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",fileTag="clust method",
-                                                variableColorMatrix=NULL,
-                                            
-                                                names()){
+                                                variableColorMatrix=NULL){
   
 
 

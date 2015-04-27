@@ -4,6 +4,9 @@ library("foreach")
 #suggests:
 library("energy")
 library("limma")
+library("matrixStats")
+#Rclusterpp does not return the distance matrix.
+#library("Rclusterpp")
 
 CoINcIDE_getAdjMatrices <- function(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
 edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
@@ -107,53 +110,84 @@ message("This code assumes that you're clustering columns, and features are in t
   
   #compute baseline similiarites, feature/sample stats for clusters.
   cat("\nComputing cluster-cluster true similarities (or distances).\n",append=TRUE,file=outputFile)
+message("nComputing cluster-cluster true similarities (or distances).\n")
+#NOTE: we are indeed taking the mean of an entire symmetric matrix and taking the diagonal term.
+#(same size similarityMatrix, #diagonal entries regardless of whether it's a null cluster or the true cluster.)
+#but this will not affect our final p-value computations, and subsetting to get the upper triangle
+#and remove the diagonal will slow down computations
   trueSimilData <- computeTrueSimil(clustIndexMatrix=clustIndexMatrix,edgeMethod=edgeMethod,
                                     dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,
                                   clustFeatureIndexList=clustFeatureIndexList,fractFeatIntersectThresh=fractFeatIntersectThresh,
                                   numFeatIntersectThresh=numFeatIntersectThresh ,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
   
- 
 
-  pvalueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
-  cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
-#this is a symmetric matrix (with diagonal as NA)...so only count half of it.
+
   message(paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))/2," edges above minimum similarity threshold of ",minTrueSimilThresh))
   cat("\n",paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))/2," edges above minimum similarity threshold of ",minTrueSimilThresh),append=TRUE,file=outputFile)
   
+cat("\nComputing similarity matrices for null/permutation calculations\n",append=TRUE,file=outputFile)
+message("Computing similarity matrices for null/permutation calculations")
+clustSimilMatrixList <- computeSimilMatrices(clustIndexMatrix=clustIndexMatrix,dataMatrixList=dataMatrixList,
+                                             edgeMethod=edgeMethod,clustFeatureIndexList=clustFeatureIndexList.
+                                             trueSimilMatrix=trueSimilData$similValueMatrix,
+                                             minTrueSimilThresh= minTrueSimilThresh,
+                                             maxTrueSimilThresh=maxTrueSimilThresh)
+
+pvalueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
+cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
+
+
   for(n in 1:nrow(clustIndexMatrix)){
     #cluster N is our reference cluster.
-  nullSimilMatrix <- computeNullSimilVector(refClustRowIndex=n,dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,numSims=numSims,
-                               trueSimilMatrix=trueSimilData$similValueMatrix,numParallelCores=numParallelCores,sigMethod=sigMethod,edgeMethod=edgeMethod,includeRefClustInNull=includeRefClustInNull,
+    if(edgeMethod=="meanMatrix"){
+     
+
+  nullSimilMatrix <- computeNullSimilVector_mean(refClustRowIndex=n,dataMatrixList=dataMatrixList,clustSimilMatrixList=clustSimilMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,numSims=numSims,
+                               trueSimilMatrix=trueSimilData$similValueMatrix,numParallelCores=numParallelCores,edgeMethod=edgeMethod,includeRefClustInNull=includeRefClustInNull,
                           clustIndexMatrix=clustIndexMatrix,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh)
   
-   
+    }else if(edgeMethod=="centroid"){
+
+      nullSimilMatrix <- computeNullSimilVector_centroid(refClustRowIndex=n,clustSimilMatrixList=clustSimilMatrixList,
+                                                         dataMatrixList=dataMatrixList, clustSampleIndexList= clustSampleIndexList,
+                                                         clustFeatureIndexList= clustFeatureIndexList,numSims=numSims,
+                                                    trueSimilMatrix=trueSimilData$similValueMatrix,numParallelCores=numParallelCores,edgeMethod,includeRefClustInNull=includeRefClustInNull,
+                                                    clustIndexMatrix,minTrueSimilThresh=minTrueSimilThresh,
+                                                    maxTrueSimilThresh=maxTrueSimilThresh)
+      
+    }
+  
+ #this is a symmetric matrix (with diagonal as NA)...so only count half of it.
+  
   #cluster R is our comparison cluster.
    for(r in 1:nrow(clustIndexMatrix)){
 
-     threshDir <- "greater"
-     
      if(sigMethod=="meanMatrix"){
        #CHECK: is trueSimilData$similValueMatrix computing the correct numbers??
        thresh <- trueSimilData$similValueMatrix[n,r]
-         
+       
        if(!is.na(summary(pr_DB)[2]$distance[edgeMethod]) && summary(pr_DB)[2]$distance[edgeMethod]){
          
          threshDir <- "less"
          
+       }else{
+         
+         threshDir <- "greater"
        }
        
      }else if(sigMethod=="centroid"){
        
        thresh <- maxNullFractSize
+       threshDir <- "greater"
+       
      }
-     
-     
      #don't analyze clusters from the same dataset.
      if(clustIndexMatrix[n,2] != clustIndexMatrix[r,2] && !is.na(thresh)){
        
       if(!any(is.na(nullSimilMatrix[r,]))){
         
         pvalueMatrix[n,r] <- computeEdgePvalue(thresh=thresh,threshDir=threshDir,nullSimilVector = nullSimilMatrix[r,])
+      
       
       }
      }
@@ -243,54 +277,122 @@ computeTrueSimil <- function(clustIndexMatrix,
 #EOF  
 }
 
-#nullSimilVector: for that clusterA-nullClust pair, with cluster A as reference,
-#all similarities across all nullClusts.
-computeEdgePvalue <- function(thresh,threshDir = c("greater","less"),nullSimilVector){
-  
-  if(is.na(thresh)){
-    
-    stop("\nthresh variable must be non-NA.")
-    
-  }
-  
-  if(any(is.na(nullSimilVector))){
 
-    stop("\nSome of your p-values have NAs - check this out before continuing. 
-         This can occur if your data has extremely low variance and you are using correlation metrics.")
-    
-  }
+####
+computeSimilMatrices <- function(clustIndexMatrix,dataMatrixList,edgeMethod,clustFeatureIndexList,
+                                 trueSimilMatrix,minTrueSimilThresh,maxTrueSimilThresh){
+  #NOTE: assumes features are the same across all clusters in a dataset.
+  #if want to use different features within one dataset: can't optimize the code as much
+  #could just have a fake "second" dataset for clusters with the different rows.
+  clustSimilMatrixList <- list()
 
-    #distance or cor matrix?
-      if(threshDir=="less"){
+  if(edgeMethod!="distCor"){
+    
+    for(d in 1:length(dataMatrixList)){
+      #what clusters are in this dataset?
+      row_indices <- as.numeric(clustIndexMatrix[which(clustIndexMatrix[,2]==d) ,1])
       
-          #do count NAs in full length?
-      pvalue <- length(which(nullSimilVector <= thresh))/length(nullSimilVector)
-      
-      }else if(threshDir=="greater"){
-        #want greater than for similarity. rest of metrics are simil metrics.
-       pvalue <- length(which(nullSimilVector >= thresh))/length(nullSimilVector)  
+      for(c in 1:length(dataMatrixList)){
         
-      }else{
-        
-        stop("\nMust provide a value of \'less\' or \'greater\' for threshDir input.")
+        #has this been calculated yet? (just in c_d, not d_c direction)
+        if(is.null(clustSimilMatrixList[[paste0(c,"_",d)]])){
+          
+          
+          col_indices <- as.numeric(clustIndexMatrix[which(clustIndexMatrix[,2]==c) ,1])
+          
+          if(any(!is.na(trueSimilMatrix[row_indices,col_indices]))){
+          #diagonal will be NA/not counted here.
+          if(any(trueSimilMatrix[row_indices,col_indices]>= minTrueSimilThresh) && any(trueSimilMatrix[row_indices,col_indices]<=maxTrueSimilThresh)){
+
+
+            #NOTE: assumes features are the same across all clusters in a dataset (why: once get similarity correlation
+            #or dist matrices, can't subset further on gene indices.)
+            #if want to use different features within one dataset: can't optimize the code as much
+            #could just have a fake "second" dataset for clusters with the different rows. 
+              features1 <- rownames(dataMatrixList[[d]][clustFeatureIndexList[[d]][[1]], ])
+              
+              features2 <- rownames(dataMatrixList[[c]][clustFeatureIndexList[[c]][[1]], ])
+
+            featuresIntersect <- intersect(features2,features2)
+            
+            if(!is.na(summary(pr_DB)[2]$distance[edgeMethod])){
+              #distance or cor matrix?
+              if(summary(pr_DB)[2]$distance[edgeMethod]){
+                
+                clustSimilMatrixList[[paste0(d,"_",c)]] <-   as.matrix(dist(t(dataMatrixList[[d]][featuresIntersect,]),
+                                                                  t(dataMatrixList[[c]][featuresIntersect,]),method=edgeMethod,by_rows=TRUE))
+
+                
+              }else{
+                
+                clustSimilMatrixList[[paste0(d,"_",c)]] <- simil(t(dataMatrixList[[d]][featuresIntersect,]),
+                                                                 t(dataMatrixList[[c]][featuresIntersect,]),method=edgeMethod,by_rows=TRUE)
+                
+              }
+              
+            }else{
+              
+              clustSimilMatrixList[[paste0(d,"_",c)]] <- cor(dataMatrixList[[d]][featuresIntersect,],
+                                                             dataMatrixList[[c]][featuresIntersect,],method=edgeMethod)
+              
+            }
+            
+            
+          }
+          
+        }
+     
+      }
       
       }
+      
+    }
+    
+    }else{
+      
+      #just compute dist for each cluster.
+      for(d in 1:length(dataMatrixList)){
+        
+        row_indices <- clustIndexMatrix[which(clustIndexMatrix[,2]==d) ,1]
+        
+        for(r in 1:length(row_indices)){
+        #diagonal will be NA/not counted here (i.e. row_indices,row_indices)
+          
+        if(any(!is.na(trueSimilMatrix[row_indices, ]))){
+            
+        if(any(trueSimilMatrix[row_indices[r],]>= minTrueSimilThresh) && any(trueSimilMatrix[row_indices[r],]<=maxTrueSimilThresh)){
+
+          #want gene by gene: a summary of the genetic pattern, across all samples.
+          clustSimilMatrixList[[row_indices]] <- as.matrix(dist(dataMatrixList[[d]][features1,],
+                                                      method="euclidean"))
+          
+          
+        }
+        
+      }
+      
+        }
+    }
   
-  return(pvalue)
+  return(clustSimilMatrixList)
   
 }
 
-computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSampleIndexList,clustFeatureIndexList,numSims=100,
-                               trueSimilMatrix,numParallelCores=1,sigMethod,edgeMethod,includeRefClustInNull=TRUE,clustIndexMatrix,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf){  
+computeNullSimilVector_mean <-   function(refClustRowIndex,clustSimilMatrixList,dataMatrixList,clustSampleIndexList,clustFeatureIndexList,numSims=100,
+                               trueSimilMatrix,numParallelCores=1,edgeMethod,includeRefClustInNull=TRUE,clustIndexMatrix,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf){  
     
     registerDoParallel(cores=numParallelCores)
 
+    
+    refStudyNum <- as.numeric(clustIndexMatrix[refClustRowIndex,2])
+    refDataMatrix <- dataMatrixList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]]
+    sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
+    featureIndices1 <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
+    refClust <- refDataMatrix[featureIndices1,sampleIndices]
 
-        refDataMatrix <- dataMatrixList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]]
-        sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
-        featureIndices <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
-        refClust <- refDataMatrix[featureIndices,sampleIndices]
-        
+  
+  if(edgeMethod!="distCor"){
+     
         #will return a matrix of numClusters x numFeatures
         #see documention on CRAN "nesting foreach loops"
         #"nesting" way of dopar with %:% didn't work too well. foreach can be weird with iterative random numbers, so play it safe.
@@ -301,23 +403,16 @@ computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSample
           #so hold each null cluster "constant", loop through compare clusters.
           if(includeRefClustInNull){
           
-            nullClust <- refDataMatrix[rownames(refClust),sample.int(ncol(refDataMatrix),size=ncol(refClust),replace=TRUE), drop=FALSE];
+            nullClustIndices <-sample.int(ncol(refDataMatrix),size=ncol(refClust),replace=TRUE)
             
           }else{
             
             #note: if only a few samples NOT in the ref cluster, this will mostly be duplicated samples
             colIndicesNoRefClust <- na.omit(match(setdiff(colnames(refDataMatrix),colnames(refClust)),colnames(refDataMatrix)))
-            nullClust <- refDataMatrix[rownames(refClust),sample(colIndicesNoRefClust,size=ncol(refClust),replace=TRUE), drop=FALSE];
+            nullClustIndices <- sample(colIndicesNoRefClust,size=ncol(refClust),replace=TRUE)
             
           }
-          
-          if(!all(rownames(nullClust) == rownames(refClust))){
-            
-            stop("In computeNullSimilVector: rownames of nullClust and refClust do not match up.")
-            
-          }
-          
- 
+
           #compare simil against each cluster
           foreach(c=1:nrow(clustIndexMatrix), .combine='c') %dopar%{
          # for(c in 1:nrow(clustIndexMatrix))  {
@@ -328,35 +423,43 @@ computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSample
 # 
 #             }
             
+            #ERROR: why calculating when refClustRowIndex==c?
             if(!is.na(trueSimilMatrix[refClustRowIndex,c])){ 
                 
-              if(trueSimilMatrix[refClustRowIndex,c] >= minTrueSimilThresh && trueSimilMatrix[refClustRowIndex,c] <= maxTrueSimilThresh){
+            if(trueSimilMatrix[refClustRowIndex,c] >= minTrueSimilThresh && trueSimilMatrix[refClustRowIndex,c] <= maxTrueSimilThresh){
               
-              sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
-              featureIndices <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
-              compareClust <- dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][featureIndices,sampleIndices,drop=FALSE]  
-              
-              if(sigMethod=="meanMatrix"){
+              compareStudyNum <- as.numeric(clustIndexMatrix[c,2])
+              compareSampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
                 
-              similValue <- computeClusterPairSimil_mean(refClust=nullClust,compareClust=compareClust,edgeMethod=edgeMethod)
-              
-              }else if(sigMethod=="centroid"){
-                #even if only one sample, bc used "drop=FALSE" above, should still be a matrix and can take rowMeans.
-              refCentroid <- rowMeans(refClust)
-              nullCentroid <- rowMeans(nullClust)
-              similValue <- computeClusterPairSimil_centroid(refCentroid=refCentroid,nullCentroid=nullCentroid,compareClust=compareClust,edgeMethod=edgeMethod)
-              
+  
+            if(!is.null( clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]])){
                 
+                #NOTE: we are indeed taking the mean of an entire symmetric matrix and taking the diagonal term.
+                #(same size similarityMatrix, #diagonal entries regardless of whether it's a null cluster or the true cluster.)
+                #but this will not affect our final p-value computations, and subsetting to get the upper triangle
+                #and remove the diagonal will slow down computations
+                similValue <- mean(clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]][nullClustIndices,compareSampleIndices])
+                
+              }else if(!is.null( clustSimilMatrixList[[paste0(compareStudyNum,"_",refStudyNum)]])){
+                
+                similValue <- mean(clustSimilMatrixList[[paste0(paste0(compareStudyNum,"_",refStudyNum))]][compareSampleIndices,nullClustIndices])
+                
+              }else{
+                
+                stop(paste0("\n\n finding an non-null index for studies ",compareStudyNum, " and ",refStudyNum))
+             
               }
+              
 
             
           }else{
             
             similValue <- NA
+            
+          }
           
-          }  
-          
-            }else{
+        
+          }else{
               
               similValue <- NA
               
@@ -365,15 +468,187 @@ computeNullSimilVector <-   function(refClustRowIndex,dataMatrixList,clustSample
         }
     #end of outer foreach dopar
     }
+#end of if not distCor (don't want this if statement embedded in doParallel loop - might slow things down.)
+}else if(edgeMethod=="distCor"){
+  #will return a matrix of numClusters x numFeatures
+  #see documention on CRAN "nesting foreach loops"
+  #"nesting" way of dopar with %:% didn't work too well. foreach can be weird with iterative random numbers, so play it safe.
+  nullSimilVector <- foreach(i=1:numSims,.combine='cbind') %dopar% {
+    
+    
+    #want same set of nullClusters across ALL comparison clusters.
+    #so hold each null cluster "constant", loop through compare clusters.
+    if(includeRefClustInNull){
+      
+      nullClustIndices <-sample.int(ncol(refDataMatrix),size=ncol(refClust),replace=TRUE)
+      
+    }else{
+      
+      #note: if only a few samples NOT in the ref cluster, this will mostly be duplicated samples
+      colIndicesNoRefClust <- na.omit(match(setdiff(colnames(refDataMatrix),colnames(refClust)),colnames(refDataMatrix)))
+      nullClustIndices <- sample(colIndicesNoRefClust,size=ncol(refClust),replace=TRUE)
+      
+    }
+    
+    #compare simil against each cluster
+    foreach(c=1:nrow(clustIndexMatrix), .combine='c') %dopar%{
+      # for(c in 1:nrow(clustIndexMatrix))  {
+      #debug: is doParallel keeping the same nullclust in this loop, and is each nullClust truly random?
+      #             if(i==1){
+      #               #these should all be equal
+      #               cat("\n",mean(nullClust),file="~/Desktop/log.txt",append=TRUE)
+      # 
+      #             }
+      
+      if(!is.na(trueSimilMatrix[refClustRowIndex,c])){ 
+        
+        if(trueSimilMatrix[refClustRowIndex,c] >= minTrueSimilThresh && trueSimilMatrix[refClustRowIndex,c] <= maxTrueSimilThresh){
+          
+          compareStudyNum <- as.numeric(clustIndexMatrix[c,2])
+          featureIndices2 <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
+          featureIndices <- intersect(featureIndices1,featureIndices2)
+
+          
+          if(!is.null(clustSimilMatrixList[[c]])){
+            
+          similValue <- dcor(dist(refDataMatrix[featureIndices,nullClustIndices],method="euclidean"),
+                             clustSimilMatrixList[[c]][featureIndices, featureIndices],index=1.0)
+          
+          stop(paste0("\n\n finding an non-null index for global cluster ",c))
+               
+        }
+        
+           
+          
+        }else{
+          
+          similValue <- NA
+          
+        }  
+        
+      }else{
+        
+        similValue <- NA
+        
+      }
+      #end of inner foreach dopar 
+    }
+    #end of outer foreach dopar
+  }
+}
 
 }#EOF
 
+
+computeNullSimilVector_centroid <-   function(refClustRowIndex,clustSimilMatrixList,dataMatrixList,clustSampleIndexList,clustFeatureIndexList,numSims=100,
+                                          trueSimilMatrix,numParallelCores=1,edgeMethod,includeRefClustInNull=TRUE,clustIndexMatrix,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf){  
+  
+  registerDoParallel(cores=numParallelCores)
+  
+  
+  refStudyNum <- as.numeric(clustIndexMatrix[refClustRowIndex,2])
+  refDataMatrix <- dataMatrixList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]]
+  refSampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
+  featureIndices1 <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
+  refClust <- refDataMatrix[featureIndices1,  refSampleIndices]
+  
+  
+  if(edgeMethod=="distCor"){
+    
+    
+    stop("Due to its computational complexity and run time and the actual theory behind distance correlation,
+         the joint options of edgeMethod=distCor and sigMethod=centroid are now allowed. Please pick a different combination.")
+    
+  }
+    
+    #will return a matrix of numClusters x numFeatures
+    #see documention on CRAN "nesting foreach loops"
+    #"nesting" way of dopar with %:% didn't work too well. foreach can be weird with iterative random numbers, so play it safe.
+    nullSimilVector <- foreach(i=1:numSims,.combine='cbind') %dopar% {
+      
+      
+      #want same set of nullClusters across ALL comparison clusters.
+      #so hold each null cluster "constant", loop through compare clusters.
+      if(includeRefClustInNull){
+        
+        nullClustIndices <-sample.int(ncol(refDataMatrix),size=ncol(refClust),replace=TRUE)
+        
+      }else{
+        
+        #note: if only a few samples NOT in the ref cluster, this will mostly be duplicated samples
+        colIndicesNoRefClust <- na.omit(match(setdiff(colnames(refDataMatrix),colnames(refClust)),colnames(refDataMatrix)))
+        nullClustIndices <- sample(colIndicesNoRefClust,size=ncol(refClust),replace=TRUE)
+        
+      }
+      
+      #compare simil against each cluster
+      foreach(c=1:nrow(clustIndexMatrix), .combine='c') %dopar%{
+        # for(c in 1:nrow(clustIndexMatrix))  {
+        #debug: is doParallel keeping the same nullclust in this loop, and is each nullClust truly random?
+        #             if(i==1){
+        #               #these should all be equal
+        #               cat("\n",mean(nullClust),file="~/Desktop/log.txt",append=TRUE)
+        # 
+        #             }
+        
+        if(!is.na(trueSimilMatrix[refClustRowIndex,c])){ 
+          
+          if(trueSimilMatrix[refClustRowIndex,c] >= minTrueSimilThresh && trueSimilMatrix[refClustRowIndex,c] <= maxTrueSimilThresh){
+            
+            compareStudyNum <- as.numeric(clustIndexMatrix[c,2])
+            compareSampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
+            if(!is.null( clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]])){
+              
+              #NOTE: we are indeed taking the mean of an entire symmetric matrix and taking the diagonal term.
+              #(same size similarityMatrix, #diagonal entries regardless of whether it's a null cluster or the true cluster.)
+              #but this will not affect our final p-value computations, and subsetting to get the upper triangle
+              #and remove the diagonal will slow down computations
+              similTrue <- colMeans(clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]][            
+                refSampleIndices,   compareSampleIndices])
+              similNull <- colMeans(clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]][nullClustIndices, compareSampleIndices])
+  
+              fractNullSimil <- length(which(similNull>similTrue))/length(similTrue)
+              
+            }else if(!is.null( clustSimilMatrixList[[paste0(compareStudyNum,"_",refStudyNum)]])){
+              
+              similTrue <- rowMeans(clustSimilMatrixList[[paste0(paste0(compareStudyNum,"_",refStudyNum))]][compareSampleIndices,refSampleIndices])
+              similNull <- rowMeans(clustSimilMatrixList[[paste0(paste0(compareStudyNum,"_",refStudyNum))]][compareSampleIndices,nullClustIndices])
+          
+              fractNullSimil  <- length(which(similNull>similTrue))/length(similTrue)
+              
+                }else{
+              
+              stop(paste0("\n\n finding an non-null index for studies ",compareStudyNum, " and ",refStudyNum))
+                   
+            }
+            
+            
+            
+          }else{
+            
+            fractNullSimil  <- NA
+            
+          }  
+          
+        }else{
+          
+          fractNullSimil  <- NA
+          
+        }
+        #end of inner foreach dopar 
+      }
+      #end of outer foreach dopar
+    }
+
+  
+}#EOF
+
 computeClusterPairSimil_mean <- function(refClust,compareClust,
-                                    edgeMethod="correlation"){
+                                         edgeMethod="correlation"){
   
   
   similMatrix <- computeClusterPairSimil(refClust,compareClust,
-                                    edgeMethod=edgeMethod)
+                                         edgeMethod=edgeMethod)
   
   
   return(mean(similMatrix))
@@ -382,88 +657,7 @@ computeClusterPairSimil_mean <- function(refClust,compareClust,
   
 }
 
-#COME BACK: compute centroids correctly?
-computeClusterPairSimil_centroid <- function(compareClust,refCentroid,nullCentroid,
-                                    edgeMethod="correlation",numParallelCores=1){
-  
-  centroids <- cbind(refCentroid,nullCentroid)
-  #below code adapted from IGP.clusterRepro function in clusterRepro package
-  #added other simil metrics to code..
-  sampleClass <- rep(NA, ncol(compareClust))
-  names(sampleClass) <- colnames(compareClust)
-
-  #centroidCompare=TRUE only matter for distCor, as it automatically returns a point value
-  #and not a matrix if we feed in the entire refClust and compareClusts at once.
-  similMatrix <- computeClusterPairSimil(refClust=compareClust,compareClust=centroids,
-                                    edgeMethod=edgeMethod,centroidCompare=TRUE)
-  
-  
-      #distance or cor matrix?
-      #running this "if" statement for all simulations does slow down the code...
-     #if only using a distance, or a simlarity metric, could remove the if statements to speed this up.
-      if(!is.na(summary(pr_DB)[2]$distance[edgeMethod]) && summary(pr_DB)[2]$distance[edgeMethod]){
-      
-        #want greater than for similarity. rest of metrics are simil metrics.
-         for (i in 1:nrow(similMatrix)) {
-    
-            sampleClass[i] <- which.min(similMatrix[i,])
-    
-        }
-      
-      }else{
-        #want greater than for similarity. rest of metrics are simil metrics.
-        #distCor is also a similarity metric - want highest one.
-         for (i in 1:nrow(similMatrix)) {
-    
-            sampleClass[i] <- which.max(similMatrix[i,])
-    
-        }
-  
-        
-      }
-
-  #clusterRepro code we didn't use:
-  #result <- c()
-  #IGP.clusterRepro from clusterRepro package returns these metrics.
-  #we don't need these.
-  #result$class <- sampleClass
-  #result$IGP <- diag(classification)/rowSums(classification)
-  #result$size <- rowSums(classification)
-  #Fract is not in clusterRepro, but similar to Size.
-  #result$fract <- rowSums(classification)/ncol(compareClust)
-  
-  #want fraction assigned to second centroid (false centroid.)
-  fract <- length(which(sampleClass==2))/ncol(compareClust)
-  
-  return(fract)
-
-}
- 
-#NEXT: update simulated data code (are some tissue samples being mixed?  last cluster looked weird...)
-#NEXT: still debug a bit: re-run simulation datasets a few times.
-#why some p-value results are 0, some are 0.00? Rounds? perhaps..
-#centroid method NOT working with "distCor"
-#centroid method looks like it has a bug - giving almost reverse results?
-
-#NEXT: community detection, with stats (studies dropped, their attributes, etc.) with 1 p-value
-
-#THEN: visualization
-
-#THEN: meta-analysis.
-
-#THEN:  bagging (bootstrap aggregating) for a classifier? still need to normalize??
-  #PERHAPS: normalize by clusters, and NOT entire dataset? (either cluster 6, or not cluster 6.)
-  #"univariate" logistic models for each cluster (for all clusters, in all datasets.)
-  #group each univariate cluster logistic model into its meta-cluster group.
-  #a sample is classified to the meta-cluster whose models most vote it "yes" and not "no".
-
-#Votes: specific cluster, or none at all (how have none at all? perhaps if the probability outputted is very low.)
-
-#THEN: meta-variance code, kmeans.
-#REMOVE these if statements/debugging
-#make a separate function for each distance metric.
-#have a function that returns the correct computeClusterPairSimil function, based off
-#the edgeMethod
+#come back: could this be more efficient/run similarly to nullClust sim code?
 computeClusterPairSimil <- function(refClust,compareClust,
                                     edgeMethod="correlation",centroidCompare=FALSE){
   
@@ -501,7 +695,7 @@ computeClusterPairSimil <- function(refClust,compareClust,
       if(summary(pr_DB)[2]$distance[edgeMethod]){
         
         clusterPairSimil <-   dist(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
-                                    
+        
       }else{
         
         clusterPairSimil <- simil(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
@@ -517,7 +711,7 @@ computeClusterPairSimil <- function(refClust,compareClust,
   }else if(edgeMethod=="distCor"){
     
     #number of rows must agree.
-
+    
     if(!centroidCompare){
       
       clusterPairSimil <- dcor(refClust,compareClust,index=1.0)
@@ -539,105 +733,39 @@ computeClusterPairSimil <- function(refClust,compareClust,
   return(clusterPairSimil)
 }
 
-# #try having this function returned instead? decide it ahead of time, and pass it as an input
-# #to any function that uses computeClusterPairSimil()
-# #the returned function will have these inputs: refClust,compareClust,
-# computeClusterPairSimilFunctionReturn <- function(
-#                                     edgeMethod,centroidCompare=FALSE){
-#   
-#   func <- function(refClust,compareClust){
-#   features <- intersect(rownames(refClust),rownames(compareClust))
-#   refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
-#   compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
-#   
-#   
-#   
-#    
-#   if(edgeMethod!="distCor"){
-#     
-#     
-#     if(!is.na(summary(pr_DB)[2]$distance[edgeMethod])){
-#       #distance or cor matrix?
-#       if(summary(pr_DB)[2]$distance[edgeMethod]){
-#         
-#         
-#         func <- function(refClust,compareClust){
-#           features <- intersect(rownames(refClust),rownames(compareClust))
-#           refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
-#           compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
-#         clusterPairSimil <-   dist(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
-#         
-#         return(clusterPairSimil)
-#         
-#         }
-#         
-#       }else{
-#         
-#         func <- function(refClust,compareClust){
-#           features <- intersect(rownames(refClust),rownames(compareClust))
-#           refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
-#           compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
-#         clusterPairSimil <- simil(t(refClust),t(compareClust),method=edgeMethod,by_rows=TRUE)
-#         
-#         return(clusterPairSimil)
-#         
-#         }
-#         
-#       }
-#       
-#     }else{
-#       
-#       func <- function(refClust,compareClust){
-#         features <- intersect(rownames(refClust),rownames(compareClust))
-#         refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
-#         compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
-#       clusterPairSimil <- cor(refClust,compareClust,method=edgeMethod)
-#       
-#       return(clusterPairSimil)
-#       
-#       }
-#       
-#     }
-#     
-#   }else if(edgeMethod=="distCor"){
-#     
-#     #number of rows must agree.
-#     
-#     if(!centroidCompare){
-#       
-#       func <- function(refClust,compareClust){
-#         features <- intersect(rownames(refClust),rownames(compareClust))
-#         refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
-#         compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
-#       clusterPairSimil <- dcor(refClust,compareClust,index=1.0)
-#       
-#       return(clusterPairSimil)
-#       
-#     }else{
-#       #if the compareClust are actually two columns of centroids: want separate measurements for each one against each
-#       #sample in refClust
-#       func <- function(refClust,compareClust){
-#         features <- intersect(rownames(refClust),rownames(compareClust))
-#         refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
-#         compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
-#         
-#       clusterPairSimil <- matrix(data=NA,ncol=2,nrow=ncol(refClust))
-#       
-#       for(s in 1:ncol(refClust)){
-#         
-#         clusterPairSimil[s, ] <- cbind(dcor(refClust[,s],compareClust[,1],index=1.0),dcor(refClust[,s],compareClust[,2],index=1.0))
-#         
-#       }
-#       
-#       return(clusterPairSimil)
-#     }
-#     
-#     }
-#   }
-#   
-#   }
-#   return(function)
-# }
-# 
-
-
+#nullSimilVector: for that clusterA-nullClust pair, with cluster A as reference,
+#all similarities across all nullClusts.
+computeEdgePvalue <- function(thresh,threshDir = c("greater","less"),nullSimilVector){
+  
+  if(is.na(thresh)){
+    
+    stop("\nthresh variable must be non-NA.")
+    
+  }
+  
+  if(any(is.na(nullSimilVector))){
+    
+    stop("\nSome of your p-values have NAs - check this out before continuing. 
+         This can occur if your data has extremely low variance and you are using correlation metrics.")
+    
+  }
+  
+  #distance or cor matrix?
+  if(threshDir=="less"){
+    
+    #do count NAs in full length?
+    pvalue <- length(which(nullSimilVector <= thresh))/length(nullSimilVector)
+    
+  }else if(threshDir=="greater"){
+    #want greater than for similarity. rest of metrics are simil metrics.
+    pvalue <- length(which(nullSimilVector >= thresh))/length(nullSimilVector)  
+    
+  }else{
+    
+    stop("\nMust provide a value of \'less\' or \'greater\' for threshDir input.")
+    
+  }
+  
+  return(pvalue)
+  
+}
