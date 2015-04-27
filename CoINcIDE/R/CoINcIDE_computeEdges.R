@@ -16,6 +16,14 @@ sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.2,numSims=500,includeRefC
 outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
 checkNA=FALSE){
   
+    
+  if(edgeMethod=="distCor"&& sigMethod=="centroid"){
+    
+    
+    stop("Due to its computational complexity and run time and the actual theory behind distance correlation,
+         the joint options of edgeMethod=distCor and sigMethod=centroid are now allowed. Please pick a different combination.")
+    
+  }
   
   date <- Sys.time();
   inputVariablesDF <- data.frame(date,edgeMethod,numParallelCores,minTrueSimilThresh,maxTrueSimilThresh,sigMethod,maxNullFractSize,numSims,
@@ -557,9 +565,9 @@ computeNullSimilVector_mean <-   function(refClustRowIndex,clustSimilMatrixList,
 
           
           if(!is.null(clustSimilMatrixList[[c]])){
-            
+            #need to make clustSimilMatrixList a dist object again.
           similValue <- dcor(dist(refDataMatrix[featureIndices,nullClustIndices],method="euclidean"),
-                             clustSimilMatrixList[[c]][featureIndices, featureIndices],index=1.0)
+                             as.dist(clustSimilMatrixList[[c]][featureIndices, featureIndices]),index=1.0)
           
           stop(paste0("\n\n finding an non-null index for global cluster ",c))
                
@@ -602,14 +610,6 @@ computeNullSimilVector_centroid <-   function(refClustRowIndex,clustSimilMatrixL
   featureIndices1 <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
   refClust <- refDataMatrix[featureIndices1,  refSampleIndices]
   
-  
-  if(edgeMethod=="distCor"){
-    
-    
-    stop("Due to its computational complexity and run time and the actual theory behind distance correlation,
-         the joint options of edgeMethod=distCor and sigMethod=centroid are now allowed. Please pick a different combination.")
-    
-  }
     
     #will return a matrix of numClusters x numFeatures
     #see documention on CRAN "nesting foreach loops"
@@ -651,7 +651,8 @@ computeNullSimilVector_centroid <-   function(refClustRowIndex,clustSimilMatrixL
             #only take intersecting features
             features <- intersect(features1,clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]])
             compareSampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
-            compareClust <- dataMatrixList[[features, compareStudyNum]]
+            #COME BACK:
+            compareClust <- dataMatrixList[[compareStudyNum]][features,  compareSampleIndices]
             centroidMatrix <- cbind(rowMeans(refClust),rowMeans(nullClust))[features, ]
            
             fractNullSimil <- centroidFunction(compareClust=compareClust,centroidMatrix=centroidMatrix,
