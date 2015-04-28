@@ -207,7 +207,7 @@ advancedNetworkPlots <- function(communityMembership,
 
 assignCentroidSubtype <- function(origDataMatrix,minNumGenes=30,centroidRData="/home/data/breast_microarrayDB/pam50_centroids.RData"){
   
-  warning("\nAssumes genes are in the columns of your data matrix, \nand for centroids, gene names are in the first columns.\n")
+  message("\nAssumes genes are in the columns of your data matrix, \nand for centroids, gene names are in the first columns.\n")
   load(centroidRData);
   #originally meant for use with pam50 centroids, but can be used on any matrix where first col is gene names, other columns are centroid groups.
   #RData object must be names centroidMatrix
@@ -216,7 +216,7 @@ assignCentroidSubtype <- function(origDataMatrix,minNumGenes=30,centroidRData="/
     stop("\nRData object must have name 'centroidMatrix'.")
  
   }
-  
+
   centroids <- centroidMatrix[, 2:ncol(centroidMatrix)];
   #only take the genes that are in this data matrix
   centroidMatrix_genes <- as.character(centroidMatrix[,1][centroidMatrix[,1] %in% colnames(origDataMatrix)]);

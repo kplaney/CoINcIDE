@@ -3,9 +3,14 @@ load(#original run:
   load("/home/data/breast_microarrayDB/output/pam50_subtypes/pam50Short_kmeans_allStudies.RData.gzip")
 
 #pam50 run:
-load("/home/kplaney/breast_analysis/kmeansConsensus_curatedBreastData.RData.gzip")
+load("/home/kplaney/breast_analysis/kmeansConsensus_curatedBreastData_mystery.RData.gzip")
 names(kmeansConsensus)
-
+#pam50 rep=.1,nstart=1,max.iter=20
+load("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_pam50ShortFeatures_2015-04-27.RData.gzip")
+load("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_pam50FullFeatures_2015-04-27.RData.gzip")
+#try hclust too:
+load("/home/kplaney/breast_analysis/curatedBreastData_hclustConsensus_pam50FullFeatures_2015-04-27.RData.gzip")
+load("/home/kplaney/breast_analysis/curatedBreastData_hclustConsensus_pam50ShortFeatures_2015-04-27.RData.gzip")
 
 load("/home/kplaney/breast_analysis//curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 names(dataMatrixList)
@@ -25,6 +30,10 @@ length(gapKmeans_pam50Short[["study_25055_GPL96_MDACC_M"]])
 #this dataset has 3-5 clusters. NOTE: "normal" means normal as classified by pam50 status, NOT
 #that it's actually normal tissue. pam50 centroids were trained on a bit of a skewed dataset.
 table(pData(esets[["study_25055_GPL96_MDACC_M"]])$pam50)
+
+#but NOTE what the publication says:
+#"Neoadjuvant study of 310 HER2-negative breast cancer cases"....so really just
+#HER2-/ER+,HER2-/ER-....2 clusters WOULD be reasonable here.
 
 #hmm...a lot are close to zero:
 PAC <- unlist(kmeansConsensus$PAC[[which(names(dataMatrixList)=="study_25055_GPL96_MDACC_M")]])
