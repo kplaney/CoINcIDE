@@ -328,9 +328,77 @@ kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList=clust
 
 
 
+
+save(kmeansConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+#############################
 ####CoINcIDE (not merged) with pam50 short for comparison
 
-#NOTE: pam50GeneShort comes from merged matrix clustering up above
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData")
+pam50GenesFull <- centroidMatrix[,1]
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+numFeatures <- "pam50Full"
+
+
+
+#COME BACK: remove clusters with too few pam50 genes?
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50GenesFull
+  
+}
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                          pickKMethod=c("consensus"),iter.max=20,nstart=15,
+                                          numSims=500,maxNumClusters=10,
+                                          outputFile="/home/kplaney/breast_analysis/test.txt",distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("average"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.85,corUse="everything",pItem=.9,maxPAC=.1)
+
+
+save(kmeansConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+######
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData")
+pam50GenesFull <- centroidMatrix[,1]
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+numFeatures <- "pam50Full"
+
+
+
+#COME BACK: remove clusters with too few pam50 genes?
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50GenesFull
+  
+}
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+hclustConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
+                                          pickKMethod=c("consensus"),iter.max=20,nstart=15,
+                                          numSims=500,maxNumClusters=10,
+                                          outputFile="/home/kplaney/breast_analysis/test.txt",distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("ward.D"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.85,corUse="everything",pItem=.9,maxPAC=.1)
+
+
+save(hclustConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_hclustConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+##########
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 #load("/home/data/breast_microarrayDB/pam50_centroids.RData")
 load("/home/data/breast_microarrayDB/output/ISMB/kmeans_merged_pam50Short.RData.gzip");
@@ -357,10 +425,45 @@ kmeansConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clust
                                           outputFile="/home/kplaney/breast_analysis/test.txt",distMethod=c("euclidean"),
                                           hclustAlgorithm=c("average"),
                                           consensusHclustAlgorithm=c("average"),
-                                          minClustConsensus=.7, minMeanClustConsensus=.85,corUse="everything",pItem=.9)
+                                          minClustConsensus=.7, minMeanClustConsensus=.85,corUse="everything",pItem=.9,maxPAC=.1)
 
 
 save(kmeansConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+####
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+#load("/home/data/breast_microarrayDB/pam50_centroids.RData")
+load("/home/data/breast_microarrayDB/output/ISMB/kmeans_merged_pam50Short.RData.gzip");
+
+pam50Short <- output$pam50GeneShort;
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+numFeatures <- "pam50Short"
+
+
+
+#COME BACK: remove clusters with too few pam50 genes?
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50Short
+  
+}
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+hclustConsensus <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
+                                          pickKMethod=c("consensus"),iter.max=20,nstart=15,
+                                          numSims=500,maxNumClusters=10,
+                                          outputFile="/home/kplaney/breast_analysis/test.txt",distMethod=c("euclidean"),
+                                          hclustAlgorithm=c("ward.D"),
+                                          consensusHclustAlgorithm=c("average"),
+                                          minClustConsensus=.7, minMeanClustConsensus=.85,corUse="everything",pItem=.9,maxPAC=.1)
+
+
+save(hclustConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_hclustConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
 
 #original run:
 load("/home/data/breast_microarrayDB/output/pam50_subtypes/pam50Short_kmeans_allStudies.RData.gzip")

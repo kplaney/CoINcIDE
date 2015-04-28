@@ -8,7 +8,7 @@ clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=
                                    outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("euclidean","pearson","spearman", "binary", "maximum", "canberra", "minkowski"),
                                    hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
                                    consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
-                                   minClustConsensus=.7, minMeanClustConsensus=.7,corUse="everything",pItem=.9){
+                                   minClustConsensus=.7, minMeanClustConsensus=.7,maxPAC=.1,corUse="everything",pItem=.9){
   
   if(pickKMethod=="gap"){
     
@@ -383,7 +383,7 @@ consensusClusterMatrixList <- function(dataMatrixList,clustFeaturesList,maxNumCl
                                        hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),
 distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),minMeanClustConsensus=.7,minClustConsensus=.7,
-outputFile="./consensusOut.txt",iter.max=30,nstart=25){
+outputFile="./consensusOut.txt",iter.max=30,nstart=25,maxPAC=.1){
   
  
   outputList <- list()
@@ -394,10 +394,13 @@ outputFile="./consensusOut.txt",iter.max=30,nstart=25){
     cat(paste0("\nClustering dataset ",d, " ",names(dataMatrixList)[d]),
         append=TRUE,file=outputFile);
     outputList[[d]] <- consensusClusterMatrix(dataMatrix=dataMatrixList[[d]],clustFeatures=clustFeaturesList[[d]],
-                                                     maxNumClusters=maxNumClusters, numSims=numSims, 
+                                                     maxNumClusters=maxNumClusters, numSims=numSims, nstart=nstart,iter.max=iter.max,
                                                      pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
-                                              hclustAlgorithm=hclustAlgorithm, consensusHclustAlgorithm=consensusHclustAlgorithm,corUse=corUse,distMethod=distMethod,
-                                              minMeanClustConsensus=minMeanClustConsensus,minClustConsensus=minClustConsensus,outputFile=outputFile)
+                                              hclustAlgorithm=hclustAlgorithm, consensusHclustAlgorithm=consensusHclustAlgorithm,
+                                              corUse=corUse,distMethod=distMethod,
+                                              minMeanClustConsensus=minMeanClustConsensus,
+                                              minClustConsensus=minClustConsensus,outputFile=outputFile,
+                                              maxPAC=maxPAC)
     
 
   
@@ -418,28 +421,43 @@ outputFile="./consensusOut.txt",iter.max=30,nstart=25){
   minConsensusClusterByK <- list()
   meanConsensusClusterByK <- list()
   PAC <- list()
+consensusClustOutput <- list()
+
+for(d in 1:length(outputList)){
   
-  for(d in 1:length(outputList)){
-    
-    clustSampleIndexList_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$clustSampleIndexList
-    clustFeatureIndexList_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$clustFeatureIndexList
-    bestK_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$bestK
-    clustSampleIndexList_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$clustSampleIndexList
-    clustFeatureIndexList_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$clustFeatureIndexList
-    bestK_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$bestK
-    clustSampleIndexList_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$clustSampleIndexList
-    clustFeatureIndexList_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$clustFeatureIndexList
-    bestK_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$bestK
-    bestK_PAC[[d]] <- outputList[[d]]$selectK_PAC$bestK
-    clustSampleIndexList_PAC[[d]] <- outputList[[d]]$selectK_PAC$clustSampleIndexList
-    clustFeatureIndexList_PAC[[d]] <- outputList[[d]]$selectK_PAC$clustFeatureIndexList
-    PAC[[d]] <- outputList[[d]]$PAC
-    consensusInfo[[d]] <- outputList[[d]]$consensusCalc
-    minConsensusClusterByK[[d]] <- outputList[[d]]$minConsensusClusterByK
-    meanConsensusClusterByK[[d]] <- outputList[[d]]$meanConsensusClusterByK
-    
-  }
+  clustSampleIndexList_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$clustSampleIndexList
+  clustFeatureIndexList_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$clustFeatureIndexList
+  bestK_consensusFrac[[d]] <- outputList[[d]]$selectK_consensusFrac$bestK
+  clustSampleIndexList_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$clustSampleIndexList
+  clustFeatureIndexList_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$clustFeatureIndexList
+  bestK_meanConsensusCluster[[d]] <- outputList[[d]]$selectK_meanConsensusClust$bestK
+  clustSampleIndexList_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$clustSampleIndexList
+  clustFeatureIndexList_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$clustFeatureIndexList
+  bestK_minConsensusCluster[[d]] <- outputList[[d]]$selectK_minConsensusClust$bestK
+  bestK_PAC[[d]] <- outputList[[d]]$selectK_PAC$bestK
+  clustSampleIndexList_PAC[[d]] <- outputList[[d]]$selectK_PAC$clustSampleIndexList
+  clustFeatureIndexList_PAC[[d]] <- outputList[[d]]$selectK_PAC$clustFeatureIndexList
+  PAC[[d]] <- outputList[[d]]$PAC
+  consensusInfo[[d]] <- outputList[[d]]$consensusCalc
+  minConsensusClusterByK[[d]] <- outputList[[d]]$minConsensusClusterByK
+  meanConsensusClusterByK[[d]] <- outputList[[d]]$meanConsensusClusterByK
+  consensusClustOutput[[d]] <- outputList[[d]]$consensusClustOutput
+  
+}
    
+names(clustSampleIndexList_consensusFrac) <- names(dataMatrixList)
+names(clustFeatureIndexList_consensusFrac) <- names(dataMatrixList)
+names(bestK_consensusFrac) <- names(dataMatrixList)
+names(clustSampleIndexList_meanConsensusCluster) <- names(dataMatrixList)
+names(clustFeatureIndexList_meanConsensusCluster) <- names(dataMatrixList)
+names(bestK_meanConsensusCluster) <- names(dataMatrixList)
+names(clustSampleIndexList_minConsensusCluster) <- names(dataMatrixList)
+names(clustFeatureIndexList_minConsensusCluster) <- names(dataMatrixList)
+names(bestK_minConsensusCluster) <- names(dataMatrixList)
+names(clustSampleIndexList_PAC) <- names(dataMatrixList)
+names(clustFeatureIndexList_PAC) <- names(dataMatrixList)
+names(bestK_PAC) <- names(dataMatrixList)
+      
   output <- list(  clustSampleIndexList_consensusFrac=clustSampleIndexList_consensusFrac,clustFeatureIndexList_consensusFrac =clustFeatureIndexList_consensusFrac,
                    bestK_consensusFrac=bestK_consensusFrac,
                    clustSampleIndexList_meanConsensusCluster=clustSampleIndexList_meanConsensusCluster,
@@ -449,7 +467,7 @@ outputFile="./consensusOut.txt",iter.max=30,nstart=25){
                    bestK_meanConsensusCluster=bestK_meanConsensusCluster,consensusInfo=consensusInfo,minConsensusClusterByK=minConsensusClusterByK,
                    meanConsensusClusterByK=meanConsensusClusterByK,    bestK_PAC= bestK_PAC,
                    clustSampleIndexList_PAC= clustSampleIndexList_PAC,
-                   clustFeatureIndexList_PAC=clustFeatureIndexList_PAC,PAC=PAC
+                   clustFeatureIndexList_PAC=clustFeatureIndexList_PAC,PAC=PAC,consensusClustOutput=consensusClustOutput
                    )
   
   return(output)
@@ -474,7 +492,7 @@ consensusClusterMatrix <- function(dataMatrix, clustFeatures,maxNumClusters = 30
 corUse=c("everything","pairwise.complete.obs", "complete.obs"),iter.max=30,nstart=25,
 distMethod=c("euclidean","spearman","euclidean", "pearson","binary", "maximum", "canberra", "minkowski"),
 minMeanClustConsensus=.7,
-outputFile="./consensusOut.txt",minClustConsensus=.7){
+outputFile="./consensusOut.txt",minClustConsensus=.7,maxPAC=.1,studyName="test"){
   
  innerLinkage <- hclustAlgorithm
  finalLinkage <- consensusHclustAlgorithm
@@ -525,7 +543,7 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
 
   #too bad we can't increase the number of starts for kmeans. (user-defined functions require a distance matrix as input,
  #so can't write own k-means function.)   
-  consensusClustOutput <- ConsensusClusterPlus_CoINcIDE (d=dataset,iter.max=30,nstart=25,
+  consensusClustOutput <- ConsensusClusterPlus_CoINcIDE (d=dataset,iter.max=iter.max,nstart=nstart,
                                                maxK=K.max,reps=numSims,
                                                pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
   innerLinkage=innerLinkage, finalLinkage=finalLinkage, ml=NULL,distance=distMethod,
@@ -565,6 +583,7 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
     
    
     for(i in 2:K.max){
+      
       N <- nrow(consensusClustOutput[[i]]$consensusMatrix)
       #technically could just take mean - is a symmetric matrix. diag=FALSE bc is a sample compared against itself (should always be 1.)
       upperTri <- consensusClustOutput[[i]]$consensusMatrix[upper.tri(consensusClustOutput[[i]]$consensusMatrix,diag=FALSE)]
@@ -593,12 +612,7 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
       #the meanBetween is almost always pretty low, but it's not monotonic - i.e. a larger K is not automatically favored.
       #not sure this logic works for hclust; in this case, the meanBetweenConsensusClusterByK appears
       consensusFrac[[i]] <- meanConsensusClusterByK[[(i-1)]]/meanBetweenConsensusClusterByK[[i]]
-      
-      #if(i >2){
-      
-      #consensusMetric[[i]] <- consensusFrac[[i]] > consensusFrac[[(i-1)]] 
-      
-      #}
+
     }
   
     #add NA in index 1, otherwise when unlist, will remove first index and mess up which.max/min
@@ -609,7 +623,22 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
     selectK_consensusFrac$bestK <- which.max(unlist(consensusFrac))
     selectK_minConsensusClust$bestK <- which.max(unlist(minConsensusClusterByK))+1
     selectK_meanConsensusClust$bestK <- which.max(unlist(meanConsensusClusterByK))+1
-    selectK_PAC$bestK  <- which.min(unlist(PAC))
+    
+    #round PAC - so difference at hundreth level rounded and then pick highest K at the tenth decimal level
+    
+    PAC_noNAs <- unlist(PAC)[which(!is.na(PAC))]
+    
+    if(length(PAC_noNAs)>0 && any(PAC_noNAs<maxPAC)){
+ 
+      possibleKs <- which(round(unlist(PAC)*100)==min(round(unlist(PAC)*100),na.rm=TRUE))
+      maxPossibleK <- possibleKs[length(possibleKs)]
+      selectK_PAC$bestK  <-  maxPossibleK
+    
+    }else{
+      
+      selectK_PAC$bestK <- 1
+      
+    }
     
     if(length(selectK_consensusFrac$bestK)==0){
       #all meanConsensus NAs returned; set K=1
@@ -660,12 +689,12 @@ outputFile="./consensusOut.txt",minClustConsensus=.7){
      append=TRUE,file=outputFile);
  
  
- message(paste0("Best K as determined by PAC is: ",selectK_PAC$bestK))
- cat(paste0("\nBest K as determined by ",clusterAlg, " and PAC  is: ", selectK_PAC$bestK ,"\n"),
+ message(paste0("Best K as determined by rounded PAC is: ",selectK_PAC$bestK))
+ cat(paste0("\nBest K as determined by ",clusterAlg, " and rounded PAC  is: ", selectK_PAC$bestK ,"\n"),
      append=TRUE,file=outputFile);
  
  
-packageClustOutput <-  function(listOutputObject){
+packageClustOutput <-  function(listOutputObject,clustFeatures,dataMatrix){
   
  listOutputObject$clustFeatureIndexList <- list()
  listOutputObject$clustSampleIndexList <- list()
@@ -691,10 +720,10 @@ packageClustOutput <-  function(listOutputObject){
  
 }
 
-selectK_consensusFrac <- packageClustOutput(selectK_consensusFrac)
-selectK_meanConsensusClust <- packageClustOutput(selectK_meanConsensusClust)
-selectK_minConsensusClust <- packageClustOutput(selectK_minConsensusClust)
-selectK_PAC <- packageClustOutput(selectK_PAC)
+selectK_consensusFrac <- packageClustOutput(selectK_consensusFrac,clustFeatures,dataMatrix)
+selectK_meanConsensusClust <- packageClustOutput(selectK_meanConsensusClust,clustFeatures,dataMatrix)
+selectK_minConsensusClust <- packageClustOutput(selectK_minConsensusClust,clustFeatures,dataMatrix)
+selectK_PAC <- packageClustOutput(selectK_PAC,clustFeatures,dataMatrix)
 
   output <- list(selectK_consensusFrac=selectK_consensusFrac, selectK_PAC=selectK_PAC ,
                  selectK_meanConsensusClust=selectK_meanConsensusClust,
@@ -799,9 +828,10 @@ ConsensusClusterPlus_CoINcIDE <- function( d=NULL,iter.max=20,nstart=15,
   res=list();
   
   ##make results directory
-  if((is.null(plot)==FALSE | writeTable) & !file.exists(paste(title,sep=""))){
-    dir.create(paste(title,sep=""))
-  }
+  #KP: comment out
+  #if((is.null(plot)==FALSE | writeTable) & !file.exists(paste(title,sep=""))){
+  #  dir.create(paste(title,sep=""))
+  #}
   
   ##write log file
   log <- matrix( ncol=2,
@@ -820,53 +850,55 @@ ConsensusClusterPlus_CoINcIDE <- function( d=NULL,iter.max=20,nstart=15,
                    "plot",if(is.null(plot)) NA else plot,
                    "seed",if(is.null(seed)) NA else seed))
   colnames(log) = c("argument","value")
-  if(writeTable){
-    write.csv(file=paste(title,"/",title,".log.csv",sep=""), log,row.names=F)
-  }
-  if(is.null(plot)){
-    ##nothing
-  }else if(plot=="pngBMP"){
-    bitmap(paste(title,"/","consensus%03d.png",sep=""))
-  }else if(plot=="png"){
-    png(paste(title,"/","consensus%03d.png",sep=""))
-    
-  }else if (plot=="pdf"){
-    pdf(onefile=TRUE, paste(title,"/","consensus.pdf",sep=""))
-  }else if (plot=="ps"){
-    postscript(onefile=TRUE, paste(title,"/","consensus.ps",sep=""))
-  }	
-  
-  colorList=list()
-  colorM = rbind() #matrix of colors.
-  
-  #18 colors for marking different clusters
-  thisPal <- c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFFF99","#B15928",
-               "#bd18ea", #magenta
-               "#2ef4ca", #aqua
-               "#f4cced", #pink,
-               "#f4cc03", #lightorange
-               "#05188a", #navy,
-               "#e5a25a", #light brown
-               "#06f106", #bright green
-               "#85848f", #med gray
-               "#000000", #black
-               "#076f25", #dark green
-               "#93cd7f",#lime green
-               "#4d0776", #dark purple
-               "#ffffff" #white
-  )
-  
-  ##plot scale
-  colBreaks=NA
-  if(is.null(tmyPal)==TRUE){
-    colBreaks=10
-    tmyPal = myPal(colBreaks)
-  }else{
-    colBreaks=length(tmyPal)
-  }
-  sc = cbind(seq(0,1,by=1/( colBreaks) )); rownames(sc) = sc[,1]
-  sc = cbind(sc,sc)
-  heatmap(sc, Colv=NA, Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=rownames(sc),labCol=F,main="consensus matrix legend")
+  #Katie: commented out.
+#   if(writeTable){
+#     write.csv(file=paste(title,"/",title,".log.csv",sep=""), log,row.names=F)
+#   }
+#   if(is.null(plot)){
+#     ##nothing
+#   }else if(plot=="pngBMP"){
+#     bitmap(paste(title,"/","consensus%03d.png",sep=""))
+#   }else if(plot=="png"){
+#     png(paste(title,"/","consensus%03d.png",sep=""))
+#     
+#   }else if (plot=="pdf"){
+#     pdf(onefile=TRUE, paste(title,"/","consensus.pdf",sep=""))
+#   }else if (plot=="ps"){
+#     postscript(onefile=TRUE, paste(title,"/","consensus.ps",sep=""))
+#   }	
+# #   
+#   colorList=list()
+#   colorM = rbind() #matrix of colors.
+#   
+#   #18 colors for marking different clusters
+#   thisPal <- c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFFF99","#B15928",
+#                "#bd18ea", #magenta
+#                "#2ef4ca", #aqua
+#                "#f4cced", #pink,
+#                "#f4cc03", #lightorange
+#                "#05188a", #navy,
+#                "#e5a25a", #light brown
+#                "#06f106", #bright green
+#                "#85848f", #med gray
+#                "#000000", #black
+#                "#076f25", #dark green
+#                "#93cd7f",#lime green
+#                "#4d0776", #dark purple
+#                "#ffffff" #white
+#   )
+#   
+#   ##plot scale
+#   colBreaks=NA
+#   if(is.null(tmyPal)==TRUE){
+#     colBreaks=10
+#     tmyPal = myPal(colBreaks)
+#   }else{
+#     colBreaks=length(tmyPal)
+#   }
+#   sc = cbind(seq(0,1,by=1/( colBreaks) )); rownames(sc) = sc[,1]
+#   sc = cbind(sc,sc)
+#KP: no heatmap
+ # heatmap(sc, Colv=NA, Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=rownames(sc),labCol=F,main="consensus matrix legend")
   
   for (tk in 2:maxK){
     if(verbose){
@@ -881,43 +913,47 @@ ConsensusClusterPlus_CoINcIDE <- function( d=NULL,iter.max=20,nstart=15,
       names(ct) = colnames(as.matrix(d))
     }
     c = fm
-    
-    colorList = setClusterColors(res[[tk-1]][[3]],ct,thisPal,colorList)
+    #Kaie
+    #colorList = setClusterColors(res[[tk-1]][[3]],ct,thisPal,colorList)
     pc = c
     pc=pc[hc$order,] #pc is matrix for plotting, same as c but is row-ordered and has names and extra row of zeros.
-    
-    
-    
-    if(!is.null(plot) && plot=="pngBMP"){
-      pc = pc[,hc$order ] #mod for no tree
-      pc = rbind(pc,0)
-      #no dendrogram if pngBMP
-      oc = colorList[[1]][hc$order] #mod for no tree
-      heatmap(pc, Colv = NA, Rowv = NA, symm = FALSE, scale = "none", col = tmyPal, na.rm = TRUE, labRow = F, labCol = F, mar = c(5, 5), main = paste("consensus matrix k=", 
-                                                                                                                                                      tk, sep = ""), ColSideCol = oc)
-    }else{
-      pc = rbind(pc,0)
-      #former with tree:
-      heatmap(pc, Colv=as.dendrogram(hc), Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=F,labCol=F,mar=c(5,5),main=paste("consensus matrix k=",tk,sep="") , ColSideCol=colorList[[1]])
-    }
-    
-    legend("topright",legend=unique(ct),fill=unique(colorList[[1]]),horiz=FALSE )
-    
-    res[[tk]] = list(consensusMatrix=c,consensusTree=hc,consensusClass=ct,ml=ml[[tk]],clrs=colorList)
-    colorM = rbind(colorM,colorList[[1]]) 
+ 
+    #Katie:
+#     
+#     
+#     if(!is.null(plot) && plot=="pngBMP"){
+#       pc = pc[,hc$order ] #mod for no tree
+#       pc = rbind(pc,0)
+#       #no dendrogram if pngBMP
+#       oc = colorList[[1]][hc$order] #mod for no tree
+#       heatmap(pc, Colv = NA, Rowv = NA, symm = FALSE, scale = "none", col = tmyPal, na.rm = TRUE, labRow = F, labCol = F, mar = c(5, 5), main = paste("consensus matrix k=", 
+#                                                                                                                                                       tk, sep = ""), ColSideCol = oc)
+#     }else{
+#       pc = rbind(pc,0)
+#       #former with tree:
+#       heatmap(pc, Colv=as.dendrogram(hc), Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=F,labCol=F,mar=c(5,5),main=paste("consensus matrix k=",tk,sep="") , ColSideCol=colorList[[1]])
+#     }
+#     
+#     legend("topright",legend=unique(ct),fill=unique(colorList[[1]]),horiz=FALSE )
+    #KP: removed clrs=colorList
+    res[[tk]] = list(consensusMatrix=c,consensusTree=hc,consensusClass=ct,ml=ml[[tk]])
+    #colorM = rbind(colorM,colorList[[1]]) 
   }
-  CDF(ml)
-  clusterTrackingPlot(colorM[,res[[length(res)]]$consensusTree$order])
-  if(is.null(plot)==FALSE){
-    dev.off();
-  }
-  res[[1]] = colorM
-  if(writeTable){
-    for(i in 2:length(res)){
-      write.csv(file=paste(title,"/",title,".k=",i,".consensusMatrix.csv",sep=""), res[[i]]$consensusMatrix)
-      write.table(file=paste(title,"/",title,".k=",i,".consensusClass.csv",sep=""), res[[i]]$consensusClass,col.names = F,sep=",")
-    }
-  }
+  #CDF(ml)
+  #clusterTrackingPlot(colorM[,res[[length(res)]]$consensusTree$order])
+  #if(is.null(plot)==FALSE){
+  #  dev.off();
+  #}
+  #res[[1]] = colorM
+#KP:
+res[[1]] = NA
+
+  #if(writeTable){
+  #  for(i in 2:length(res)){
+  #    write.csv(file=paste(title,"/",title,".k=",i,".consensusMatrix.csv",sep=""), res[[i]]$consensusMatrix)
+  #    write.table(file=paste(title,"/",title,".k=",i,".consensusClass.csv",sep=""), res[[i]]$consensusClass,col.names = F,sep=",")
+  #  }
+  #}
   return(res)
 }
 
@@ -929,22 +965,23 @@ calcICL = function(res,title="untitled_consensus_cluster",plot=NULL,writeTable=F
   sumRes=list()
   colorsArr=c()
   
-  #make results directory
-  if((is.null(plot)==FALSE | writeTable) & !file.exists(paste(title,sep=""))){
-    dir.create(paste(title,sep=""))
-  }
-  if(is.null(plot)){
-    #to screen
-  }else if(plot=="pdf"){
-    pdf(onefile=TRUE, paste(title,"/","icl.pdf",sep=""))
-  }else if(plot=="ps"){
-    postscript(onefile=TRUE, paste(title,"/","icl.ps",sep=""))
-  }else if (plot=="png"){
-    png(paste(title,"/","icl%03d.png",sep=""))
-  }else if (plot=="pngBMP"){
-    bitmap(paste(title,"/","icl%03d.png",sep=""))
-  }
-  
+#   #make results directory
+#KP: commented out.
+#   if((is.null(plot)==FALSE | writeTable) & !file.exists(paste(title,sep=""))){
+#     dir.create(paste(title,sep=""))
+#   }
+#   if(is.null(plot)){
+#     #to screen
+#   }else if(plot=="pdf"){
+#     pdf(onefile=TRUE, paste(title,"/","icl.pdf",sep=""))
+#   }else if(plot=="ps"){
+#     postscript(onefile=TRUE, paste(title,"/","icl.ps",sep=""))
+#   }else if (plot=="png"){
+#     png(paste(title,"/","icl%03d.png",sep=""))
+#   }else if (plot=="pngBMP"){
+#     bitmap(paste(title,"/","icl%03d.png",sep=""))
+#   }
+#   
   par(mfrow=c(3,1),mar=c(4,3,2,0))
   
   for (k in 2:length(res)){ #each k
@@ -973,43 +1010,43 @@ calcICL = function(res,title="untitled_consensus_cluster",plot=NULL,writeTable=F
     q = matrix(as.numeric(unlist(w)),ncol=length(w),byrow=F)
     q = q[,res[[2]]$consensusTree$order] #order by leave order of k=2
     #q is a matrix of k rows and sample columns, values are item consensus of sample to the cluster.
-    
-    thisColors = unique(cbind(res[[k]]$consensusClass,res[[k]]$clrs[[1]]))
-    thisColors=thisColors[order(as.numeric(thisColors[,1])),2]
-    colorsArr=c(colorsArr,thisColors)
-    sumRes[[k]] = rankedBarPlot(q,thisColors,cc=res[[k]]$consensusClass[res[[2]]$consensusTree$order],paste("k=",k,sep="") )
+    #KP: commented out:
+#     thisColors = unique(cbind(res[[k]]$consensusClass,res[[k]]$clrs[[1]]))
+#     thisColors=thisColors[order(as.numeric(thisColors[,1])),2]
+#     colorsArr=c(colorsArr,thisColors)
+#     sumRes[[k]] = rankedBarPlot(q,thisColors,cc=res[[k]]$consensusClass[res[[2]]$consensusTree$order],paste("k=",k,sep="") )
   }
   
-  ys=cs=lab=c()
-  lastk=cc[1,1]
-  for(i in 1:length(colorsArr)){
-    if(lastk != cc[i,1]){
-      ys=c(ys,0,0)
-      cs=c(cs,NA,NA)
-      lastk=cc[i,1]
-      lab=c(lab,NA,NA)
-    }
-    ys=c(ys,cc[i,3])
-    cs=c(cs,colorsArr[i])
-    lab=c(lab,cc[i,1])
-  }
-  names(ys) = lab
-  par(mfrow=c(3,1),mar=c(4,3,2,0))
-  barplot(ys,col=cs,border=cs,main="cluster-consensus",ylim=c(0,1),las=1)
-  if(is.null(plot)==FALSE){
-    dev.off()
-  }
+#   ys=cs=lab=c()
+#   lastk=cc[1,1]
+#   for(i in 1:length(colorsArr)){
+#     if(lastk != cc[i,1]){
+#       ys=c(ys,0,0)
+#       cs=c(cs,NA,NA)
+#       lastk=cc[i,1]
+#       lab=c(lab,NA,NA)
+#     }
+#     ys=c(ys,cc[i,3])
+#     cs=c(cs,colorsArr[i])
+#     lab=c(lab,cc[i,1])
+#   }
+#   names(ys) = lab
+#   par(mfrow=c(3,1),mar=c(4,3,2,0))
+#   barplot(ys,col=cs,border=cs,main="cluster-consensus",ylim=c(0,1),las=1)
+#   if(is.null(plot)==FALSE){
+#     dev.off()
+#   }
   colnames(cc) = c("k","cluster","clusterConsensus")
   colnames(cci) = c("k","cluster","item","itemConsensus")
   cci[,"item"] = names(res[[2]]$consensusClass)[ cci[,"item"] ]
   #type cci
   cci = data.frame( k=as.numeric(cci[,"k"]), cluster=as.numeric(cci[,"cluster"]), item=cci[,"item"], itemConsensus=as.numeric(cci[,"itemConsensus"])) 
   
-  #write to file.
-  if(writeTable){
-    write.csv(file=paste(title,"/",title,".summary.cluster.consensus.csv",sep=""),row.names=F, cc)
-    write.csv(file=paste(title,"/",title,".summary.item.consensus.csv",sep=""), row.names=F, cc)
-  }
+#   #write to file.
+#   if(writeTable){
+#     write.csv(file=paste(title,"/",title,".summary.cluster.consensus.csv",sep=""),row.names=F, cc)
+#     write.csv(file=paste(title,"/",title,".summary.item.consensus.csv",sep=""), row.names=F, cc)
+#   }
   return(list(clusterConsensus=cc,itemConsensus=cci))
 }
 
@@ -1246,7 +1283,7 @@ sampleCols <- function( d,
 
 CDF=function(ml,breaks=100){
   #plot CDF distribution
-  plot(c(0),xlim=c(0,1),ylim=c(0,1),col="white",bg="white",xlab="consensus index",ylab="CDF",main="consensus CDF", las=2)
+ plot(c(0),xlim=c(0,1),ylim=c(0,1),col="white",bg="white",xlab="consensus index",ylab="CDF",main="consensus CDF", las=2)
   k=length(ml)
   this_colors = rainbow(k-1)
   areaK = c()
@@ -1358,24 +1395,23 @@ triangle = function(m,mode=1){
 }
 
 
-rankedBarPlot=function(d,myc,cc,title){
-  colors = rbind() #each row is a barplot series
-  byRank = cbind()
-  
-  spaceh = 0.1 #space between bars
-  for(i in 1:ncol(d)){
-    byRank = cbind(byRank,sort(d[,i],na.last=F))
-    colors = rbind(colors,order(d[,i],na.last=F))
-  }
-  maxH = max(c(1.5,apply(byRank,2,sum)),na.rm=T) #maximum height of graph
-  
-  #barplot largest to smallest so that smallest is in front.
-  barp = barplot( apply(byRank,2,sum) ,  col=myc[colors[,1]] ,space=spaceh,ylim=c(0,maxH),main=paste("item-consensus", title),border=NA,las=1  )
-  for(i in 2:nrow(byRank)){
-    barplot( apply(matrix(byRank[i:nrow(byRank),],ncol=ncol(byRank))  ,2,sum), space=spaceh,col=myc[colors[,i]],ylim=c(0,maxH), add=T,border=NA,las=1  )
-  }
-  xr=seq(spaceh,ncol(d)+ncol(d)*spaceh,(ncol(d)+ncol(d)*spaceh)/ncol(d)  )
-  #class labels as asterisks
-  text("*",x=xr+0.5,y=maxH,col=myc[cc],cex=1.4) #rect(xr,1.4,xr+1,1.5,col=myc[cc] )
-}
-
+# rankedBarPlot=function(d,myc,cc,title){
+#   colors = rbind() #each row is a barplot series
+#   byRank = cbind()
+#   
+#   spaceh = 0.1 #space between bars
+#   for(i in 1:ncol(d)){
+#     byRank = cbind(byRank,sort(d[,i],na.last=F))
+#     colors = rbind(colors,order(d[,i],na.last=F))
+#   }
+#   maxH = max(c(1.5,apply(byRank,2,sum)),na.rm=T) #maximum height of graph
+#   
+#   #barplot largest to smallest so that smallest is in front.
+#   barp = barplot( apply(byRank,2,sum) ,  col=myc[colors[,1]] ,space=spaceh,ylim=c(0,maxH),main=paste("item-consensus", title),border=NA,las=1  )
+#   for(i in 2:nrow(byRank)){
+#     barplot( apply(matrix(byRank[i:nrow(byRank),],ncol=ncol(byRank))  ,2,sum), space=spaceh,col=myc[colors[,i]],ylim=c(0,maxH), add=T,border=NA,las=1  )
+#   }
+#   xr=seq(spaceh,ncol(d)+ncol(d)*spaceh,(ncol(d)+ncol(d)*spaceh)/ncol(d)  )
+#   #class labels as asterisks
+#   text("*",x=xr+0.5,y=maxH,col=myc[cc],cex=1.4) #rect(xr,1.4,xr+1,1.5,col=myc[cc] )
+# }
