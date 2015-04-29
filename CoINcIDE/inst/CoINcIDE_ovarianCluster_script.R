@@ -45,6 +45,21 @@ save(kmeansConsensus,file=paste0(saveDir,"/curatedOvarianData_kmeansConsensus_",
 
 
 
+##also try nstart=1
+
+#we know these are strong clusters. have  minMeanClustConsensus around .85
+kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                         pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                         numSims=500,maxNumClusters=10,
+                                         outputFile=paste0(saveDir,"/",numFeatures,"F_clust.txt"),distMethod=c("euclidean"),
+                                         hclustAlgorithm=c("average"),
+                                         consensusHclustAlgorithm=c("average"),
+                                         minClustConsensus=.7, minMeanClustConsensus=.85,
+                                         corUse="everything",pItem=.9,maxPAC=.15)
+
+save(kmeansConsensus,file=paste0(saveDir,"/curatedOvarianData_kmeansConsensus_nstart1_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
 
 
 

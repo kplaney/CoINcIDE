@@ -13,6 +13,7 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
+
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansConsensuspam50_short_Nstart15pItem9 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
                                           pickKMethod=c("consensus"),iter.max=20,nstart=15,
@@ -112,6 +113,22 @@ kmeansConsensuspam50_full_Nstart15pItem9 <- clustMatrixListWrapper(dataMatrixLis
 
 save(kmeansConsensuspam50_full_Nstart15pItem9,
      file=paste0(saveDir,"/kmeansConsensuspam50_full_Nstart15pItem9_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+kmeansConsensuspam50_full_Nstart1pItem9 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                                                   pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                                                   numSims=500,maxNumClusters=10,
+                                                                   outputFile="/home/kplaney/breast_analysis/test.txt",distMethod=c("euclidean"),
+                                                                   hclustAlgorithm=c("average"),
+                                                                   consensusHclustAlgorithm=c("average"),
+                                                                   minClustConsensus=.7, minMeanClustConsensus=.85,
+                                                                   corUse="everything",pItem=.9,maxPAC=.15)
+
+
+save(kmeansConsensuspam50_full_Nstart1pItem9,
+     file=paste0(saveDir,"/kmeansConsensuspam50_full_Nstart1pItem9_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
 
 
 hclustConsensuspam50_full_pItem9 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),

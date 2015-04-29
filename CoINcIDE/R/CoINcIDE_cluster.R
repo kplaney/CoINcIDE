@@ -1500,7 +1500,7 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
   
   colorList <- list()
   for(t in 2:k){
-    tmp <- cutree(hc,k)
+    tmp <- cutree(hc,t)
    # names(ct) = colnames(exprMatrix)
 
     colorList = setClusterColors(res[[t-1]][[3]],tmp,thisPal,colorList)
@@ -1515,9 +1515,8 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
   tmyPal = myPal(colBreaks)
   
   pc = rbind(pc,0)
-  #former with tree:
-  #NOTE: I removed this: ColSideCol=colorList[[1]] colors aren't quite working right now...
-  heatmap(pc, Colv=as.dendrogram(hc), Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=F,labCol=F,mar=c(5,5),main=paste("consensus matrix k=",k,sep="") )
+  # with tree:
+  heatmap(pc, Colv=as.dendrogram(hc), Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=F,labCol=F,mar=c(5,5),main=paste("consensus matrix k=",k,sep="") , ColSideCol=colorList[[1]] )
   legend("topright",legend=unique(ct),fill=unique(colorList[[1]]),horiz=FALSE )
   
 } 
@@ -1600,4 +1599,56 @@ CDF_CoINcIDE <- function(consensusClustOutput,breaks=100){
     deltaK = c(deltaK,( areaK[i] - areaK[i-1])/areaK[i-1])
   }
   plot(1+(1:length(deltaK)),y=deltaK,xlab="k",ylab="relative change in area under CDF curve",main="Delta area",type="b")
+}
+
+#for consensus clustering.
+summarizeChooseK <- function(studyName="study_25055_GPL96_MDACC_M",gapKmeans_pam50Short,
+                             consensusClusterOutput){
+  
+  if(missing(studyName)){
+    
+    stop("Please provide a studyName character vector that is the name of one of the dataset indices in your consensusClusterOutputList.")
+  }
+  if(!missing(gapKmeans_pam50Short)){
+    message("gap test K: ",length(gapKmeans_pam50Short[[studyName]]))
+    
+    gapTest <- length(gapKmeans_pam50Short[[studyName]])
+    
+  }else{
+    
+    gapTest <- NA
+    
+  }
+  
+
+  message("bestK using consensus fract: ",consensusClusterOutput$bestK_consensusFrac[[studyName]])
+  
+  consensusFrac <- consensusClusterOutput$bestK_consensusFrac[[studyName]]
+  
+  message("consensus fract scores for K=1:10: ")
+  cat("\n",unlist(consensusClusterOutput$consensus_fract[[studyName]]),"\n")
+  
+  message("bestK using mean consensus: ",consensusClusterOutput$bestK_meanConsensusCluster[[studyName]])
+  
+  meanConsensus <- consensusClusterOutput$bestK_meanConsensusCluster[[studyName]]
+  
+  message("mean consensus for K=1:10: ")
+  index <- which(names(consensusClusterOutput$bestK_consensusFrac)==studyName)
+  cat("\n",unlist(consensusClusterOutput$meanConsensusClusterByK[[studyName]]),"\n")
+  message("bestK using unrounded PAC : ",consensusClusterOutput$bestK_PAC[[studyName]])
+  
+  PAC <- consensusClusterOutput$bestK_PAC[[studyName]]
+  message("unrounded PAC scores: ")
+  cat("\n",unlist(consensusClusterOutput$PAC[[studyName]]))
+  message("bestK using rounded PAC : ",consensusClusterOutput$bestK_PACR[[studyName]])
+  PACR <- consensusClusterOutput$bestK_PACR[[studyName]]
+  #just for comparision
+  message("rounded PAC scores: ")
+  cat("\n",unlist(consensusClusterOutput$PACR[[studyName]]))
+  
+  
+  output <- data.frame(gapTest,consensusFrac,meanConsensus,PAC,PACR)
+  
+  return(output)
+  
 }

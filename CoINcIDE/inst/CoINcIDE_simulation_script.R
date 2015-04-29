@@ -5,6 +5,8 @@ lungSimData <- createLungSimDatasets(numSimDatasets=2, stddevNoise=.1)
 dim(lungSimData$dataMatrixList[[1]])
 
 dataMatrixList <- lungSimData$dataMatrixList
+clustSampleIndexList <- lungSimData$clustSampleIndexList
+clustFeatureIndexList <- lungSimData$clustFeatureIndexList
 clustFeaturesList <- lungSimData$clustFeaturesList
 
 #let's try the four ways I've coded up clustering, selecting K.

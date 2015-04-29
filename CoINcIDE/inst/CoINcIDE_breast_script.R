@@ -39,6 +39,8 @@ if(length(output$removeDatasetIndices>0)){
   dataMatrixList <- dataMatrixList[-output$removeDatasetIndices]
   
 }
+
+#this is the "core" data matrix list we will use for our analyses:
 save(dataMatrixList,file="/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip",compress="gzip")
 
 

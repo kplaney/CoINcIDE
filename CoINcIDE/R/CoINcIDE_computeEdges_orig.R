@@ -14,15 +14,7 @@ outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersect
 checkNA=FALSE){
   
   
-  date <- Sys.time();
-  inputVariablesDF <- data.frame(date,edgeMethod,numParallelCores,minTrueSimilThresh,maxTrueSimilThresh,sigMethod,maxNullFractSize,numSims,
-                                 includeRefClustInNull,outputFile,fractFeatIntersectThresh,numFeatIntersectThresh,clustSizeThresh, clustSizeFractThresh,
-                                 checkNA);
-  
-  #capture.output prints the data correctly.
-  capture.output(paste0("\nRunning find similar clusters on ",Sys.time()," with the following inputs:\n"),append=TRUE,file=outputFile);
-  capture.output(inputVariablesDF,append=TRUE,file=outputFile);
-  #   
+   #   
   #check: if rownames are null.
   #this can take a while to run if a long list of datasets.
    if(checkNA){
