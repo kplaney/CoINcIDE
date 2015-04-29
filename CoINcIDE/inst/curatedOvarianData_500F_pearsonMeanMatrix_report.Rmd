@@ -167,11 +167,11 @@ for(c in 1:length(sigGenes$sigMetaclustGenes_pos)){
               row.names=FALSE,col.names=FALSE)
   
   DAVID_out[[c]] <- GSEA_DAVID(testGeneVector=testGeneSet,idType="GENE_SYMBOL",yourEmail="katie.planey@stanford.edu",
-                       EASE_thresh=0.1,count_thresh=2L,qvalueThreshFunct=.05,
-                       pvalueThreshCluster=.1,fileTag=paste0("pearson500F_commmunity_",c),
+                       EASE_thresh=0.1,count_thresh=2L,qvalueThreshFunct=.2,
+                       pvalueThreshCluster=.2,fileTag=paste0("pearson500F_commmunity_",c),
                        saveDir="/home/kplaney/ovarian_analysis/DAVID/")
   
-  message("Significantly enriched DAVID functional groups for overexpressed genes in meta-cluster ",c,":")
+  message("Significantly enriched DAVID functional groups for overexpressed genes in meta-cluster ",c," with soft q-value thresholds:")
   DAVID_out[[c]]$sigFunctGroups
   
     message("Significantly enriched DAVID clusters for overexpressed genes in meta-cluster ",c,":")
