@@ -164,6 +164,11 @@ cat("\nComputing p-values for each cluster-cluster similarity using null cluster
     
     message("Running simil tests for cluster number: ",n)
     #cluster N is our reference cluster.
+    
+    #if all NA: means this cluster didn't pass our size thresholds
+    #might as well skip over this loop, as will return all NA pvalues.
+    if(any(!is.na(trueSimilData$similValueMatrix[n,])) && any(trueSimilData$similValueMatrix[n,]>= minTrueSimilThresh,na.rm=TRUE)){
+      
     if(sigMethod=="meanMatrix"){
      
 #for this R: we want the same nullSimil comparisons across all other clusters for this reference cluster.
@@ -238,7 +243,8 @@ cat("\nComputing p-values for each cluster-cluster similarity using null cluster
 
      #end of loop r
     }
- 
+    #if is.na
+    }
    }#end of loop n
  
 
@@ -448,7 +454,7 @@ computeNullSimilVector_mean <-   function(refClustRowIndex,clustSimilMatrixList,
     refDataMatrix <- dataMatrixList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]]
     sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
     featureIndices1 <- clustFeatureIndexList[[as.numeric(clustIndexMatrix[refClustRowIndex,2])]][[as.numeric(clustIndexMatrix[refClustRowIndex,3])]]
-    refClust <- refDataMatrix[featureIndices1,sampleIndices]
+    refClust <- refDataMatrix[featureIndices1,sampleIndices,drop=FALSE]
 
   
   if(edgeMethod!="distCor"){

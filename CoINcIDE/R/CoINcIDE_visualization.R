@@ -113,7 +113,8 @@ plotMetaFeatureES <- function(ESMatrix,saveFile=FALSE,plotToScreen=TRUE,
 #THEN: SAMR meta-analysis.
 advancedNetworkPlots <- function(communityMembership,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
-                                  saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes){
+                                  saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes,
+                                 plotToScreen=FALSE){
   
 
 
@@ -168,6 +169,7 @@ advancedNetworkPlots <- function(communityMembership,
     
     V(undirGraph)$size <- communityMembership$attrDF$size;
     
+    if(!plotToScreen){
     #save plots
     png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),
         width = 700, height = 800,res=160);
@@ -183,7 +185,21 @@ advancedNetworkPlots <- function(communityMembership,
          vertex.color= V(undirGraph)$color, edge.arrow.size=3);
     dev.off();
     
-  }
+    }else{
+      
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
+           vertex.color= V(undirGraph)$color, edge.arrow.size=3);
+      
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
+           vertex.color= V(undirGraph)$color, edge.arrow.size=3);
+      
+      
+      
+    }
+    }
+  
+  if(!plotToScreen){
+    
   #without relative sizes
   png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),
       width = 700, height = 800,res=160);
@@ -197,6 +213,16 @@ advancedNetworkPlots <- function(communityMembership,
        vertex.color= V(undirGraph)$color, edge.arrow.size=3);
   dev.off();
   
+  }else{
+    
+    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
+    
+    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
+    
+    
+  }
   output <- list(undirGraph=undirGraph,attrDF=communityMembership$attrDF,network_stats=network_stats);
   return(output);
   

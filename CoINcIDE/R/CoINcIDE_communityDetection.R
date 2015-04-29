@@ -618,8 +618,8 @@ sampleNames <- c()
 for(d in 1:length(clustSampleIndexList)){
   
   for(c in 1:length(clustSampleIndexList[[d]])){
-    
-    sampleNames <- append(sampleNames,colnames(dataMatrixList[[d]][ , clustSampleIndexList[[d]][[c]]]))
+    #drop=FALSE: in case a cluster had only 1 patient.
+    sampleNames <- append(sampleNames,colnames(dataMatrixList[[d]][ , clustSampleIndexList[[d]][[c]],drop=FALSE]))
     
   }
   
@@ -644,8 +644,9 @@ for(d in 1:length(clustSampleIndexList)){
 
 
     #was this in the final clustering?
+    #==clustNum
     if(length(which(communityInfo$attrDF[,"clust"]==clustNum))>0){
-      
+      #message("commNum: ",commNum)
       commNum <- unique(communityInfo$attrDF[which(communityInfo$attrDF[,"clust"]==clustNum), "community"])
       
       if(length(commNum)!=1){
@@ -668,7 +669,7 @@ for(d in 1:length(clustSampleIndexList)){
   
 }
 
-sampleClustCommKey <- data.frame(sampleNames,globalClustNum,studyClustNum,studyNum,community)
+sampleClustCommKey <- data.frame(sampleNames,globalClustNum,studyClustNum,studyNum,community,stringsAsFactors=FALSE)
 colnames(sampleClustCommKey) <- c("sampleName","globalClustNum","studyClustNum","studyNum","community")
 
 fullMemberMatrix <- matrix(data=0,ncol=numTotalSamples,nrow=numTotalSamples,dimnames=list(sampleNames,sampleNames))
