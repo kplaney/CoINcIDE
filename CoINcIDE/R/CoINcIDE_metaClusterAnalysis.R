@@ -7,6 +7,7 @@ library("RCurl")
 library("RDAVIDWebService")
 library("limma")
 library("biomaRt")
+library("biomaRt")
 #library("Rgraphviz")
 #http://david.abcc.ncifcrf.gov/content.jsp?file=WS.html
 #http://bioinformatics.oxfordjournals.org/content/29/21/2810
@@ -755,7 +756,7 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
                  hedgeGList=hedgeGList,hedgeG_seList=hedgeG_seList)
   
   return(output)
-  
+
   #EOF
 }
 
@@ -916,7 +917,7 @@ GSEA_DAVID <- function(testGeneVector,idType="GENE_SYMBOL",yourEmail="katie.plan
   
   
 
-  sigFunct <- functAnnotChart[which(functAnnotChart[,"Benjamini"]<=qvalueThreshFunct) ,c("Category","Term")]
+  sigFunct <- functAnnotChart[which(functAnnotChart[,"Benjamini"]<=qvalueThreshFunct) ,c("Category","Term","Benjamini")]
   
   }else{
     
@@ -965,247 +966,260 @@ GSEA_DAVID <- function(testGeneVector,idType="GENE_SYMBOL",yourEmail="katie.plan
 # }
 # #listAttributes(mart) after setting up "mart" tells you all of the feature sources you can use.
 # #ex: "refseq_mrna" for refseq mrna ID.
-# mapGeneIDs <- function(geneticFeatures,bioMartSource="ensembl",bioMartDataset="hsapiens_gene_ensembl",
-#                                           geneticFeatureSource = 'hgnc_symbol',returnOnlyOneSymbolPerFeature=TRUE){
-#   
-#   library("biomaRt")
-#   mart <- useMart(bioMartSource,dataset=bioMartDataset)
-#   
-#   #can't have ' in a genetic features name for biomaRt to recognize it.
-#   if(length(dim(geneticFeatures))>0){
-#     
-#     #take first column. otherwise gsub does weird stuff.
-#     geneticFeatures <- geneticFeatures[,1];
-#     
-#   }
-#   
-#   if(length(geneFeatures)>450){
-#     
-#     stop("Your gene list is probably too long for biomaRt in R; try looping over chunks of the list.")
-#     
-#   }
-#   #can't have ' in a genetic features name for biomaRt to recognize it.
-#   geneticFeatures<- gsub("\'","",geneticFeatures);
-#   #oftentimes this period is added to ensembl IDs - but it's not in biomart.
-#   geneticFeatures <- strsplit2(geneticFeatures,"\\.")[,1];
-#   
-#   #some code alters geneticFeatures - we'll need the original list for some purposes later on down in the code
-#   #(returning 1 row per original genetic feature source item.)
-#   geneticFeaturesFull <- geneticFeatures;
-#   warning("duplicate entries for a certain BiomaRt source may be returned.")
-#   warning("if you're feeding in HGNC gene symbols,make sure these are the latest updated version, otherwise Biomart may not recognize them.")
-#   #listAttributes(mart)
-#   
-#   #use BM, as BMList is slower and loops over each value you put in. BM looks at all values more efficiently.
-#    
-#       linkedData <- getBM(c(geneticFeatureSource,'hgnc_symbol','ensembl_gene_id','start_position','end_position','band','chromosome_name','gene_biotype','entrezgene'),
-#                           filters=c(geneticFeatureSource),values=geneticFeatures,
-#                           mart=mart,uniqueRows=TRUE); 
-#   
-# 
-#   if(dim(linkedData)[1] < length(geneticFeatures)){
-#     
-#     warning("couldn't find a biomaRt record for all features.");
-#     
-#   }
-#   
-#   if(returnOnlyOneSymbolPerFeature){
-#     
-#     if(length(geneticFeaturesFull) != length(unique(geneticFeaturesFull))){
-#       
-#       warning("Some of your genetic feature inputs were duplicated. So you'll get duplicated output rows by choosing to have only 1 symbol returned per 
-#               (unique) feature input.")
-#       
-#     }
-#     
-#     if(length(dim(linkedData))==0){
-#       #so can grab column ID if it's a vector (shouldn't occur bc I put the feature source along with the gene symbol - so min 2 columns.)
-#       linkedData <- as.matrix(linkedData);
-#       
-#     }
-#     
-#     featureInfo <- linkedData;
-#     linkedData <- matrix(data=NA,nrow=length(geneticFeaturesFull),ncol=dim(linkedData)[2]);
-#     colnames(linkedData) <- colnames(featureInfo);
-#     
-#     #looking for original column we fed in - want this many rows and to match on this.
-#     #will only return 1 row per unique geneticFeatureSource
-#     colIndex <- which(colnames(linkedData)==geneticFeatureSource)[1];
-#     
-#     for(g in 1:length(geneticFeaturesFull)){
-#       
-#       #may have duplicated entries per one feature.
-#       #technically, if just did match function, would only return first match.
-#       #but I liked doing this stuff deliberately so I can remember it better later...
-#       matchIDs <- which(featureInfo[,colIndex ]==geneticFeaturesFull[g]);
-#       
-#       #may have returned NULL.
-#       if(!is.na(all(matchIDs))){
-#         
-#         #just take the first match.
-#         linkedData[g,] <- unlist(featureInfo[matchIDs[1],]);
-#         
-#       }else{
-#         
-#         cat("nothing for ", geneticFeaturesFull[g]);
-#         #data is already NA. no need for this.
-#         #linkedData[g,] <- NA;
-#         
-#       }
-#       
-#       #COME BACK: is this working OK?
-#       if(length(matchIDs)>1){
-#         warn <- TRUE;
-#         cat("\n index",g," gene ",geneticFeaturesFull[g]," had multiple records returned.\n");
-#         
-#       }else{
-#         warn <- FALSE;
-#       }
-#       
-#       
-#     }
-#     
-#     if(warn){
-#       
-#       warning("Found more than 1 gene symbol for some input features - printed them out above. The first symbol was chosen/kept each time - usually the best bet.")
-#     }
-#     
-#   }
-#   
-#   
-#   return(linkedData);
-#   
-#   }
-# 
+mapGeneIDs <- function(geneticFeatures,bioMartSource="ensembl",bioMartDataset="hsapiens_gene_ensembl",
+                                          geneticFeatureSource = 'hgnc_symbol',returnOnlyOneSymbolPerFeature=TRUE){
+  
+
+  mart <- useMart(bioMartSource,dataset=bioMartDataset)
+  
+  #can't have ' in a genetic features name for biomaRt to recognize it.
+  if(length(dim(geneticFeatures))>0){
+    
+    #take first column. otherwise gsub does weird stuff.
+    geneticFeatures <- geneticFeatures[,1];
+    
+  }
+  
+  if(length(geneticFeatures)>450){
+    
+    stop("Your gene list is probably too long for biomaRt in R; try looping over chunks of the list.")
+    
+  }
+  #can't have ' in a genetic features name for biomaRt to recognize it.
+  geneticFeatures<- gsub("\'","",geneticFeatures);
+  #oftentimes this period is added to ensembl IDs - but it's not in biomart.
+  geneticFeatures <- strsplit2(geneticFeatures,"\\.")[,1];
+  
+  #some code alters geneticFeatures - we'll need the original list for some purposes later on down in the code
+  #(returning 1 row per original genetic feature source item.)
+  geneticFeaturesFull <- geneticFeatures;
+  warning("duplicate entries for a certain BiomaRt source may be returned.")
+  warning("if you're feeding in HGNC gene symbols,make sure these are the latest updated version, otherwise Biomart may not recognize them.")
+  #listAttributes(mart)
+  
+  #use BM, as BMList is slower and loops over each value you put in. BM looks at all values more efficiently.
+   
+      linkedData <- getBM(c(geneticFeatureSource,'hgnc_symbol','ensembl_gene_id','start_position','end_position','band','chromosome_name','gene_biotype','entrezgene'),
+                          filters=c(geneticFeatureSource),values=geneticFeatures,
+                          mart=mart,uniqueRows=TRUE); 
+  
+
+  if(dim(linkedData)[1] < length(geneticFeatures)){
+    
+    warning("couldn't find a biomaRt record for all features.");
+    
+  }
+  
+  if(returnOnlyOneSymbolPerFeature){
+    
+    if(length(geneticFeaturesFull) != length(unique(geneticFeaturesFull))){
+      
+      warning("Some of your genetic feature inputs were duplicated. So you'll get duplicated output rows by choosing to have only 1 symbol returned per 
+              (unique) feature input.")
+      
+    }
+    
+    if(length(dim(linkedData))==0){
+      #so can grab column ID if it's a vector (shouldn't occur bc I put the feature source along with the gene symbol - so min 2 columns.)
+      linkedData <- as.matrix(linkedData);
+      
+    }
+    
+    featureInfo <- linkedData;
+    linkedData <- matrix(data=NA,nrow=length(geneticFeaturesFull),ncol=dim(linkedData)[2]);
+    colnames(linkedData) <- colnames(featureInfo);
+    
+    #looking for original column we fed in - want this many rows and to match on this.
+    #will only return 1 row per unique geneticFeatureSource
+    colIndex <- which(colnames(linkedData)==geneticFeatureSource)[1];
+    
+    for(g in 1:length(geneticFeaturesFull)){
+      
+      #may have duplicated entries per one feature.
+      #technically, if just did match function, would only return first match.
+      #but I liked doing this stuff deliberately so I can remember it better later...
+      matchIDs <- which(featureInfo[,colIndex ]==geneticFeaturesFull[g]);
+      
+      #may have returned NULL.
+      if(!is.na(all(matchIDs))){
+        
+        #just take the first match.
+        linkedData[g,] <- unlist(featureInfo[matchIDs[1],]);
+        
+      }else{
+        
+        cat("nothing for ", geneticFeaturesFull[g]);
+        #data is already NA. no need for this.
+        #linkedData[g,] <- NA;
+        
+      }
+      
+      #COME BACK: is this working OK?
+      if(length(matchIDs)>1){
+        warn <- TRUE;
+        cat("\n index",g," gene ",geneticFeaturesFull[g]," had multiple records returned.\n");
+        
+      }else{
+        warn <- FALSE;
+      }
+      
+      
+    }
+    
+    if(warn){
+      
+      warning("Found more than 1 gene symbol for some input features - printed them out above. The first symbol was chosen/kept each time - usually the best bet.")
+    }
+    
+  }
+  
+  
+  return(linkedData);
+  
+  }
+
 # #COME BACK: need to debug how compute this....
-#  GSEA <- function(testGeneVector,refGeneLists=NULL,method=c("hypergeometric","fisher"),genomeSize,
-#                   refGeneListDir="/home/data/MSigDB/GSEA_base_MSigDB_lists_merged.RData.gzip"){
+ GSEA <- function(testGeneVector,refGeneLists=NULL,method=c("hypergeometric","fisher"),
+                  refGeneListDir="/home/data/MSigDB/GSEA_base_MSigDB_lists_merged.RData.gzip"){
+   
+  #all reference - take union
+   #genes in reference gene lists + length test GeneVector
+   
+   warning("\nThis code assumes that all of your genes in your test gene list and ref gene list are in the genome.");
+   
+   if(is.null(refGeneLists)){
+     
+   load(refGeneListDir)
+   #cat("\nUsing default MSigDB lists: MSigDB_onco_symbols, MSigDB_CanPath_symbols,MSigDB_TFT_symbols,MSigDB_immun_symbols,
+    #   and MSigDB_cancerNeigh_symbols.\n");
+   
+   }
+   
+  refGeneLists <- GSEA_base_MSigDB_lists_merged;
+  
+  genome <- c()
+  
+  for(r in 1:length(refGeneLists)){
+    
+    genome <- union(genome,unlist(refGeneLists[[r]]))
+  }
+  
+  #now add on test gene vector
+  genome <- union(genome,testGeneVector)
+  message("genome size is ",length(genome))
+  genomeSize <- length(genome)
+  pvalues <- list();
+  
+  for(r in 1:length(refGeneLists)){
+    
+    numIntersect <- length(intersect(testGeneVector,refGeneLists[[r]]));
+    
+    if(numIntersect>0){
+     # message(names(refGeneLists)[r])
+      if(method=="hypergeometric"){
+        #we are taking the area under the curve to calculate a <= scenario.
+        #from 1 to the number of genes we've intersected - this is our vector of quantiles
+        #"representing the number of white balls drawn without replacement from an urn which contains both black and white balls"
+        #length(refGeneLists[[r]]) is the total number of balls we drew from the urn. so the urn has to be the entire genome here?
+        #tricky when filter down gene list first.  a larger genomeSize will make for more conservative p-values.
+        
+        #phyper(x, m, n, k) gives the probability of getting x or fewer
+        #phyper(numIntersect-1, length(geneList), genomeSize, length(refGeneLists[[r]]), lower.tail=FALSE)
+        #lower tail =FALSE same as 1-:
+        #what's the probability of have a larger tail than this?
+        pvalues[[r]] <- 1- phyper(numIntersect-1, length(testGeneVector), genomeSize, length(refGeneLists[[r]]));
+        
+        #this will also give the same answer:
+        #we want to know how probably it is by chance that we'd see MORE (or equal?) intersecting genes than we have.
+        #pvalue <- min(1-cumsum(dhyper(0:(numIntersect-1), length(testGeneVector), genomeSize-length(testGeneVector), length(refGeneLists[[r]])) ));
+      }else if(method=="fisher"){
+        
+        counts <-  matrix(data = c(numIntersect, length(refGeneLists[[r]])-numIntersect, length(testGeneVector),genomeSize-length(testGeneVector)),nrow = 2);
+        pvalues[[r]] <- fisher.test(counts,alternative="greater")$p.value;
+        
+      }else{
+        
+        stop("\nPlease input method=hypergeometric or method=fisher as the statistical method.");
+        
+      }
+      
+      
+      
+    }else{
+      
+      #set equal to one? no sure how to do this here....
+      pvalues[[r]] <- NA;
+      
+    }
+    
+  }
+  
+  nonNA_indices <- which(!is.na(unlist(unlist(pvalues))));
+  nonNA_pvalues <- unlist(pvalues)[which(!is.na(unlist(unlist(pvalues))))];
+  qvalues <- array(data=NA,dim=length(unlist(pvalues)));
+  #want to preserve NA values
+  #now do multiple hyp testing
+  qvalues[nonNA_indices] <- p.adjust(p=nonNA_pvalues,method="fdr");
+  
+  names(pvalues) <- names(refGeneLists)
+  names(qvalues) <- names(refGeneLists)
+  output <- list(qvalues=qvalues,pvalues=unlist(pvalues),refGeneListNames=names(refGeneLists));
+  
+  return(output);
+  
+}
+
+# #for example: can create TCGA membership, overlay with ours.
+# visualizeTwoMetaclustMemberships <- function(memberMatrix1,memberMatrix2,returnSampleMemberMatrix()$fullMemberMatrix){
+#   
+#  totalColNames <- union(colnames(memberMatrix1),colnames(memberMatrix2))
+#  overlayMatrix <- matrix(data=NA,ncol=length(totalColNames),nrow=length(totalColNames),
+#                          dimnames=list(totalColNames,totalColNames))
+#  
+#  for(t in 1:length(totalColNames)){
 #    
-#    warning("\nThis GSEA test may overly conservative -Katie needs to make the genomeSize just all the genes across all of the refLists")
-#    warning("\nThis code assumes that all of your genes in your test gene list and ref gene list are in the genome.");
+#    for(s in 1:length(totalColNames)){
 #    
-#    if(is.null(refGeneLists)){
+#      #have we computed this index yet?
+#      if(is.na(overlayMatrix[t,s])){
+#        
+#    if(!is.na(match(colnames(memberMatrix1),totalColNames[t]))){
 #      
-#    load(refGeneListDir)
-#    #cat("\nUsing default MSigDB lists: MSigDB_onco_symbols, MSigDB_CanPath_symbols,MSigDB_TFT_symbols,MSigDB_immun_symbols,
-#     #   and MSigDB_cancerNeigh_symbols.\n");
-#    
+#      
+#      value1 <- memberMatrix1[totalColNames[t],totalColNames[s]] 
+#      
+#    }else{
+#      #want to be able to ID when a sample was simply not included in an analysis.
+#      value1  <- -2
+#      
+#    }
+#      
+#      if(!is.na(match(colnames(memberMatrix2),totalColNames[t]))){
+#        
+#        value2 <- memberMatrix2[totalColNames[t],totalColNames[s]]   
+#        
+#      }else{
+#        
+#        value2 <- -2
+#        
+#      }
+#      
+#          
+#          overlayMatrix[t,s] <- value1 + value 2
+#          
+#    #end of if NA      
+#    }
+#        
+#  
 #    }
 #    
-#   refGeneLists <- GSEA_base_MSigDB_lists_merged;
-#   
-#   pvalues <- list();
-#   
-#   for(r in 1:length(refGeneLists)){
-#     
-#     numIntersect <- length(intersect(testGeneVector,refGeneLists[[r]]));
-#     
-#     if(numIntersect>0){
-#       
-#       if(method=="hypergeometric"){
-#         #we are taking the area under the curve to calculate a <= scenario.
-#         #from 1 to the number of genes we've intersected - this is our vector of quantiles
-#         #"representing the number of white balls drawn without replacement from an urn which contains both black and white balls"
-#         #length(refGeneLists[[r]]) is the total number of balls we drew from the urn. so the urn has to be the entire genome here?
-#         #tricky when filter down gene list first.  a larger genomeSize will make for more conservative p-values.
-#         
-#         #phyper(x, m, n, k) gives the probability of getting x or fewer
-#         #phyper(numIntersect-1, length(geneList), genomeSize, length(refGeneLists[[r]]), lower.tail=FALSE)
-#         #lower tail =FALSE same as 1-:
-#         #what's the probability of have a larger tail than this?
-#         pvalues[[r]] <- 1- phyper(numIntersect-1, length(testGeneVector), genomeSize, length(refGeneLists[[r]]));
-#         
-#         #this will also give the same answer:
-#         #we want to know how probably it is by chance that we'd see MORE (or equal?) intersecting genes than we have.
-#         #pvalue <- min(1-cumsum(dhyper(0:(numIntersect-1), length(testGeneVector), genomeSize-length(testGeneVector), length(refGeneLists[[r]])) ));
-#       }else if(method=="fisher"){
-#         
-#         counts <-  matrix(data = c(numIntersect, length(refGeneLists[[r]])-numIntersect, length(testGeneVector),genomeSize-length(testGeneVector)),nrow = 2);
-#         pvalues[[r]] <- fisher.test(counts,alternative="greater")$p.value;
-#         
-#       }else{
-#         
-#         stop("\nPlease input method=hypergeometric or method=fisher as the statistical method.");
-#         
-#       }
-#       
-#       
-#       
-#     }else{
-#       
-#       #set equal to one? no sure how to do this here....
-#       pvalues[[r]] <- NA;
-#       
-#     }
-#     
-#   }
-#   
-#   nonNA_indices <- which(!is.na(unlist(unlist(pvalues))));
-#   nonNA_pvalues <- unlist(pvalues)[which(!is.na(unlist(unlist(pvalues))))];
-#   qvalues <- array(data=NA,dim=length(unlist(pvalues)));
-#   #want to preserve NA values
-#   #now do multiple hyp testing
-#   qvalues[nonNA_indices] <- p.adjust(p=nonNA_pvalues,method="fdr");
-#   
-#   names(pvalues) <- names(refGeneLists)
-#   names(qvalues) <- names(refGeneLists)
-#   output <- list(qvalues=qvalues,pvalues=unlist(pvalues),refGeneListNames=names(refGeneLists));
-#   
-#   return(output);
-#   
+#  }
+#  
+#  if(any(is.na(overlayMatrix))){
+#    
+#    stop("Error: you are getting NAs in your overlayMatrix.")
+#    
+#  }
+#   return(overlayMatrix)
+#   #EOF
 # }
-# 
-# # #for example: can create TCGA membership, overlay with ours.
-# # visualizeTwoMetaclustMemberships <- function(memberMatrix1,memberMatrix2,returnSampleMemberMatrix()$fullMemberMatrix){
-# #   
-# #  totalColNames <- union(colnames(memberMatrix1),colnames(memberMatrix2))
-# #  overlayMatrix <- matrix(data=NA,ncol=length(totalColNames),nrow=length(totalColNames),
-# #                          dimnames=list(totalColNames,totalColNames))
-# #  
-# #  for(t in 1:length(totalColNames)){
-# #    
-# #    for(s in 1:length(totalColNames)){
-# #    
-# #      #have we computed this index yet?
-# #      if(is.na(overlayMatrix[t,s])){
-# #        
-# #    if(!is.na(match(colnames(memberMatrix1),totalColNames[t]))){
-# #      
-# #      
-# #      value1 <- memberMatrix1[totalColNames[t],totalColNames[s]] 
-# #      
-# #    }else{
-# #      #want to be able to ID when a sample was simply not included in an analysis.
-# #      value1  <- -2
-# #      
-# #    }
-# #      
-# #      if(!is.na(match(colnames(memberMatrix2),totalColNames[t]))){
-# #        
-# #        value2 <- memberMatrix2[totalColNames[t],totalColNames[s]]   
-# #        
-# #      }else{
-# #        
-# #        value2 <- -2
-# #        
-# #      }
-# #      
-# #          
-# #          overlayMatrix[t,s] <- value1 + value 2
-# #          
-# #    #end of if NA      
-# #    }
-# #        
-# #  
-# #    }
-# #    
-# #  }
-# #  
-# #  if(any(is.na(overlayMatrix))){
-# #    
-# #    stop("Error: you are getting NAs in your overlayMatrix.")
-# #    
-# #  }
-# #   return(overlayMatrix)
-# #   #EOF
-# # }

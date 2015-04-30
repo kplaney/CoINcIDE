@@ -1,4 +1,4 @@
-curatedOvarianData meta-clustering with 500 (meta-rank) features using kmeans consensus and pearson mean matrix correlation
+curatedOvarianData meta-clustering with 200 (meta-rank) features using kmeans consensus and pearson mean matrix correlation
 ========================================================
 **Data loading**
 ```{r global_options, include=FALSE}
@@ -11,10 +11,10 @@ First, I loaded up my data just past the CoINcIDE" "getAdjMatrices() function (t
 
 ```{r}
 #grab data matrix list, clust features list
-CoINcIDE_rankFeatures <- "/home/kplaney/ovarian_analysis/metaFeatures_500.RData.gzip"
+CoINcIDE_rankFeatures <- "/home/kplaney/ovarian_analysis/metaFeatures_200.RData.gzip"
 load(CoINcIDE_rankFeatures)
 metaFeatures <- metaFeatures
-CoINcIDE_clusterOutput <-  "/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_nstart1_500Features_2015-04-29.RData.gzip"
+CoINcIDE_clusterOutput <-  "/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_nstart1_200Features_2015-04-28.RData.gzip"
 load(CoINcIDE_clusterOutput)
 clusterOutput <- kmeansConsensus
 load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
@@ -43,9 +43,9 @@ clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
 clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
 
 
-CoINcIDE_computeEdgesObject <- "/home/kplaney/ovarian_analysis/adjMatrices_500F_pearson_meanMatrix_2015-04-29RData.gzip"
+CoINcIDE_computeEdgesObject <- "/home/kplaney/ovarian_analysis/adjMatrices_200F_pearson_meanMatrix_2015-04-29RData.gzip"
 load(CoINcIDE_computeEdgesObject)
-output <- ov_500F_pearson_meanMatrix
+output <- ov_200F_pearson_meanMatrix
 inputVariablesDF <- output$inputVariablesDF
 computeTrueSimilOutput <- output$computeTrueSimilOutput
 pvalueMatrix <- output$pvalueMatrix
@@ -142,8 +142,8 @@ plotMetaFeatureRank(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
 
 message("Running effect size analysis:")
 ES_out <- computeMetaclustEffectSizes(metaClustSampleNames=binInfo$metaClustSampleNames,dataMatrixList=dataMatrixList,featureNames=metaFeatures$finalFeatures,minOtherClass=5)
-sigGenes <- selectMetaclustSigGenes(computeMetaclustEffectSizesOutput=ES_out,qvalueThresh=1,
-                                    ESthresh=.5)
+sigGenes <- selectMetaclustSigGenes(computeMetaclustEffectSizesOutput=ES_out,qvalueThresh=.1,
+                                    ESthresh=.2)
 summSigGenes <- summarizePosMetaclustGenes(selectMetaclustSigGenesOut=sigGenes,computeMetaclustEffectSizesOutput)
 
 
@@ -155,46 +155,36 @@ summSigGenes <- summarizePosMetaclustGenes(selectMetaclustSigGenesOut=sigGenes,c
 It turns out "GSEABase" isn't all that great..so just using some Broad gene sets I already downloaded and the standard hypergeometric tests:
 
 ```{r}
-GSEA_out <- list()
+#this doesn't work too well - but that is perhaps because I'm calculating this wrong...
+#this is filtering on wilcoxon p-value; by ES alone gives too many results for certain meta-clusters.
+#(could filter by higher ES in future.)
+DAVID_out <- list()
 for(c in 1:length(sigGenes$sigMetaclustGenes_pos)){
   
   testGeneSet <- sigGenes$sigMetaclustGenes_pos[[c]]
+  cat("\n",length(testGeneSet), " genes for commmunity number ",c, "(name) ",names(sigGenes$sigMetaclustGenes_pos)[c],
+      " have a positive effect size above .2 with a wilcoxon rank q-value below .1")
+  #write to feed into David for now?
+  write.table(testGeneSet,file=paste0("/home/kplaney/ovarian_analysis/DAVID/upGenes_comm",
+              names(sigGenes$sigMetaclustGenes_pos)[c],"_pearson500F.txt"),quote=FALSE,
+              row.names=FALSE,col.names=FALSE)
   
-GSEA_out[[c]] <- GSEA(testGeneVector=testGeneSet,refGeneLists=NULL,method=c("hypergeometric"),
-                  refGeneListDir="/home/data/MSigDB/GSEA_base_MSigDB_lists_merged.RData.gzip")
-
-}
-save(GSEA_out,file="/home/kplaney/ovarian_analysis/DAVID/GSEA_out_500F_pearson_ESpt5.RData.gzip",compress="gzip")
-#this doesn't work too well - but that is perhaps because I'm calculating this wrong...
-#this is filtering on wilcoxon p-value; by ES alone gives too many results for certain meta-clusters.
-# #(could filter by higher ES in future.)
-# DAVID_out <- list()
-# for(c in 1:length(sigGenes$sigMetaclustGenes_pos)){
-#   
-#   testGeneSet <- sigGenes$sigMetaclustGenes_pos[[c]]
-#   cat("\n",length(testGeneSet), " genes for commmunity number ",c, "(name) ",names(sigGenes$sigMetaclustGenes_pos)[c],
-#       " have a positive effect size above .2 with a wilcoxon rank q-value below .1")
-#   #write to feed into David for now?
-#   write.table(testGeneSet,file=paste0("/home/kplaney/ovarian_analysis/DAVID/upGenes_comm",
-#               names(sigGenes$sigMetaclustGenes_pos)[c],"_pearson500F.txt"),quote=FALSE,
-#               row.names=FALSE,col.names=FALSE)
-#   
-#   DAVID_out[[c]] <- GSEA_DAVID(testGeneVector=testGeneSet,idType="GENE_SYMBOL",yourEmail="katie.planey@stanford.edu",
-#                        EASE_thresh=0.1,count_thresh=2L,qvalueThreshFunct=.2,
-#                        pvalueThreshCluster=.2,fileTag=paste0("pearson500F_commmunity_",c),
-#                        saveDir="/home/kplaney/ovarian_analysis/DAVID/")
-#   
-#   message("Significantly enriched DAVID functional groups for overexpressed genes in meta-cluster ",c," with soft q-value thresholds:\n")
-#   cat(as.character(unlist(DAVID_out[[c]]$sigFunctGroups$Term)),"\n\n")
-#   
+  DAVID_out[[c]] <- GSEA_DAVID(testGeneVector=testGeneSet,idType="GENE_SYMBOL",yourEmail="katie.planey@stanford.edu",
+                       EASE_thresh=0.1,count_thresh=2L,qvalueThreshFunct=.2,
+                       pvalueThreshCluster=.2,fileTag=paste0("pearson200F_commmunity_",c),
+                       saveDir="/home/kplaney/ovarian_analysis/DAVID/")
+  
+  message("Significantly enriched DAVID functional groups for overexpressed genes in meta-cluster ",c," with soft q-value thresholds:\n")
+  cat(as.character(unlist(DAVID_out[[c]]$sigFunctGroups$Term)),"\n\n")
   
    # message("Significantly enriched DAVID clusters for overexpressed genes in meta-cluster ",c,":")
-  #cat("\n", DAVID_out[[c]]$sigClusters,"\n")
+   #DAVID_out[[c]]$sigClusters
    # plot2D(DAVID_out[[c]]$functionalAnnotationChart[
     #  na.omit(match(DAVID_out[[c]]$sigFunctGroups,DAVID_out[[c]]$functionalAnnotationChart[,1]))],
      #    color=c("FALSE"="black", "TRUE"="green"))
 }
-save(DAVID_out,file="/home/kplaney/ovarian_analysis/DAVID_500F_pearsonMatrix.RData.gzip",compress="gzip")
+
+save(DAVID_out,file="/home/kplaney/ovarian_analysis/DAVID_200F_pearsonMatrix.RData.gzip",compress="gzip")
 
 ```
 **Survival Analyses**

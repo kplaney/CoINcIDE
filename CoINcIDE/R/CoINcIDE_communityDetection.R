@@ -7,7 +7,9 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
                              meanEdgePairPvalueThresh=.05,
                              minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
                              fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
-                             clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges"
+                             clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges",
+                             restrictEdges=FALSE,clustIndexMatrix
+                             
 ){
   
   clustSizeIndexRemove <- c()
@@ -24,7 +26,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
       
     }
     if(computeTrueSimilOutput$clustSizeMatrix[r] <= clustSizeThresh || computeTrueSimilOutput$clustSizeFractMatrix[r] <= clustSizeFractThresh){
-      #remove these clusters
+      #remove these clusters - do not pass thresholds
       pvalueMatrix[r, ] <- NA
       count <- count + 1
       clustSizeIndexRemove[count] <- r
@@ -35,13 +37,14 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   message(length(clustSizeIndexRemove), " clusters dropped because they were below the clust size thresh clustSizeThresh
           threshold of ",clustSizeThresh)
   #assign mean p-value matrix
-  
+
   for(r in 1:nrow(meanEdgePvalueMatrix)){
     
     for(c in 1:nrow(meanEdgePvalueMatrix)){
       #have we already computed the mean here?
       if(is.na(meanEdgePvalueMatrix[r,c])){
         
+        if(!is.na(computeTrueSimilOutput$similValueMatrix[r,c]) && computeTrueSimilOutput$similValueMatrix[r,c]>= minTrueSimilThresh){
         #other choice: could combine via fisher's p-value, stouffer's (Z-transform) or brown's method.
         #for independent p-values: some claim Stouffer's is preferred over fisher's method: http://onlinelibrary.wiley.com/doi/10.1111/j.1420-9101.2005.00917.x/full
         #Brown's method, not stouffer or fisher, are correct for dependent p-values (which is the case here.)
@@ -51,11 +54,54 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
         meanEdgePvalueMatrix[r,c] <- mean(c(pvalueMatrix[r,c],pvalueMatrix[c,r]))
         meanEdgePvalueMatrix[c,r] <- meanEdgePvalueMatrix[r,c]
         
+        }
+        
       }
       
     }
     
   }
+
+  if(restrictEdges){
+    
+    for(r in 1:nrow(meanEdgePvalueMatrix)){
+      
+      #we use > in the edge finding algorithm.
+      compareIndices <- intersect(which(meanEdgePvalueMatrix[r,] >= minTrueSimilThresh) , 
+                                  which(!is.na(meanEdgePvalueMatrix[r,])))
+      
+      if(length(compareIndices)>0){
+
+        clust_names_by_study <- split(clustIndexMatrix[compareIndices,1],f=clustIndexMatrix[compareIndices,2],drop=TRUE);
+        
+        for(c in 1:length(clust_names_by_study)){
+          
+          if(length(clust_names_by_study[[c]])>1){
+            #we have multiple matches
+            orig_indices <- as.numeric(as.character(clust_names_by_study[[c]]))
+            #if a tie: then keep both - stay honest!
+            #p-values here: want minimum value.
+            bestMatch <- which(meanEdgePvalueMatrix[r,orig_indices]==min(meanEdgePvalueMatrix[r,orig_indices]));
+            #remove this best index so that we don't set it to NA below.
+            orig_indices <- orig_indices[-bestMatch];
+            
+            #if a tie, only 2 in orig_indices: length will be zero.
+            if(length(orig_indices)>0){
+              #null out these indices now so won't get compared
+              meanEdgePvalueMatrix[r,orig_indices] <- NA;
+              meanEdgePvalueMatrix[r,orig_indices] <- NA;
+              
+            }
+            
+          }
+        }
+        
+        
+      }
+      # if(length(compareIndices)>0) 
+    }
+  }
+    
   
   adjMatricesList <- list(computeTrueSimilOutput$similValueMatrix,computeTrueSimilOutput$similValueMatrix,
                           pvalueMatrix,meanEdgePvalueMatrix,computeTrueSimilOutput$fractFeatIntersectMatrix,

@@ -1,9 +1,7 @@
-curatedOvarianData meta-clustering with 500 (meta-rank) features using kmeans consensus and pearson mean matrix correlation
+curatedOvarianData meta-clustering with 500 (meta-rank) features using kmeans consensus and spearman mean matrix correlation
 ========================================================
 **Data loading**
-```{r global_options, include=FALSE}
-knitr::opts_chunk$set(echo=FALSE, warning=FALSE)
-```
+
 
 This is a report for the curatedOvarianData meta-clustering. Initial clustering was done using k-means and selecting k via the the rounded PACR metric with nstart=1.
 
@@ -43,9 +41,9 @@ clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
 clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
 
 
-CoINcIDE_computeEdgesObject <- "/home/kplaney/ovarian_analysis/adjMatrices_500F_pearson_meanMatrix_2015-04-29RData.gzip"
+CoINcIDE_computeEdgesObject <- "/home/kplaney/ovarian_analysis/adjMatrices_500F_spearman_meanMatrix_2015-04-29RData.gzip"
 load(CoINcIDE_computeEdgesObject)
-output <- ov_500F_pearson_meanMatrix
+output <- ov_500F_spearman_meanMatrix
 inputVariablesDF <- output$inputVariablesDF
 computeTrueSimilOutput <- output$computeTrueSimilOutput
 pvalueMatrix <- output$pvalueMatrix
@@ -57,7 +55,7 @@ indEdgePvalueThresh <- .05
 minTrueSimilThresh <- .5
 maxTrueSimilThresh <- Inf
 clustSizeFractThresh <- inputVariablesDF$clustSizeFractThresh
-#NOTE: I have found that removing clusters below size 10 does clear up signal.
+#KEEP: small cluster sizes: it turns out one TCGA cluster is mostly linked to all smaller clusters.
 clustSizeThresh <- 5
 fractFeatIntersectThresh <- inputVariablesDF$fractFeatIntersectThresh
   numFeatIntersectThresh <- inputVariablesDF$numFeatIntersectThresh
@@ -86,8 +84,8 @@ finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,
                               meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
                               minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
                               fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
-                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",
-                              restrictEdges=FALSE
+                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,
+                              fileTag="CoINcIDE_edges_",restrictEdges=FALSE
 )
 
 commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,
@@ -142,8 +140,8 @@ plotMetaFeatureRank(metaMatrix,saveFile=FALSE,plotToScreen=TRUE,
 
 message("Running effect size analysis:")
 ES_out <- computeMetaclustEffectSizes(metaClustSampleNames=binInfo$metaClustSampleNames,dataMatrixList=dataMatrixList,featureNames=metaFeatures$finalFeatures,minOtherClass=5)
-sigGenes <- selectMetaclustSigGenes(computeMetaclustEffectSizesOutput=ES_out,qvalueThresh=1,
-                                    ESthresh=.5)
+sigGenes <- selectMetaclustSigGenes(computeMetaclustEffectSizesOutput=ES_out,qvalueThresh=.1,
+                                    ESthresh=.2)
 summSigGenes <- summarizePosMetaclustGenes(selectMetaclustSigGenesOut=sigGenes,computeMetaclustEffectSizesOutput)
 
 
@@ -155,47 +153,36 @@ summSigGenes <- summarizePosMetaclustGenes(selectMetaclustSigGenesOut=sigGenes,c
 It turns out "GSEABase" isn't all that great..so just using some Broad gene sets I already downloaded and the standard hypergeometric tests:
 
 ```{r}
-GSEA_out <- list()
+#this doesn't work too well - but that is perhaps because I'm calculating this wrong...
+#this is filtering on wilcoxon p-value; by ES alone gives too many results for certain meta-clusters.
+#(could filter by higher ES in future.)
+DAVID_out <- list()
 for(c in 1:length(sigGenes$sigMetaclustGenes_pos)){
   
   testGeneSet <- sigGenes$sigMetaclustGenes_pos[[c]]
+  cat("\n",length(testGeneSet), " genes for commmunity number ",c, "(name) ",names(sigGenes$sigMetaclustGenes_pos)[c],
+      " have a positive effect size above .2 with a wilcoxon rank q-value below .1")
+  #write to feed into David for now?
+  write.table(testGeneSet,file=paste0("/home/kplaney/ovarian_analysis/DAVID/upGenes_comm",
+              names(sigGenes$sigMetaclustGenes_pos)[c],"_spearman500F.txt"),quote=FALSE,
+              row.names=FALSE,col.names=FALSE)
   
-GSEA_out[[c]] <- GSEA(testGeneVector=testGeneSet,refGeneLists=NULL,method=c("hypergeometric"),
-                  refGeneListDir="/home/data/MSigDB/GSEA_base_MSigDB_lists_merged.RData.gzip")
-
-}
-save(GSEA_out,file="/home/kplaney/ovarian_analysis/DAVID/GSEA_out_500F_pearson_ESpt5.RData.gzip",compress="gzip")
-#this doesn't work too well - but that is perhaps because I'm calculating this wrong...
-#this is filtering on wilcoxon p-value; by ES alone gives too many results for certain meta-clusters.
-# #(could filter by higher ES in future.)
-# DAVID_out <- list()
-# for(c in 1:length(sigGenes$sigMetaclustGenes_pos)){
-#   
-#   testGeneSet <- sigGenes$sigMetaclustGenes_pos[[c]]
-#   cat("\n",length(testGeneSet), " genes for commmunity number ",c, "(name) ",names(sigGenes$sigMetaclustGenes_pos)[c],
-#       " have a positive effect size above .2 with a wilcoxon rank q-value below .1")
-#   #write to feed into David for now?
-#   write.table(testGeneSet,file=paste0("/home/kplaney/ovarian_analysis/DAVID/upGenes_comm",
-#               names(sigGenes$sigMetaclustGenes_pos)[c],"_pearson500F.txt"),quote=FALSE,
-#               row.names=FALSE,col.names=FALSE)
-#   
-#   DAVID_out[[c]] <- GSEA_DAVID(testGeneVector=testGeneSet,idType="GENE_SYMBOL",yourEmail="katie.planey@stanford.edu",
-#                        EASE_thresh=0.1,count_thresh=2L,qvalueThreshFunct=.2,
-#                        pvalueThreshCluster=.2,fileTag=paste0("pearson500F_commmunity_",c),
-#                        saveDir="/home/kplaney/ovarian_analysis/DAVID/")
-#   
-#   message("Significantly enriched DAVID functional groups for overexpressed genes in meta-cluster ",c," with soft q-value thresholds:\n")
-#   cat(as.character(unlist(DAVID_out[[c]]$sigFunctGroups$Term)),"\n\n")
-#   
+  DAVID_out[[c]] <- GSEA_DAVID(testGeneVector=testGeneSet,idType="GENE_SYMBOL",yourEmail="katie.planey@stanford.edu",
+                       EASE_thresh=0.1,count_thresh=2L,qvalueThreshFunct=.2,
+                       pvalueThreshCluster=.2,fileTag=paste0("spearman500F_commmunity_",c),
+                       saveDir="/home/kplaney/ovarian_analysis/DAVID/")
   
-   # message("Significantly enriched DAVID clusters for overexpressed genes in meta-cluster ",c,":")
-  #cat("\n", DAVID_out[[c]]$sigClusters,"\n")
+  message("Significantly enriched DAVID functional groups for overexpressed genes in meta-cluster ",c," with soft q-value thresholds:\n")
+  DAVID_out[[c]]$sigFunctGroups
+  
+    message("Significantly enriched DAVID clusters for overexpressed genes in meta-cluster ",c,":")
+   DAVID_out[[c]]$sigClusters
    # plot2D(DAVID_out[[c]]$functionalAnnotationChart[
     #  na.omit(match(DAVID_out[[c]]$sigFunctGroups,DAVID_out[[c]]$functionalAnnotationChart[,1]))],
      #    color=c("FALSE"="black", "TRUE"="green"))
 }
-save(DAVID_out,file="/home/kplaney/ovarian_analysis/DAVID_500F_pearsonMatrix.RData.gzip",compress="gzip")
 
+save(DAVID_out,file="/home/kplaney/ovarian_analysis/DAVID_500F_spearmanMatrix.RData.gzip",compress="gzip")
 ```
 **Survival Analyses**
 I'm still working on determing which long-term and binary variables have the least amount of NAs across the samples in these meta-clusters, but it does look like the binary vital_status variable (alive or dead) and continous days to death variables provide survival curves that significantly stratify patients. It was less significant when I used a 5-year cutoff.
@@ -306,5 +293,100 @@ table(sampleClustCommPhenoData[,groupingTerm],sampleClustCommPhenoData[,"tumorst
 table(sampleClustCommPhenoData[,groupingTerm],sampleClustCommPhenoData[,"recurrence_status"],exclude=NULL)
 #not grouped by grade
 table(sampleClustCommPhenoData[,groupingTerm],sampleClustCommPhenoData[,"grade"],exclude=NULL)
-table(groupings)
+
+#is this only for TCGA?
+table(sampleClustCommPhenoData[,groupingTerm],sampleClustCommPhenoData[,"primary_therapy_outcome_success"],exclude=NULL)
+#communities spread fairly well through clusters
+table(sampleClustCommPhenoData[,groupingTerm],sampleClustCommPhenoData[,"studyNum"],exclude=NULL)
+#by only TCGA: it does appear that the cluster with the smaller TCGA samples may have worse response, but there's a lot of NAs:
+table(sampleClustCommPhenoData[which(sampleClustCommPhenoData[,"studyNum"]==23),"primary_therapy_outcome_success"],sampleClustCommPhenoData[which(sampleClustCommPhenoData[,"studyNum"]==23),"community"],exclude=NULL)
+#all NAs for binary relapse variable in TCGA data:
+table(sampleClustCommPhenoData[which(sampleClustCommPhenoData[,"studyNum"]==23),"relapse_binary"],sampleClustCommPhenoData[which(sampleClustCommPhenoData[,"studyNum"]==23),"community"],exclude=NULL)
+table(sampleClustCommPhenoData[which(sampleClustCommPhenoData[,"studyNum"]==23),"relapse_binary"],sampleClustCommPhenoData[which(sampleClustCommPhenoData[,"studyNum"]==23),"community"],exclude=NULL)
+
+```
+
+As for the days to recurrence available, it turns out there's only one grouping, so we can't run the analysis:
+
+```{r}
+# #re-compute this variable, as subsetted  before:
+# sampleClustCommPhenoData <- addClinicalVarToNodeAttributes(sampleClustCommKey,phenoMasterDF=phenoMasterDF)
+# 
+# #survival analysis
+# #booo- only one group has the days to recurrence.
+# outcomesVarBinary="primary_therapy_outcome_success"
+# outcomesVarCont = "days_to_tumor_recurrence"
+# CutoffPointYears=5
+# uniquePatientID="unique_patient_ID"
+# groupingTerm="community"
+#    
+#      
+#   #only take samples with the groupingTerm you're looking at.
+#   sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
+#   #remove samples with NA values.
+#   groupings <- sampleClustCommPhenoData[, groupingTerm]
+#   
+#   #groupings <- groupings[which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary]))];
+#   #outcomesData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary])),];
+#   
+#   #keep samples with NA days to event for now?
+# #hmm...one meta-cluster is left out if use "days_to_death"...
+#   #groupings <- as.numeric(as.factor(groupings[which(!is.na(outcomesData[,outcomesVarCont]))]))
+#   #outcomesData <- outcomesData[which(!is.na(outcomesData[,outcomesVarCont])),];
+#   
+#   #if binary is character string categories: make it a factor first, then numeric,
+#   #otherwise coxph function will throw errors.
+# #  nonCensoredTerm=1
+# sampleClustCommPhenoData[which(sampleClustCommPhenoData[ ,outcomesVarBinary]=="deceased"),outcomesVarBinary] <- 1
+# sampleClustCommPhenoData[which(sampleClustCommPhenoData[ ,outcomesVarBinary]=="living"),outcomesVarBinary] <- 0
+#   outcomesDataShort <- data.frame(as.numeric(sampleClustCommPhenoData[,outcomesVarBinary]),as.numeric(sampleClustCommPhenoData[,outcomesVarCont])
+#   );
+#   
+#   #sometimes the names are duplicated across studies - remove this line
+#   #rownames(outcomesDataShort ) <- outcomesData[,uniquePatientID];
+#   colnames(outcomesDataShort) <- c("Censoring","TimeToLastContactOrEvent")
+#   
+#   nonCensoredTerm=1
+#   censoredTerm=0
+#   Survival <- outcomesDataShort
+#   #creating the survival objects with the time and censoring variables
+#   OverallSurvival <- Surv(Survival$TimeToLastContactOrEvent,Survival$Censoring==nonCensoredTerm);
+#   #creating a survival object cutoff at a certain point
+#    CutoffPoint <- CutoffPointYears*365;
+#    CutoffSamples=Survival$TimeToLastContactOrEvent>CutoffPoint & !is.na(Survival$TimeToLastContactOrEvent)
+#    SurvivalCutoff=Survival
+#    SurvivalCutoff$TimeToLastContactOrEvent[CutoffSamples]=CutoffPoint
+#    SurvivalCutoff$Censoring[CutoffSamples]=censoredTerm
+# #   #"Surv" creates a survival object. really for binary outcomes data.
+#    OverallSurvivalCutoff=Surv(SurvivalCutoff$TimeToLastContactOrEvent,SurvivalCutoff$Censoring==nonCensoredTerm)
+# 
+#     coxfit=coxph(OverallSurvival~groupings, data=Survival)
+#   message("coxfit summary for overall survival.")
+#   summary(coxfit)
+#   #plot(cox.zph(coxfit))
+#  kmfit=survdiff(OverallSurvival ~ groupings)
+# message("kaplan meier p-value for overall survival:")
+#  1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)
+# 
+# message("calculating the sign of the survival relationship")
+#   mfit=survfit(OverallSurvival ~ groupings)
+#   plot(mfit,main="overall survival")
+#   
+# mfitCut <- survfit(OverallSurvivalCutoff ~ groupings)
+#   plot(mfitCut,main=paste0("overall survival with cutoff at ",
+#                            CutoffPointYears," years"))
+# 
+# coxfit=coxph(OverallSurvivalCutoff~groupings, data= SurvivalCutoff)
+#   message("coxfit summary for survival cutoff at ",CutoffPointYears,"years:")
+#   summary(coxfit)
+#  #plot(cox.zph(coxfit))
+#   
+#   kmfit=survdiff(OverallSurvivalCutoff ~ groupings)
+# message("kaplan meier p-value for survival cutoff:")
+#   1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)  
+
+
+
+
+
 ```

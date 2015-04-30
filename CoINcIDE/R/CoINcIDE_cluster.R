@@ -738,7 +738,7 @@ outputFile="./consensusOut.txt",minClustConsensus=.7,maxPAC=.15,studyName="test"
      append=TRUE,file=outputFile);
  
  
- message(paste0("Best K as determined by rounded PAC is: ",selectK_PACR$bestK))
+ message(paste0("Best K as determined by rounded PACR is: ",selectK_PACR$bestK))
  cat(paste0("\nBest K as determined by ",clusterAlg, " and rounded PAC  is: ", selectK_PACR$bestK ,"\n"),
      append=TRUE,file=outputFile);
  

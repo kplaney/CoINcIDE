@@ -506,14 +506,14 @@ computeNullSimilVector_mean <-   function(refClustRowIndex,clustSimilMatrixList,
                 #(same size similarityMatrix, #diagonal entries regardless of whether it's a null cluster or the true cluster.)
                 #but this will not affect our final p-value computations, and subsetting to get the upper triangle
                 #and remove the diagonal will slow down computations
-                similValue <- mean(clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]][nullClustIndices,compareSampleIndices])
-                
+               similValue <- mean(clustSimilMatrixList[[paste0(refStudyNum,"_",compareStudyNum )]][nullClustIndices,compareSampleIndices])
+           
                 #the order of the two study names may be reversed (didn't wnat to double-store the similarity matrices.)
               }else if(!is.null( clustSimilMatrixList[[paste0(compareStudyNum,"_",refStudyNum)]])){
                 
                 similValue <- mean(clustSimilMatrixList[[paste0(paste0(compareStudyNum,"_",refStudyNum))]][compareSampleIndices,nullClustIndices])
-                
-              }else{
+         
+                }else{
                 
                 stop(paste0("\n\n finding an non-null index for studies ",compareStudyNum, " and ",refStudyNum))
              
@@ -804,7 +804,7 @@ computeClusterPairSimil_mean <- function(refClust,compareClust,
   similMatrix <- computeClusterPairSimil(refClust,compareClust,
                                          edgeMethod=edgeMethod)
   
-  
+
   return(mean(similMatrix))
   
   
