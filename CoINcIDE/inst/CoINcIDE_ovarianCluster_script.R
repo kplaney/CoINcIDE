@@ -78,3 +78,6 @@ numFeatures <- 1000
 save(hclustConsensus,file=paste0("/home/kplaney/ovarian_analysis/curatedOvarianData_hclustConsensus_",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
 
 
+
+
+######now to gap test ovarian

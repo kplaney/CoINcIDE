@@ -25,9 +25,9 @@ clustSampleIndexList <-  clusterOutput$clustSampleIndexList_PACR
 clustFeatureIndexList <- clusterOutput$clustFeatureIndexList_PACR
 
 
-CoINcIDE_computeEdgesObject <- "/home/kplaney/breast_analysis/adjMatrices_kmeansConsensuspam50_full_Nstart1pItem9.RData.gzip"
+CoINcIDE_computeEdgesObject <- "/home/kplaney/breast_analysis/adjMatrices_pam50Full_spearman_meanMatrix_2015-04-29.RData.gzip"
 load(CoINcIDE_computeEdgesObject)
-output <- pam50Full_pearson_meanMatrix
+output <- pam50Full_spearman_meanMatrix
 inputVariablesDF <- output$inputVariablesDF
 computeTrueSimilOutput <- output$computeTrueSimilOutput
 pvalueMatrix <- output$pvalueMatrix

@@ -47,9 +47,6 @@ CheckBatchEffect <-function(GEN_Data,BatchData,batchColName) {
 #TO DO: describe mod.
 BatchCorrection <- function(GEN_Data,BatchData,mod,batchColName,outputFile="./combatOutput.txt") {
   
-  # combat
-  #source('/Users/ogevaert/Documents/WORK/Rscripts/ComBat_NooutputFiles.R')
-  # select only samples with batch, others get deleted
   #KP: NEED THIS? JUST DID THIS IN WRAPPER FUNCTION? guess didn't do the second half...
   WithBatchSamples=is.element(colnames(GEN_Data),rownames(BatchData));
   

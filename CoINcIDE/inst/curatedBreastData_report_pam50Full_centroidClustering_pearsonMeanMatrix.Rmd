@@ -1,4 +1,4 @@
-curatedOvarianData meta-clustering with 200 (meta-rank) features using kmeans consensus
+curatedBreastData meta-clustering with 200 (meta-rank) features using kmeans consensus
 ========================================================
 **Data loading**
 
@@ -8,9 +8,9 @@ This is a report for the curatedOvarianData meta-clustering. Initial clustering 
 ```{r}
 #grab data matrix list, clust features list
 
-CoINcIDE_clusterOutput <-  "/home/kplaney/breast_analysis//kmeansConsensuspam50_full_Nstart1pItem9_pam50FullFeatures_2015-04-28.RData.gzip"
+CoINcIDE_clusterOutput <-  "/home/kplaney/breast_analysis//pam50Full_centroidCluster.RData.gzip"
 load(CoINcIDE_clusterOutput)
-clusterOutput <- kmeansConsensuspam50_full_Nstart1pItem9
+clusterOutput <- pam50Full_centroidCluster
 #data matrix list:
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 
@@ -21,13 +21,13 @@ source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_visualizati
 #source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R")
 
 
-clustSampleIndexList <-  clusterOutput$clustSampleIndexList_PACR
-clustFeatureIndexList <- clusterOutput$clustFeatureIndexList_PACR
+clustSampleIndexList <-  clusterOutput$clustSampleIndexList
+clustFeatureIndexList <- clusterOutput$clustFeatureIndexList
 
 
-CoINcIDE_computeEdgesObject <- "/home/kplaney/breast_analysis/adjMatrices_kmeansConsensuspam50_full_Nstart1pItem9.RData.gzip"
+CoINcIDE_computeEdgesObject <- "/home/kplaney/breast_analysis/adjMatrices_pam50Full_centroidCluster_pearson_meanMatrix_2015-05-03.RData.gzip"
 load(CoINcIDE_computeEdgesObject)
-output <- pam50Full_pearson_meanMatrix
+output <- pam50Full_centroidCluster_pearson_meanMatrix
 inputVariablesDF <- output$inputVariablesDF
 computeTrueSimilOutput <- output$computeTrueSimilOutput
 pvalueMatrix <- output$pvalueMatrix
@@ -60,13 +60,14 @@ message("Across the entire square (symmetric) similarity matrix, there are ",len
 
 **Network Analysis**
 
-As we can see in these plots, 4 meta-clusters remained after edge filtering. 
+As we can see in these plots, 4 meta-clusters remained after edge filtering. Note how datasets 12 and 13 have been dropped; this didn't happen with the Gap statistic. The GSE25055 dataset still showed up, but the I-SPY dataset did not. It appears that the clusterings this time around were perhaps not granular enough??
+
 ```{r}
 finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,pvalueMatrix=pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
                               meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
                               minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
                               fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
-                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",restrictEdges=FALSE
+                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",restrictEdges=FALSE,clustIndexMatrix=clustIndexMatrix
 )
 #COME BACK: fastgreedy or edgeBetween
 commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,

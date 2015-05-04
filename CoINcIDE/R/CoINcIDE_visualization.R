@@ -110,7 +110,7 @@ plotMetaFeatureES <- function(ESMatrix,saveFile=FALSE,plotToScreen=TRUE,
   
   
 }
-#THEN: SAMR meta-analysis.
+
 advancedNetworkPlots <- function(communityMembership,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
                                   saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes,

@@ -55,6 +55,43 @@ table(subtypeDF_master$subtype)
 #basically: less basal, luminal A with short subtypings:
 table(subtypeDF_master$subtype_short)
 
+
+#########centroid subtyping (only use pam50 full):
+load("/home/kplaney/breast_analysis/pam50FullAndShort_subtypeDF.RData.gzip")
+
+subtype_studySplit <- split(subtypeDF_master[,c("subtype","sampleName")],f=subtypeDF_master[,"studyNum"])
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+clustSampleIndexList <- list()
+clustFeatureIndexList <- list()
+
+length(subtype_studySplit)==length(dataMatrixList)
+
+
+load("/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData");
+pam50Genes <- centroidMatrix[ ,1];
+
+for(d in 1:length(dataMatrixList)){
+  
+  clustSampleIndexList[[d]] <- list()
+  clustFeatureIndexList[[d]] <- list()
+  studySubtypes <- unique(subtype_studySplit[[d]][,"subtype"])
+  
+  featureIndices <- na.omit(match(pam50Genes,rownames(dataMatrixList[[d]])))
+  
+  for(s in 1:length(studySubtypes)){
+    
+    clustFeatureIndexList[[d]][[s]] <- featureIndices
+    clustSampleIndexList[[d]][[s]] <- na.omit(match(
+      subtype_studySplit[[d]][which(subtype_studySplit[[d]][,"subtype"]==studySubtypes[s]),"sampleName"],
+      colnames(dataMatrixList[[d]])))
+    
+  }
+  
+  
+}
+
+###########
 saveDir <- "/home/kplaney/breast_analysis/"
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 
@@ -68,7 +105,6 @@ numParallelCores=8
 minTrueSimilThresh=.3
 #maxNullFractSize=.2
 maxTrueSimilThresh=Inf
-minTrueSimilThresh=.25
 includeRefClustInNull=TRUE
 numSims=500
 

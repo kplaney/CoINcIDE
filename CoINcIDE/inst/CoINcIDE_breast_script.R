@@ -1,18 +1,7 @@
-library("curatedBreastData")
-#had to download source: wget http://www.bioconductor.org/packages/release/data/experiment/src/contrib/curatedBreastData_1.0.0.tar.gz
-
-load("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedBreastData/data/curatedBreastDataExprSetList.rda")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 
-#NOTE: function may conflict with other package
-#this takes a while for this large of a database! (few hours)
-esets <- processExpressionSetList(exprSetList=curatedBreastDataExprSetList,outputFileDirectory="/home/kplaney/breast_analysis/",
-                                  minVar=.001,featureDataFieldName="gene_symbol",uniquePDataID="patient_ID")
-
-
-save(esets,file="/home/kplaney/breast_analysis/curatedBreastData_esets_proc.RData.gzip",compress="gzip")
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
-
+load("/home/kplaney/breast_analysis/curatedBreastData_esets_proc.RData.gzip")
 #now format just as a list of data matrices.
 dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene_symbol")
 
@@ -22,15 +11,7 @@ names(dataMatrixList) <- names(esets)
 ##ALSO: merge matrices first to help decide which studies to keep overall
 
 #also merge this one
-output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('none'));
-save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_no_norm.RData.gzip",compress="gzip")
-
-#have NOT run these last two yet:
-output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC'));
-save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_BMC_norm.RData.gzip",compress="gzip")
-
-output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('combat'));
-save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_combat_norm.RData.gzip",compress="gzip")
+load("/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_no_norm.RData.gzip",compress="gzip")
 
 #NOW: also remove these smaller datasets from the esets list before save
 
@@ -38,7 +19,11 @@ if(length(output$removeDatasetIndices>0)){
   
   dataMatrixList <- dataMatrixList[-output$removeDatasetIndices]
   
+  esets_minVar001_17_studies <- esets[-output$removeDatasetIndices]
 }
+
+
+save(esets_minVar001_17_studies,file="/home/kplaney/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip",compress="gzip")
 
 #this is the "core" data matrix list we will use for our analyses:
 save(dataMatrixList,file="/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip",compress="gzip")

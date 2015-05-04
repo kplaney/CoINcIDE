@@ -8,9 +8,9 @@ This is a report for the curatedOvarianData meta-clustering. Initial clustering 
 ```{r}
 #grab data matrix list, clust features list
 
-CoINcIDE_clusterOutput <-  "/home/kplaney/breast_analysis//kmeansConsensuspam50_full_Nstart1pItem9_pam50FullFeatures_2015-04-28.RData.gzip"
+CoINcIDE_clusterOutput <-  "/home/kplaney/breast_analysis//kmeansConsensuspam50_short_Nstart1pItem9_pam50ShortFeatures_2015-04-28.RData.gzip"
 load(CoINcIDE_clusterOutput)
-clusterOutput <- kmeansConsensuspam50_full_Nstart1pItem9
+clusterOutput <- kmeansConsensuspam50_short_Nstart1pItem9
 #data matrix list:
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 
@@ -25,9 +25,9 @@ clustSampleIndexList <-  clusterOutput$clustSampleIndexList_PACR
 clustFeatureIndexList <- clusterOutput$clustFeatureIndexList_PACR
 
 
-CoINcIDE_computeEdgesObject <- "/home/kplaney/breast_analysis/adjMatrices_kmeansConsensuspam50_full_Nstart1pItem9.RData.gzip"
+CoINcIDE_computeEdgesObject <- "/home/kplaney/breast_analysis/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData.gzip"
 load(CoINcIDE_computeEdgesObject)
-output <- pam50Full_pearson_meanMatrix
+output <- pam50Short_pearson_meanMatrix
 inputVariablesDF <- output$inputVariablesDF
 computeTrueSimilOutput <- output$computeTrueSimilOutput
 pvalueMatrix <- output$pvalueMatrix
@@ -68,7 +68,9 @@ finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,
                               fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
                               clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",restrictEdges=FALSE
 )
-#COME BACK: fastgreedy or edgeBetween
+
+#edge between gives slightly more interpretable results...but stick with fastgreedy; 
+#over multiple runs for different analyses gives slightly more intuitive results.
 commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,
                                         clustIndexMatrix=output$clustIndexMatrix,fileTag="autoReport",
                             saveDir=saveDir,minNumUniqueStudiesPerCommunity=3,clustMethodName="",
@@ -105,6 +107,7 @@ aggregateData$sampleClustCommKey$subtype <- subtypeDF$subtype
 
 table(aggregateData$sampleClustCommKey$subtype,aggregateData$sampleClustCommKey$community)
 #very few HER2 samples...
+load("/home/kplaney/breast_analysis/")
 
 binInfo <- binarizeMetaclustStudyStatus(aggregateData$sampleClustCommKey)
 rankInfo <- computeRankMatrix(metaClustSampleNames=binInfo$metaClustSampleNames,

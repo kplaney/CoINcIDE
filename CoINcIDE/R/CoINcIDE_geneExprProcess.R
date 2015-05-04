@@ -1331,7 +1331,7 @@ exprSetListToMatrixList <- function(esetList,featureDataFieldName="gene_symbol")
 }
 
 merge_datasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC','none','combat'),NA_genesRemove=TRUE,
-                              outputFile="./mergeDatasets"){
+                              outputFile="./mergeDatasets",combatPvalueThresh=.05){
   
   dataMatrixList <- list();
   numDatasets <- 0;
@@ -1413,24 +1413,39 @@ merge_datasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 
     }
     
   }
-  
+  #factor easier for combat to interpret.
+  study <- factor(study)
   sampleData <-  data.frame(study,sampleName)
+  #make study names the numeric factors for combat.
   colnames(sampleData) <- c('batch','sampleName')
-  
+  sampleDataOrig <- sampleData
+  sampleData$batch <- as.numeric(study)
+  #may get a warning here if sample names aren't unique
+  if(any(duplicated(sampleName))){
+    
+    stop("Must have unique sample names across the entire dataset (if this is regularly a pain, please provide feedback to CoINcIDE author.)")
+    
+  }
+  row.names(sampleData) <- sampleName
   if(batchNormalize=='combat'){
 
     combatOut <- batchNormalization(countsMatrixNoNANoDup=mergedExprMatrix,outcomesAndCovariates=sampleData,
-                       MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile=outputFile)
+                       MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=combatPvalueThresh,batchColName="batch",outputFile=outputFile)
     
     if(!is.null(combatOut$GEN_Data_Corrected)){
       
       mergedExprMatrix <- combatOut$GEN_Data_Corrected
-      sampleData <- sampleData[na.omit(match(BatchDataSelected[,"batch"],sampleData[,"batch"])), ]
+      sampleDataPostCombat <- sampleData[na.omit(match(combatOut$BatchData[,"batch"],sampleData[,"batch"])), ]
       
     }
+  }else{
+    
+    combatOut <- NULL
+    sampleDataPostCombat <- NULL
   }
   
-  output <- list(mergedExprMatrix=mergedExprMatrix,sampleData=sampleData, removeDatasetIndices= removeDatasetIndices);
+  output <- list(mergedExprMatrix=mergedExprMatrix,sampleData=sampleDataOrig, removeDatasetIndices= removeDatasetIndices,
+                 combatOut = combatOut,sampleDataPostCombat=sampleDataPostCombat);
   return(output);
   
 }

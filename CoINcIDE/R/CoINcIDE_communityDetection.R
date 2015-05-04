@@ -609,7 +609,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
       width = 700, height = 1000);
   
     networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                          vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
+                          vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " studies.\n",
                                                                                            finalNumCommunities," pruned communities found using method ",clustMethodName, "with community detection ",
                                                                                            commMethod,"."),xlab="color=community, #=study");
 
@@ -619,7 +619,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     }else{
       
       networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                              vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
+                              vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " studies.\n",
                                                                                                finalNumCommunities," pruned communities found using method ",clustMethodName, "with community detection ",
                                                                                                commMethod,"."),xlab="color=community, #=study");
       

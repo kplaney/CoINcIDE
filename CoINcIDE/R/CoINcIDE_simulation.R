@@ -1,206 +1,7 @@
 library("ggplot2")
 library("s4vd")
 
-lungSimAdjMatrices <- function(
-                       saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
-                       eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
-                       noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),numRows=200,
-                       numWrapperSims=10,
-                       dataMatrixList,clustFeaturesList,clustMethod=c("naiv","km","hc"),pickKMethod=c("gap","consensus"),numSims=100,maxNumClusters=30,
-                                                          outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
-                                                          hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
-                                                          consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
-                                                          bestKconsensusMethod=c("highestMinConsensus","bestKOverThreshBeforeNAclust","maxBestKOverThresh"),minClustConsensus=.9,
-                       edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
-                                    "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-                       sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,includeRefClustInNull=TRUE,
-fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
-  
-  
-  
-  if(length(numPerClust) != 4){
-    
-    stop("\nMust pick a cluster size for all 4 tissue types:\nyour numPerClust variable vector was not a length of 4.")
-  }  
-  
 
-  #just run n=1, i.e. zero data, once. do by hand.
-  
-  CoINcIDE_getAdjMatricesOutput <- list()
-  
-  for(n in 1:length(noiseVector)){
-    message(paste0("Loop ",n,"Noise level: ",noiseVector[n]))
-    #only run 1 simulation iteration for noise level o.
-    
-    if(n==1){
-      
-      numWrapperSims <- 1;
-      
-    }else if(n>1){
-      
-      numWrapperSims <- numWrapperSimsOrig;
-      
-    }
-
-    CoINcIDE_getAdjMatricesOutput[[n]] <- list()
-    
-    for(t in c(1:numWrapperSims)){
-
-      #don't save these: just recalc each time. this will save the last iteration.
-      lungSimData <- createLungSimDatasets(numSimDatasets=numSimDatasets,
-                                           eigenValueMin =eigenValueMin,simType=simType,
-                                           numPerClust = numPerClust,
-                                           stddevNoise=noiseVector[n],numRows=numRows);
-      
-      
-      if(clustMethod != "naive"){
-        
-        clustOutput <- clustMatrixListWrapper(dataMatrixList=lungSimData$dataMatrixList,clustFeaturesList=lungSimData$clustFeaturesList,clustMethod=clustMethod,pickKMethod=pickKMethod,numSims=numSims,maxNumClusters=maxNumClusters,
-                                         outputFile=outputFile,iter.max=iter.max,nstart=nstart,distMethod=distMethod,
-                                         hclustAlgorithm=hclustAlgorithm, 
-                                         consensusHclustAlgorithm=consensusHclustAlgorithm,
-                                         bestKconsensusMethod=bestKconsensusMethod,minClustConsensus=minClustConsensus)
-      
-      clustSampleIndexList <- clustOutput$clustSampleIndexList
-      clustFeatureIndexList <- clustOutput$clustFeatureIndexList
-      
-      }else{
-        
-        clustFeatureIndexList <- lungSimData$clustFeatureIndexList
-        clustSampleIndexList <- lungSimData$clustSampleIndexList
-        
-      }
-      
-      CoINcIDE_getAdjMatricesOutput[[n]][[t]] <-  CoINcIDE_getAdjMatrices(dataMatrixList=lungSimData$dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
-                                                               edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
-                                                               sigMethod=sigMethod,maxNullFractSize=maxNullFractSize,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
-                                                               outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
-      
-    
-    
-    }
-    
-  }
-  
-  return(CoINcIDE_getAdjMatricesOutput)
-  
-}
-
-# lungSimROC <- function(saveDir = "/home/kplaney/ISMB/lung_sims/",numSimDatasets=10,
-#                             eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
-#                                                             noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
-#                                                             numWrapperSims=10,numSims=100,
-#                        edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
-#                                     "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-#                        sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,includeRefClustInNull=TRUE,
-#                        outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0
-#                           ){
-# 
-#                               
-#                               #fabricate your true edge list
-#                               trueEdgeMatrix <- createTrueEdges(numRowClust=1,numColClust=4,numSimDatasets=numSimDatasets);
-#                               
-#                               if(simType=="unevenSizeClust"){
-#                                 #remove any edges that containi last 2 nodes -they aren't in our simulation.
-#                                 removeNode1 <- 4*numSimDatasets;
-#                                 removeNode2 <- 4*numSimDatasets-1;
-#                                 rowRemove1_1 <- which(trueEdgeMatrix[,1]==removeNode1);
-#                                 if(length(rowRemove1_1 >1)){
-#                                   trueEdgeMatrix <- trueEdgeMatrix [-rowRemove1_1, ,drop=FALSE];
-#                                 }
-#                                 rowRemove1_2 <- which(trueEdgeMatrix[,2]==removeNode1);
-#                                 if(length(rowRemove1_2 >1)){
-#                                 trueEdgeMatrix <- trueEdgeMatrix [-rowRemove1_2, ,drop=FALSE];
-#                                 }
-#                                 rowRemove2_1 <- which(trueEdgeMatrix[,1]==removeNode2);
-#                                 if(length(rowRemove2_1 >1)){
-#                                 trueEdgeMatrix <- trueEdgeMatrix [-rowRemove2_1, ,drop=FALSE];
-#                                 }
-#                                 rowRemove2_2 <- which(trueEdgeMatrix[,2]==removeNode2);
-#                                 if(length(rowRemove2_2 >1)){
-#                                 trueEdgeMatrix <- trueEdgeMatrix [-rowRemove2_2, ,drop=FALSE];
-#                                 }
-#                                 
-#                                 numTotalClusters <- 4*numSimDatasets-2;
-#                                 
-#                               }else{
-#                                 
-#                                 numTotalClusters <- 4*numSimDatasets;
-#                                 
-#                               }
-# 
-#                               #TO DO: UPDATE FUNCTION INPUTS.
-#                                 CoINcIDE_getAdjMatricesOutputList <-  lungSimAdjMatrices(
-#                                                                                                      saveDir = "/home/kplaney/ISMB/lung_sims/",numSimDatasets=10,
-#                                                                                                      eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),,
-#                                                                                                      noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
-#                                                                                                      numWrapperSims=10,numSims=1000,
-#                                                                                                      edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
-#                                                                                                                   "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-#                                                                                                      sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
-#                                                                                                      outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0)
-#                                   
-#                                     
-#                               ROC <- lapply(CoINcIDE_getAdjMatricesOutputList,FUN=function(CoINcIDE_getAdjMatricesOutput,....){
-#                                 
-#                                 ROC_one_noiseLevel <- lapply(CoINcIDE_getAdjMatricesOutput,FUN=function(CoINcIDE_getAdjMatricesUnit,.....){
-#                                   
-#                                   edgeList <- computeEdgeMatrix(CoINcIDE_getAdjMatricesUnit)
-#                                   ROC_out <- compute_edge_ROC_metrics(trueEdges=trueEdgeMatrix,predEdges=edgeList,numTotalClusters=numTotalClusters);
-#                                   
-#                                 },......)
-#                                
-#                                 
-#                               },......)
-#                                 
-#                                 
-#                           
-#                                   }
-#                               #convert to matrices
-# 
-#                               ROC_matrixFull <- do.call(rbind,lapply(ROC,FUN=function(ROC_unit){
-#                                 
-#                                 #this will make 1 matrix for 1 noise level, with each row a simulation.                     
-#                                 oneNoiseLevelData <- do.call(rbind,lapply(ROC_unit,FUN=function(data){
-#                                   
-#                                   ROC_stats <- c(data$PPV,data$TPR,data$FPR,data$FP,data$TP,data$FN,data$TN);
-#                                   return(ROC_stats);
-#                                 }
-#                                 
-#                                 )
-#                                 
-#                                 )
-#                                 
-#                                 #take the mean across all simulations for this noise level.
-#                                 #if only one: take data.matrix
-#                                 oneNoiseLevelData <- colMeans(data.matrix(oneNoiseLevelData));
-#                                 return(oneNoiseLevelData);
-#                                 
-#                               }
-#                               
-#                               )
-#                               
-#                               );
-#                               
-#                               ROC_matrixFull <- cbind(noiseVector,ROC_matrixFull)
-#                               colnames(ROC_matrixFull) <- c("sd_noise","PPV","TPR","FPR","FP","TP","FN","TN");
-#                               rownames(ROC_matrixFull) <- noiseVector;
-#                               
-# 
-#                               #only take first 12...
-#                               df <- data.frame(ROC_matrixFull);
-#                               #theme(plot.title = element_text(size = rel(2)))
-#                               TPR_plot <- ggplot(data =df,aes(x=sd_noise,y=TPR))+geom_line()+  labs(title = "TPR for simulations with increasing noise.",
-#                                                                                                          y="TPR",x="sd noise")+
-#                                 theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#                                                                                                              plot.title = element_text(size = rel(2)));
-#                               
-#                               
-#                               output <- list(TPR_plot=TPR_plot,ROC=ROC, ROC_matrixFull=ROC_matrixFull);
-#                               
-#                               return(output);
-#                               
-# }
 ######
 createLungSimDatasets <-  function(numSimDatasets=10,
                                    eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
@@ -216,15 +17,42 @@ createLungSimDatasets <-  function(numSimDatasets=10,
     clustSampleIndexList[[d]] <- list()
     clustFeatureIndexList[[d]] <- list()
 
-    count <- 1
-    for(c in 1:length(numPerClust)){
-      
-      clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClust[c]-1))
-      clustFeatureIndexList[[d]][[c]] <- c(1:numRows)
-      count <- count+numPerClust[c]
-      
-    }
     
+    if(d!=numSimDatasets){
+
+      
+      count <- 1
+      for(c in 1:length(numPerClust)){
+            
+        clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClust[c]-1))
+        clustFeatureIndexList[[d]][[c]] <- c(1:numRows)
+        count <- count+numPerClust[c]
+        
+      }
+      
+    }else{
+      
+      if( simType != "unevenSizeClust"){
+        
+        count <- 1
+        for(c in 1:length(numPerClust)){
+          
+          clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClust[c]-1))
+          clustFeatureIndexList[[d]][[c]] <- c(1:numRows)
+          count <- count+numPerClust[c]
+          
+        }
+        
+      }else{
+        #only two groups for last cluster, and their proportions are hard-coded (100 and 10.)
+        clustSampleIndexList[[d]][[1]] <- c(1:100)
+        clustFeatureIndexList[[d]][[1]] <- c(1:numRows)
+        clustSampleIndexList[[d]][[2]] <- c(101:110)
+        clustFeatureIndexList[[d]][[2]] <- c(1:numRows)
+        
+      }
+
+    }
   }
   
   lungData <- createLungMatrixList()
@@ -561,13 +389,12 @@ simulateClusterData <- function(numSimDatasets=1,clustMatrixList,numRows,numPerC
 }
 
 #####
-#simulation metrics
-#####
+
 #assumes clusters are in the same order each time.
 createTrueEdges <- function(numRowClust=4,numColClust=1,numSimDatasets=2){
   
-  trueEdges <- matrix(data=NA,ncol=2,nrow=(numColClust*numRowClust*numSimDatasets)*(numSimDatasets-1)/2)
-  counter <- 0
+  trueEdges <- matrix(data=NA,ncol=2,nrow=(numRowClust*numColClust*numSimDatasets)*(numSimDatasets-1)/2);
+  counter <- 0;
   
   #have a feeling recursion could do this... 1 is an edge with numRowClust*numColClust*i where i = a loop over num sims. then move on toe
   #1+numRowClust*numColClust*i edge with numRowClust*numColClust*(i+1), etc.
@@ -581,109 +408,109 @@ createTrueEdges <- function(numRowClust=4,numColClust=1,numSimDatasets=2){
         #previous ones "taken care of" by the edges in u-1
         if(m <= u){
           
-          next
+          next;
           
         }
-        indexes <- c( (1+(numColClust*numRowClust)*counter):(1+(numColClust*numRowClust)*counter+ numColClust*numRowClust-1))
+        indexes <- c( (1+(numRowClust*numColClust)*counter):(1+(numRowClust*numColClust)*counter+ numRowClust*numColClust-1));
         
-        startEdges <- c(1:(numColClust*numRowClust))+numColClust*numRowClust*(u-1)
-        trueEdges[indexes, 1] <- startEdges
-        trueEdges[indexes, 2] <- c(1:(numColClust*numRowClust))+numColClust*numRowClust*(m-1)
+        startEdges <- c(1:(numRowClust*numColClust))+numRowClust*numColClust*(u-1);
+        trueEdges[indexes, 1] <- startEdges;
+        trueEdges[indexes, 2] <- c(1:(numRowClust*numColClust))+numRowClust*numColClust*(m-1);
         
-        counter <- counter +1
+        counter <- counter +1;
       }
       
     }
     
   }
   
-  return(trueEdges)
+  return(trueEdges);
   
 }
 ###########
 compute_edge_ROC_metrics <- function(trueEdges,predEdges,numTotalClusters){
   
-  trueEdgesFound <- matrix(data=NA,ncol=2,nrow=1)
-  trueEdgesMissed <- matrix(data=NA,ncol=2,nrow=1)
+  trueEdgesFound <- matrix(data=NA,ncol=2,nrow=1);
+  trueEdgesMissed <- matrix(data=NA,ncol=2,nrow=1);
   
   for(r in 1:nrow(trueEdges)){
     
-    rowIndices <- which(predEdges[,1]==trueEdges[r,1])
+    rowIndices <- which(predEdges[,1]==trueEdges[r,1]);
     
     if(length(rowIndices)>0){
       
       if(any(predEdges[rowIndices,2]==trueEdges[r,2])){
         
-        #num_truePos <- num_truePos + 1
+        #num_truePos <- num_truePos + 1;
         #remove this edge: will help sum up FP later
         if(length(which(predEdges[rowIndices,2]==trueEdges[r,2]))>1){
           
-          stop("indexing error.")
+          stop("indexing error.");
           
         }
         #cat("\n",predEdges[rowIndices[which(predEdges[rowIndices,2]==trueEdges[r,2])],],"\n")
-        predEdges <- predEdges[-rowIndices[which(predEdges[rowIndices,2]==trueEdges[r,2])], , drop=FALSE]
+        predEdges <- predEdges[-rowIndices[which(predEdges[rowIndices,2]==trueEdges[r,2])], , drop=FALSE];
         
-        trueEdgesFound <- rbind(trueEdgesFound,trueEdges[r,c(1:2),drop=FALSE])
+        trueEdgesFound <- rbind(trueEdgesFound,trueEdges[r,c(1:2),drop=FALSE]);
         
         #found correct edge - move on to next row
-        next
+        next;
         #no row index found.
       }
       #no row index found. 
     }
     # but flip node order, check again
     
-    rowIndices <- which(predEdges[,2]==trueEdges[r,1])
+    rowIndices <- which(predEdges[,2]==trueEdges[r,1]);
     
     if(length(rowIndices)>0){
       
       if(any(predEdges[rowIndices,1]==trueEdges[r,1])){
         
-        #num_truePos <- num_truePos + 1
+        #num_truePos <- num_truePos + 1;
         #remove this edge: will help sum up FP later
         if(length(which(predEdges[rowIndices,2]==trueEdges[r,2]))>1){
           
-          stop("indexing error.")
+          stop("indexing error.");
           
         }
         #cat("\n",predEdges[rowIndices[which(predEdges[rowIndices,2]==trueEdges[r,2])],],"\n")
-        predEdges <- predEdges[-rowIndices[which(predEdges[rowIndices,2]==trueEdges[r,2])], ,drop=FALSE]
-        trueEdgesFound <- rbind(trueEdgesFound,trueEdges[r,c(1:2),drop=FALSE])
+        predEdges <- predEdges[-rowIndices[which(predEdges[rowIndices,2]==trueEdges[r,2])], ,drop=FALSE];
+        trueEdgesFound <- rbind(trueEdgesFound,trueEdges[r,c(1:2),drop=FALSE]);
         
         #found a true edge - move on to next loop.
-        next
+        next;
       }
       
     }
     
     
     #didn't find an edge when there was a true edge.
-    trueEdgesMissed <- rbind(trueEdgesMissed,trueEdges[r,c(1:2),drop=FALSE])
+    trueEdgesMissed <- rbind(trueEdgesMissed,trueEdges[r,c(1:2),drop=FALSE]);
     #move on to next r index in true edges.
   }
   
-  trueEdgesFound <- trueEdgesFound[-1, ,drop=FALSE]
-  trueEdgesMissed <- trueEdgesMissed[-1, ,drop=FALSE]
-  num_truePos <- nrow(trueEdgesFound)
+  trueEdgesFound <- trueEdgesFound[-1, ,drop=FALSE];
+  trueEdgesMissed <- trueEdgesMissed[-1, ,drop=FALSE];
+  num_truePos <- nrow(trueEdgesFound);
   #any predicted left that weren't true edges?
-  num_falsePos <- nrow(predEdges)
+  num_falsePos <- nrow(predEdges);
   #how many true edges? did we miss?
-  num_falseNeg <- nrow(trueEdgesMissed)
-  #total number of possible edges is number of clusters squared (a lot!)
+  num_falseNeg <- nrow(trueEdgesMissed);
+  #total number of possible edges is number of biclusters squared (a lot!)
   # minus numTotalClusters is minusing out of the diagonal
   #/2: we only want the upper (or lower) triangle to remove redundancy.
-  num_trueNeg <- numTotalClusters^2/2 -numTotalClusters -nrow(trueEdges)
+  num_trueNeg <- numTotalClusters^2/2 -numTotalClusters -nrow(trueEdges);
   
   if(num_falseNeg+num_truePos != nrow(trueEdges)){
     
-    stop("\nCalculating FN or TP wrong.\n")
+    stop("\nCalculating FN or TP wrong.\n");
     
   }
   
   if( (num_trueNeg+num_falseNeg+num_truePos+num_falsePos) != (numTotalClusters^2/2-numTotalClusters)){
     
-    stop("\nCalculating FP or TN wrong.\n")
+    stop("\nCalculating FP or TN wrong.\n");
     
   }
   
@@ -691,18 +518,182 @@ compute_edge_ROC_metrics <- function(trueEdges,predEdges,numTotalClusters){
   #we mostly care about PPV and TPR. FPR will almost alwways be low.
   if(num_truePos >0){
     
-    PPV <- num_truePos/(num_truePos+num_falsePos)
+    PPV <- num_truePos/(num_truePos+num_falsePos);
     
   }else{
     
-    PPV <- 0
+    PPV <- 0;
   }
   
-  FPR <- num_falsePos/(num_falsePos+num_trueNeg)
-  TPR <- num_truePos/(num_truePos + num_falseNeg)
+  FPR <- num_falsePos/(num_falsePos+num_trueNeg);
+  TPR <- num_truePos/(num_truePos + num_falseNeg);
   output <- list(PPV=PPV,TPR=TPR,FPR=FPR,FP=num_falsePos,TP=num_truePos,FN=num_falseNeg,TN=num_trueNeg,
-                 trueEdgesFound=trueEdgesFound,trueEdgesMissed=trueEdgesMissed)
+                 trueEdgesFound=trueEdgesFound,trueEdgesMissed=trueEdgesMissed);
   
-  return(output)
+  return(output);
   
+}
+
+runLungSimROC <- function(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
+                       eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
+                       noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
+                       numWrapperSims=100,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
+                       clustSizeThresh=5,clustSizeFractThresh=.05,numParallelCores=8,minTrueSimilThresh=.3,
+                       maxTrueSimilThresh=Inf,includeRefClustInNull=TRUE, edgeMethod=c("pearson"),
+                       indEdgePvalueThresh=.3,meanEdgePairPvalueThresh=.2,restrictEdges=FALSE
+){
+  
+  
+  
+  
+  if(length(numPerClust) != 4){
+    
+    stop("\nMust pick a cluster size for all 4 tissue types:\nyour numPerClust variable was not a length of 4.")
+  }  
+
+  
+  ROC <- list();
+  
+  #fabricate your true edge list
+  
+  if(simType=="unevenSizeClust"){
+    #2 less clusters.
+    numTotalClusters <- 4*numSimDatasets-2;
+    trueEdgeMatrix <- createTrueEdges(numRowClust=2,numColClust=1,numSimDatasets=numSimDatasets);
+    
+    
+  }else{
+    
+    trueEdgeMatrix <- createTrueEdges(numRowClust=4,numColClust=1,numSimDatasets=numSimDatasets);
+    
+    numTotalClusters <- 4*numSimDatasets;
+
+  }
+  #STEP: fabricate your true edge list
+  trueEdgeMatrix <- createTrueEdges(numRowClust=4,numColClust=1,numSimDatasets=numSimDatasets);
+  
+  if(simType=="unevenSizeClust"){
+    #remove any edges that containi last 2 nodes -they aren't in our simulation.
+    removeNode1 <- 4*numSimDatasets;
+    removeNode2 <- 4*numSimDatasets-1;
+    rowRemove1_1 <- which(trueEdgeMatrix[,1]==removeNode1);
+    if(length(rowRemove1_1 >1)){
+      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove1_1, ,drop=FALSE];
+    }
+    rowRemove1_2 <- which(trueEdgeMatrix[,2]==removeNode1);
+    if(length(rowRemove1_2 >1)){
+      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove1_2, ,drop=FALSE];
+    }
+    rowRemove2_1 <- which(trueEdgeMatrix[,1]==removeNode2);
+    if(length(rowRemove2_1 >1)){
+      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove2_1, ,drop=FALSE];
+    }
+    rowRemove2_2 <- which(trueEdgeMatrix[,2]==removeNode2);
+    if(length(rowRemove2_2 >1)){
+      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove2_2, ,drop=FALSE];
+    }
+    
+  }
+  
+  numWrapperSimsOrig <- numWrapperSims;
+  #just run n=1, i.e. zero data, once. do by hand.
+  for(n in 1:length(noiseVector)){
+    cat("\nLoop ",n,"Noise level: ",noiseVector[n],"\n")
+    #only run 1 simulation iteration for noise level o.
+    
+    if(n==1){
+      
+      numWrapperSims <- 1;
+      
+    }else if(n>1){
+      
+      numWrapperSims <- numWrapperSimsOrig;
+      
+    }
+    ROC[[n]] <- list();
+    
+    for(t in c(1:numWrapperSims)){
+      
+      #don't save these: just recalc each time. this will save the last iteration.
+      lungSimData <- createLungSimDatasets(numSimDatasets=numSimDatasets,
+                                           eigenValueMin =eigenValueMin,simType=simType,
+                                           numPerClust = numPerClust,
+                                           stddevNoise=noiseVector[n],numRows=200);
+      
+      dataMatrixList <- lungSimData$dataMatrixList
+      clustSampleIndexList <- lungSimData$clustSampleIndexList
+      clustFeatureIndexList <- lungSimData$clustFeatureIndexList
+      #hard code in mean matrix:
+      adjMatrixOut <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                              edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                              sigMethod="meanMatrix",numSims=numSims,includeRefClustInNull=includeRefClustInNull,                                             
+                                              outputFile=paste0(saveDir,"/CoINcIDE_hclustConsensus_messages.txt"),fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                              numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
+      
+      
+      predEdges <- assignFinalEdges(computeTrueSimilOutput= adjMatrixOut$computeTrueSimilOutput,
+                                    pvalueMatrix= adjMatrixOut$pvalueMatrix,
+                                    indEdgePvalueThresh=indEdgePvalueThresh,
+                                    meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
+                                    minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                    fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
+                                    clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,
+                                    saveDir=saveDir,fileTag="lungSimulations",restrictEdges=restrictEdges
+      )
+
+
+        ROC[[n]][[t]]   <-    compute_edge_ROC_metrics(trueEdges=trueEdgeMatrix,predEdges=predEdges$filterEdgeOutput$edgeMatrix,numTotalClusters=numTotalClusters);
+      
+      
+      #loop of simulations/foreach
+    }
+    
+    
+    #loop n
+  }
+
+
+  #convert to matrices
+  
+  ROC_matrixFull <- do.call(rbind,lapply(ROC,FUN=function(ROC_unit){
+    
+    #this will make 1 matrix for 1 noise level, with each row a simulation.                     
+    oneNoiseLevelData <- do.call(rbind,lapply(ROC_unit,FUN=function(data){
+      
+      ROC_stats <- c(data$PPV,data$TPR,data$FPR,data$FP,data$TP,data$FN,data$TN);
+      return(ROC_stats);
+    }
+    
+    )
+    
+    )
+    
+    #take the mean across all simulations for this noise level.
+    #if only one: take data.matrix
+    oneNoiseLevelData <- colMeans(data.matrix(oneNoiseLevelData));
+    return(oneNoiseLevelData);
+    
+  }
+  
+  )
+  
+  );
+  
+  ROC_matrixFull <- cbind(noiseVector,ROC_matrixFull)
+  colnames(ROC_matrixFull) <- c("sd_noise","PPV","TPR","FPR","FP","TP","FN","TN");
+  rownames(ROC_matrixFull) <- noiseVector;
+  
+  #a simple plot
+  df <- data.frame(ROC_matrixFull);
+  #theme(plot.title = element_text(size = rel(2)))
+  TPR_plot <- ggplot(data =df,aes(x=sd_noise,y=TPR))+geom_line()+  labs(title = "TPR for simulations \nwith increasing noise.",
+                                                                        y="TPR",x="sd noise")+
+    theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                                                                                 plot.title = element_text(size = rel(2)));
+  
+  
+  output <- list(TPR_plot=TPR_plot,ROC=ROC, ROC_matrixFull=ROC_matrixFull);
+  
+  return(output);
+
 }
