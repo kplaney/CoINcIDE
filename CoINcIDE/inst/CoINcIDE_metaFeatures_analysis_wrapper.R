@@ -15,7 +15,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName="gene",
     survivalAnalysis=TRUE,outcomesVarBinary="vital_status",outcomesVarCont = "days_to_death",
     CutoffPointYears=5, eset_uniquePatientID="unique_patient_ID", ovarian=TRUE, fisherTestVariables = c("histological_type","tumorstage","recurrence_status","grade"),
-    dataMatrixList
+    fisherTestVariableLegendNames=fisherTestVariables,fisherTestVariableTitleNames=fisherTestVariables
     ){
   
   
@@ -36,7 +36,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   inputVariablesDF$minNumUniqueStudiesPerCommunity=minNumUniqueStudiesPerCommunity
   inputVariablesDF$commMethod = commMethod
   inputVariablesDF$ovarian = ovarian
-  cat("CoINcIDE input variables used for this analysis: ",
+  cat(paste("CoINcIDE input variables used for this analysis: ",collapse="_"),
       append=TRUE,file=outputFile)
   textOut <-capture.output(inputVariablesDF)
   cat("\n",textOut,sep="\n",append=TRUE,file=outputFile)
@@ -59,7 +59,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     }
 
   
-  cat("\nStarted with  ",length(dataMatrixList), " datasets\n:",
+  cat(paste("\nStarted with  ",length(dataMatrixList), " datasets\n:",collapse="_"),
       append=TRUE,file=outputFile)
   textOut <- capture.output(names(dataMatrixList))
   cat("\n",textOut,sep="\n",append=TRUE,file=outputFile)
@@ -73,10 +73,10 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   tmp <- origToNewIndexMap[ ,c(1,3)]
   colnames(tmp) <- c("datasetNumber","datasetName")
   write.table(tmp,file=paste0(saveDir,"/",experimentName,"_datasetNameNumberKey.txt"),quote=FALSE,row.names=TRUE,col.names=FALSE)
-  cat("\nAssuming we're using k-means consensus PACR to choose K\n.",file=outputFile,append=TRUE)
+  cat(paste("\nAssuming we're using k-means consensus PACR to choose K\n.",collapse="_"),file=outputFile,append=TRUE)
   clustSampleIndexList <-  clusterCoINcIDE_output$clustSampleIndexList_PACR
   clustFeatureIndexList <- clusterCoINcIDE_output$clustFeatureIndexList_PACR
-  cat("\nK for each dataset: \n",append=TRUE,file=outputFile)
+  #cat("\nK for each dataset: \n",append=TRUE,file=outputFile)
   #capture.output(names(clusterCoINcIDE_output$bestK_PACR),file=outputFile,append=TRUE)
   # capture.output(unlist(clusterCoINcIDE_output$bestK_PACR),file=outputFile,append=TRUE)
   
@@ -90,13 +90,13 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   numFeatIntersectThresh <- inputVariablesDF$numFeatIntersectThresh
   clustSizeFractThresh <- inputVariablesDF$clustSizeFractThresh
   
-  cat("\nThere were ",nrow(clustIndexMatrix), " total input clusters from ",length(unique(clustIndexMatrix[,2])), " studies",append=TRUE,file=outputFile)
-  cat("\nThe total number of input features was ",length(metaFeatures$finalFeatures),append=TRUE,file=outputFile)
-  cat("\nAcross the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.1))," pvalues less than or equal to .1",append=TRUE,file=outputFile)
-  cat("\nAcross the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.05))," pvalues less than or equal to .05",append=TRUE,file=outputFile)
-  cat("\nAcross the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.01))," pvalues less than or equal to .01",append=TRUE,file=outputFile)
-  cat("\nAcross the entire square (symmetric) similarity matrix, there are ",length(which(computeTrueSimilOutput$similValueMatrix>=minTrueSimilThresh))/2,
-      " similarities greater than or equal to ",minTrueSimilThresh,"not double-counting.",append=TRUE,file=outputFile)
+  cat(paste("\nThere were ",nrow(clustIndexMatrix), " total input clusters from ",length(unique(clustIndexMatrix[,2])), " studies",collapse="_"),append=TRUE,file=outputFile)
+  cat(paste("\nThe total number of input features was ",length(metaFeatures$finalFeatures),collapse="_"),append=TRUE,file=outputFile)
+  cat(paste("\nAcross the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.1))," pvalues less than or equal to .1",collapse="_"),append=TRUE,file=outputFile)
+  cat(paste("\nAcross the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.05))," pvalues less than or equal to .05",collapse="_"),append=TRUE,file=outputFile)
+  cat(paste("\nAcross the entire square (nonsymmetric) p-value matrix, there are ",length(which(pvalueMatrix<=.01))," pvalues less than or equal to .01",collapse="_"),append=TRUE,file=outputFile)
+  cat(paste("\nAcross the entire square (symmetric) similarity matrix, there are ",length(which(computeTrueSimilOutput$similValueMatrix>=minTrueSimilThresh))/2,
+      " similarities greater than or equal to ",minTrueSimilThresh,"not double-counting.",collapse="_"),append=TRUE,file=outputFile)
   
   finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,pvalueMatrix=pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
                                     meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
@@ -116,10 +116,13 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                             dataMatrixList=dataMatrixList,communityInfo=commInfo)
   clustSizes <- table(aggregateData$sampleClustCommKey$globalClustNum)
   textOut <- capture.output(table(aggregateData$sampleClustCommKey$community,exclude=FALSE))
-  cat("\nMeta-cluster sizes:\n",textOut,sep="\n",append=TRUE,file=paste0(saveDir,"/",experimentName,"_metaclusterSizes.txt"))
+  cat(paste("\nMeta-cluster sizes:\n",collapse="_"),textOut,sep="\n",
+      append=TRUE,file=paste0(saveDir,"/",experimentName,"_metaclusterSizes.txt"))
   #add clusterSizes to node attributes
   commInfo$attrDF$size <- clustSizes[na.omit(match(commInfo$attrDF$clust,names(clustSizes)))]
-  
+ textOut <- capture.output(table(aggregateData$sampleClustCommKey$community,aggregateData$sampleClustCommKey$studyNum,exclude=FALSE))
+ cat(paste("\nMeta-cluster number of samples by studies:\n",collapse="_"),textOut,sep="\n",append=TRUE,file=paste0(saveDir,"/",experimentName,"_metaclusterNumSamplesByStudies.txt"))
+ 
   networkStats <- advancedNetworkPlots(communityMembership=commInfo,
                                        brewPal = networkColors,
                                        saveDir=saveDir,clustIndexMatrix=clustIndexMatrix,
@@ -153,7 +156,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   for(c in 1:length(sigGenes$sigMetaclustGenesES_pos)){
     
     testGeneSet <- sigGenes$sigMetaclustGenesES_pos[[c]]
-    cat("\n",length(testGeneSet)," genes for community ", c, " with >= ES of ",ES_thresh,"\n",append=TRUE,file=outputFile)
+    cat(paste("\n",length(testGeneSet)," genes for community ", c, " with >= ES of ",ES_thresh,"\n",collapse="_"),
+              append=TRUE,file=outputFile)
     GSEA_out[[c]] <- GSEA(testGeneVector=testGeneSet,refGeneLists=NULL,method=c("hypergeometric"),
                           refGeneListDir="/home/data/MSigDB/GSEA_base_MSigDB_lists_merged.RData.gzip")
     
@@ -172,7 +176,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       }
     }
     GSEA_out_unique[[g]] <- tmp
-    cat("\n",length(tmp)," unique signficant GSEA ref gene lists community ", g, " with ES of >=",ES_thresh,"\n",append=TRUE,file=outputFile)
+    cat(paste("\n",length(tmp)," unique signficant GSEA ref gene lists community ", g, " with ES of >=",ES_thresh,"\n",collapse="_"),
+              append=TRUE,file=outputFile)
     
   }
   save(GSEA_out_unique,file=paste0(saveDir,"/",experimentName,"_GSEA_out_uniqueSigLists_forEachMetaCluster.RData.gzip"),compress="gzip")
@@ -187,7 +192,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   for(g in 1:length(GSEA_out)){
     
     GSEA_out_sig[[g]] <- GSEA_out[[g]]$refGeneListNames[which(GSEA_out[[g]]$qvalue<=.05)] 
-    cat("\n",length(tmp)," overall (not necessarily unique) signficant GSEA ref gene lists community ", g, " with >= ES of ",ES_thresh,"\n",append=TRUE,file=outputFile)
+    cat(paste("\n",length(tmp)," overall (not necessarily unique) signficant GSEA ref gene lists community ", g, " with >= ES of ",ES_thresh,"\n",collapse="_"),
+              append=TRUE,file=outputFile)
     
     
   }
@@ -240,12 +246,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       #now: this data frame only has the "original" study number.
       #type=left: only want samples that are in the sampleClustCommPhenoData
       sampleClustCommPhenoData <- join(sampleClustCommPhenoData,subtypeDF_master,by=c("origStudyNum","sampleName"),type="left",
-                            match="all")                       
-                            
+                            match="all") 
+      
+      #add on subtype variables
+      fisherTestVariables <- append(fisherTestVariables,c("subtype","subtype_short"))
+      fisherTestVariableTitleNames <- append(fisherTestVariableTitleNames,c("pam50 subtype","35-gene pam50 subtype"))
+      fisherTestVariableLegendNames <- append( fisherTestVariableLegendNames,c("pam50\nsubtype","pam50\nsubtype"))                      
     }   
     sampleClustCommPhenoDataOrig <- sampleClustCommPhenoData
-    #add on subtype variables
-    fisherTestVariables <- append(fisherTestVariables,c("subtype","subtype_short"))
+
     groupingTerm="community"
     
     #only take samples with the groupingTerm you're looking at.
@@ -253,9 +262,10 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     #remove samples with NA values.
     groupings <- sampleClustCommPhenoData[, groupingTerm]
     
-    cat("\n",length(groupings), " patients included across all final meta-clusters.\n",
+    cat(paste("\n",length(groupings), " patients included across all final meta-clusters.\n",collapse="_"),
         append=TRUE,file=outputFile)
     
+    expName <- gsub("_"," ",experimentName)
     for(f in 1:length(fisherTestVariables)){
       
       if(!fisherTestVariables[f] %in% colnames(sampleClustCommPhenoData)){
@@ -286,17 +296,17 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       #no scale_fill_manual(values = variableColorMatrix)+
         #fill must be a factor.
         plotG <-    ggplot(dataF,aes(clinVar,fill=as.factor(clinVar)))+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
-          labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariables[f],""),
-               title=paste0("Breakdowns of ",fisherTestVariables[f],
-                            " by meta-cluster for ",experimentName,"\n"))+
+          labs(y="Number of samples",fill=paste0("",fisherTestVariableLegendNames[f],""),
+               title=paste0(fisherTestVariableTitleNames[f],
+                            " by meta-cluster \nfor ",expName,"\n"))+
           theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
                 axis.title=element_blank())+
           theme(legend.title=element_text(size=12))+   theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
           theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
-          theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_text(colour = "black",size=20,vjust=1),
+          theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-          theme(plot.title=element_text(colour="black",size=20,vjust=1))
+          theme(plot.title=element_text(colour="black",size=18,vjust=1))
         
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
@@ -305,39 +315,39 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         dev.off()
         
         plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=as.factor(clinVar)))+geom_bar() + 
-          labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariables[f],""),
-               title=paste0("Breakdowns of ",fisherTestVariables[f],
-                            " by meta-cluster for ",experimentName,"\n"))+
+          labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariableLegendNames[f],""),
+               title=paste0(fisherTestVariableTitleNames[f],
+                            " by meta-cluster \nfor ",expName,"\n"))+
           theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
                 axis.title=element_blank())+
           theme(legend.title=element_text(size=12))+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
           theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
-          theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_text(colour = "black",size=20,vjust=1),
+          theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
           theme(plot.title=element_text(colour="black",size=20,vjust=1))
         
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
-        plot( plotG)
+        plot( plotGStacked)
         
         dev.off()
         
         
       }else{
-        
+   
         variableColorMatrix <- c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")
         names(variableColorMatrix) <- c("LumB","LumA","Her2","Normal","Basal")
       
         plotG <-    ggplot(dataF,aes(clinVar,fill=as.factor(clinVar)))+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
-          labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariables[f],""),
-               title=paste0("Breakdowns of ",fisherTestVariables[f],
-                            " by meta-cluster for ",experimentName,"\n"))+
+          labs(y="Number of samples", fill=paste0("",fisherTestVariableLegendNames[f],""),
+               title=paste0(fisherTestVariableTitleNames[f],
+                            " by meta-cluster \nfor ",expName))+
           theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
                 axis.title=element_blank())+
           theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
           theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
-          theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=1,hjust=1),axis.title.x= element_text(colour = "black",size=20,vjust=1),
+          theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
           theme(plot.title=element_text(colour="black",size=20,vjust=1))
@@ -349,21 +359,21 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         dev.off()
         
         plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=as.factor(clinVar)))+geom_bar() + 
-          labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariables[f],""),
-               title=paste0("Breakdowns of ",fisherTestVariables[f],
-                            " by meta-cluster for ",experimentName,"\n"))+
+          labs(y="Number of samples", fill=paste0("",fisherTestVariableLegendNames[f],""),
+               title=paste0(fisherTestVariableTitleNames[f],
+                            " by meta-cluster \nfor ",expName,"\n"))+
           theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
                 axis.title=element_blank())+
           theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
           theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
-          theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=1,hjust=1),axis.title.x= element_text(colour = "black",size=20,vjust=1),
+          theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
           theme(plot.title=element_text(colour="black",size=20,vjust=1))
         
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
-        plot( plotG)
+        plot( plotGStacked)
         
         dev.off()
       
@@ -374,7 +384,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       tmp1 <- factor(sampleClustCommPhenoData[,fisherTestVariables[f]][which(!is.na(sampleClustCommPhenoData[,fisherTestVariables[f]]))])
          if(length(tmp1)==0 || length(unique(tmp1)==1)){
         
-        cat("\nClinical variable ", fisherTestVariables[f], " had only NAs or all one value so not analyzing it.\n",
+        cat(paste("\nClinical variable ", fisherTestVariables[f], " had only NAs or all one value so not analyzing it.\n",collapse="_"),
             append=TRUE,file=outputFile)
         next;
       }
@@ -384,7 +394,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   
   #end of if is NA
       }else{
-        cat("\nVariable ",fisherTestVariables[f], " is all NAs.\n",append=TRUE,file=outputFile)
+        cat(paste("\nVariable ",fisherTestVariables[f], " is all NAs.\n",collapse="_"),append=TRUE,file=outputFile)
         result[[paste0("fisher_",fisherTestVariables[f],"_pvalue")]]  <- NA
       }
   #end of looping over fisher variables.
@@ -487,10 +497,10 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     #OS: not enough variables.
  
     survFile <- paste0(saveDir,"/",experimentName,"_linearSurvivalStats_",Sys.Date(),".txt")
-    cat("\nLinear analysis with only RFS:\n",append=TRUE,file=survFile)
+    cat(paste("\nLinear analysis with only RFS:\n",collapse="_"),append=TRUE,file=survFile)
     
     dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$RFS))), ]
-    cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+    cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
     
     #strongly predicts RFS.
     linearModels[["RFS_linearAlone"]] <- lm(RFS~community,data=dataMatrix)
@@ -503,12 +513,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     #interesting: community becomes insignificant if add in therapies now: this could be
     #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
     #low Rsquared.
-    cat("\nLinear analysis with RFS and treatment:\n",append=TRUE,file=survFile)
+    cat(paste("\nLinear analysis with RFS and treatment:\n",collapse="_"),append=TRUE,file=survFile)
     dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
     dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
     dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
     dataMatrix <- data.frame(dataMatrix)
-    cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+    cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
     
      linearModelsSumm [["RFS_withRx_numPatients"]] <- nrow(dataMatrix)
     
@@ -530,14 +540,14 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
          
         }else{
           
-          cat("RFS analysis with therapies returned NA.\n",append=TRUE,file=survFile)
+          cat(paste("\nRFS analysis with therapies returned NA.\n",collapse="_"),append=TRUE,file=survFile)
         }
          
        }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 
                 && length(unique(dataMatrix$anti_HER2))==1 ){
          
          
-         cat("\nFor RFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",
+         cat(paste("\nFor RFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",collapse="_"),
              append=TRUE,file=survFile)
          linearModels[["RFS_linearWithRx"]] <- lm(RFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix)
           linearModelsSumm[["RFS_linearWithRx"]] <- summary( linearModels[["RFS_linearWithRx"]])
@@ -550,7 +560,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
        }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
                 && length(unique(dataMatrix$anti_HER2))>1 ){
          
-         cat("\nFor RFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",
+         cat(paste("\nFor RFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",collapse="_"),
              append=TRUE,file=survFile)
          
          linearModels[["RFS_linearWithRx"]] <- lm(RFS~community+chemotherapyClass+anti_HER2,data=dataMatrix)
@@ -566,7 +576,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                 && length(unique(dataMatrix$anti_HER2))>1 ){
          
          
-         cat("\nFor RFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",
+         cat(paste("\nFor RFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",collapse="_"),
              append=TRUE,file=survFile)
          
          linearModels[["RFS_linearWithRx"]] <- lm(RFS~community+anti_estrogen+anti_HER2,data=dataMatrix)
@@ -581,7 +591,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                 && length(unique(dataMatrix$anti_HER2))==1 ){
          
          
-         cat("\nFor RFS analysis, the anti HER2 and estrogen variables have only one unique value each.\n",append=TRUE,
+         cat(paste("\nFor RFS analysis, the anti HER2 and estrogen variables have only one unique value each.\n",collapse="_"),append=TRUE,
              file=survFile)
          
          
@@ -602,11 +612,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
 
 
   #now try with stage, grade.
-  cat("\nLinear analysis with RFS and histological grade :\n",append=TRUE,file=survFile)
-  dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
+  cat(paste("\nLinear analysis with RFS and histological grade :\n",collapse="_"),append=TRUE,file=survFile)
+  dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$RFS))), ]
   dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$hist_grade))),]
   dataMatrix <- data.frame(dataMatrix)
-  cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+  cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
   
    linearModelsSumm[["RFS_withGrade_numPatients"]] <- nrow(dataMatrix)
   linearModels[["RFS_linearWithGrade"]] <- tryCatch( lm(RFS~community+hist_grade,data=dataMatrix),
@@ -615,21 +625,21 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                      }
   )
   if(!is.na(linearModels[["RFS_linearWithGrade"]])){
-    linearModelsSumm[["RFS_linearWithGrade"]] <- summary( linearModels[["pCR_linearWithRx"]])
-    textOut <- capture.output( linearModelsSumm[["pCR_linearWithRxPvalue"]]$coefficients)
+    linearModelsSumm[["RFS_linearWithGrade"]] <- summary( linearModels[["RFS_linearWithGrade"]])
+    textOut <- capture.output( linearModelsSumm[["RFS_linearWithGrade"]]$coefficients)
     cat(textOut,sep="\n",append=TRUE,file=survFile) 
     linearModelsSumm[["RFS_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
     
   }else{
     
-    cat("\nHist grade with RFS analysis returned NA.",append=TRUE,file=survFile)  
+    cat(paste("\nHist grade with RFS analysis returned NA.\n",collapse="_"),append=TRUE,file=survFile)  
   }
 
 ###DFS
-   cat("\nLinear analysis with only DFS:\n",append=TRUE,file=survFile)
+   cat(paste("\nLinear analysis with only DFS:\n",collapse="_"),append=TRUE,file=survFile)
    
    dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
-   cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+   cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    
    #strongly predicts DFS.
    linearModels[["DFS_linearAlone"]] <- lm(DFS~community,data=dataMatrix)
@@ -642,12 +652,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
    #interesting: community becomes insignificant if add in therapies now: this could be
    #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
    #low Rsquared.
-   cat("\nLinear analysis with DFS and treatment:\n",append=TRUE,file=survFile)
+   cat(paste("\nLinear analysis with DFS and treatment:\n",collapse="_"),append=TRUE,file=survFile)
    dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
    dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
    dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
    dataMatrix <- data.frame(dataMatrix)
-   cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+   cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    
     linearModelsSumm[["DFS_withRx_numPatients"]] <- nrow(dataMatrix)
    
@@ -669,7 +679,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
    
   }else{
     
-    cat("\nDFS with therapies analysis returned NA.\n",append=TRUE,file=survFile)
+    cat(paste("\nDFS with therapies analysis returned NA.\n",collapse="_"),append=TRUE,file=survFile)
     
   }
    
@@ -677,7 +687,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                 length(unique(dataMatrix$anti_HER2))==1 ){
         
         
-        cat("\nFor DFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",
+        cat(paste("\nFor DFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",collapse="_"),
             append=TRUE,file=survFile)
         linearModels[["DFS_linearWithRx"]] <- lm(DFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix)
          linearModelsSumm[["DFS_linearWithRx"]] <- summary( linearModels[["DFS_linearWithRx"]])
@@ -690,7 +700,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
                && length(unique(dataMatrix$anti_HER2))>1 ){
         
-        cat("\nFor DFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",
+        cat(paste("\nFor DFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",collapse="_"),
             append=TRUE,file=survFile)
         
         linearModels[["DFS_linearWithRx"]] <- lm(DFS~community+chemotherapyClass+anti_HER2,data=dataMatrix)
@@ -706,7 +716,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                && length(unique(dataMatrix$anti_HER2))>1 ){
         
         
-        cat("\nFor DFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",
+        cat(paste("\nFor DFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",collapse="_"),
             append=TRUE,file=survFile)
         
         linearModels[["DFS_linearWithRx"]] <- lm(DFS~community+anti_estrogen+anti_HER2,data=dataMatrix)
@@ -721,7 +731,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                && length(unique(dataMatrix$anti_HER2))==1 ){
         
         
-        cat("\nFor DFS analysis, the anti HER2 and estrogen variables have only one unique value each.\n",append=TRUE,
+        cat(paste("\nFor DFS analysis, the anti HER2 and estrogen variables have only one unique value each.\n",collapse="_"),append=TRUE,
             file=survFile)
 
         
@@ -741,11 +751,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
    
 
    #now try with stage, grade.
-   cat("\nLinear analysis with DFS and histological grade :\n",append=TRUE,file=survFile)
+   cat(paste("\nLinear analysis with DFS and histological grade :\n",collapse="_"),append=TRUE,file=survFile)
    dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
    dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$hist_grade))),]
   dataMatrix <- data.frame(dataMatrix)
-   cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+   cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    
     linearModelsSumm[["DFS_withGrade_numPatients"]] <- nrow(dataMatrix)
 
@@ -755,22 +765,22 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                      }
   )
   if(!is.na(linearModels[["DFS_linearWithGrade"]])){
-    linearModelsSumm[["DFS_linearWithGrade"]] <- summary( linearModels[["DFS_linearWithRx"]])
-    textOut <- capture.output( linearModelsSumm[["DFS_linearWithRxPvalue"]]$coefficients)
+    linearModelsSumm[["DFS_linearWithGrade"]] <- summary( linearModels[["DFS_linearWithGrade"]])
+    textOut <- capture.output( linearModelsSumm[["DFS_linearWithGrade"]]$coefficients)
     cat(textOut,sep="\n",append=TRUE,file=survFile) 
     linearModelsSumm[["DFS_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
     
   }else{
     
-    cat("\nHist grade with DFS analysis returned NA.",append=TRUE,file=survFile)  
+    cat(paste("\nHist grade with DFS analysis returned NA\n.",collapse="_"),append=TRUE,file=survFile)  
   }
 
 
 #####pCR
-cat("\nLinear analysis with only pCR:\n",append=TRUE,file=survFile)
+cat(paste("\nLinear analysis with only pCR:\n",collapse="_"),append=TRUE,file=survFile)
 
 dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
-cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
 
 #strongly predicts pCR.
 linearModels[["pCR_linearAlone"]] <- lm(pCR~community,data=dataMatrix)
@@ -783,12 +793,12 @@ cat(textOut,sep="\n",append=TRUE,file=survFile)
 #interesting: community becomes insignificant if add in therapies now: this could be
 #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
 #low Rsquared.
-cat("\nLinear analysis with pCR and treatment:\n",append=TRUE,file=survFile)
+cat(paste("\nLinear analysis with pCR and treatment:\n",collapse="_"),append=TRUE,file=survFile)
 dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
 dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
 dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
 dataMatrix <- data.frame(dataMatrix)
-cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
 
  linearModelsSumm[["pCR_withRx_numPatients"]] <- nrow(dataMatrix)
 
@@ -812,7 +822,7 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
        
        
        linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- NA
-       cat("\nDFS analysis with therapies gave factor errors.\n",append=TRUE,file=survFile)
+       cat(paste("\nDFS analysis with therapies gave factor errors.\n",collapse="_"),append=TRUE,file=survFile)
        
      }
      
@@ -820,7 +830,7 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
             && length(unique(dataMatrix$anti_HER2))==1 ){
      
      
-     cat("\nFor pCR analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",
+     cat(paste("\nFor pCR analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",collapse="_"),
          append=TRUE,file=survFile)
      linearModels[["pCR_linearWithRx"]] <- lm(pCR~community+chemotherapyClass+anti_estrogen,data=dataMatrix)
       linearModelsSumm[["pCR_linearWithRx"]] <- summary( linearModels[["pCR_linearWithRx"]])
@@ -833,7 +843,7 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
    }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
             && length(unique(dataMatrix$anti_HER2))>1 ){
      
-     cat("\nFor pCR analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",
+     cat(paste("\nFor pCR analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",collapse="_"),
          append=TRUE,file=survFile)
      
      linearModels[["pCR_linearWithRx"]] <- lm(pCR~community+chemotherapyClass+anti_HER2,data=dataMatrix)
@@ -849,7 +859,7 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
             && length(unique(dataMatrix$anti_HER2))>1 ){
      
      
-     cat("\nFor pCR analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",
+     cat(paste("\nFor pCR analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",collapse="_"),
          append=TRUE,file=survFile)
      
      linearModels[["pCR_linearWithRx"]] <- lm(pCR~community+anti_estrogen+anti_HER2,data=dataMatrix)
@@ -864,7 +874,7 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
             && length(unique(dataMatrix$anti_HER2))==1 ){
      
      
-     cat("\nFor pCR analysis, the anti HER2 and estrogen variables have only one unique value each.\n",append=TRUE,
+     cat(paste("\nFor pCR analysis, the anti HER2 and estrogen variables have only one unique value each.\n",collapse="_"),append=TRUE,
          file=survFile)
      
      
@@ -884,11 +894,11 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
 
 
 #now try with stage, grade.
-cat("\nLinear analysis with pCR and histological grade :\n",append=TRUE,file=survFile)
+cat(paste("\nLinear analysis with pCR and histological grade :\n",collapse="_"),append=TRUE,file=survFile)
 dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
 dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$hist_grade))),]
 dataMatrix <- data.frame(dataMatrix)
-cat("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",append=TRUE,file=survFile)
+cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
 
  linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrix)
 linearModels[["pCR_linearWithGrade"]] <- tryCatch( lm(pCR~community+hist_grade,data=dataMatrix),
@@ -897,14 +907,14 @@ linearModels[["pCR_linearWithGrade"]] <- tryCatch( lm(pCR~community+hist_grade,d
                                                   }
 )
  if(!is.na(linearModels[["pCR_linearWithGrade"]])){
- linearModelsSumm[["pCR_linearWithGrade"]] <- summary( linearModels[["pCR_linearWithRx"]])
-textOut <- capture.output( linearModelsSumm[["pCR_linearWithRxPvalue"]]$coefficients)
+ linearModelsSumm[["pCR_linearWithGrade"]] <- summary( linearModels[["pCR_linearWithGrade"]])
+textOut <- capture.output( linearModelsSumm[["pCR_linearWithGrade"]]$coefficients)
 cat(textOut,sep="\n",append=TRUE,file=survFile) 
  linearModelsSumm[["pCR_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
    
   }else{
     
-  cat("\nHist grade with pCR analysis returned NA.",append=TRUE,file=survFile)  
+  cat(paste("\nHist grade with pCR analysis returned NA.",collapse="_"),append=TRUE,file=survFile)  
   }
   
 #end of if not ovarian.

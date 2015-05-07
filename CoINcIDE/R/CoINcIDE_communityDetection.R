@@ -361,7 +361,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
     origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
                             edge.arrow.size=3,main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
-                            ),xlab="#=Study Number");
+                            ),xlab="node=cluster,#=dataset");
     
     
     dev.off();
@@ -372,7 +372,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
     origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
        edge.arrow.size=3,edge.width = plotEdgeWeights,edge.color="black", main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
-                                                                            ),xlab="#=Study Number, edge weight = inverse p-value");
+                                                                            ),xlab="node=cluster,#=dataset, edge weight = inverse p-value");
    
     dev.off();
     
@@ -537,9 +537,9 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
       networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
-                                                                                                         numCommunitiesOrig," communities of any size found\n",
-                                                                                                         "with community detection method ",commMethod,"."),xlab="color=community, #=study");
+                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," meta-clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
+                                                                                                         numCommunitiesOrig," communities of any size found ",
+                                                                                                         "with\n community detection method ",commMethod,"."),xlab="color=meta-cluster,node=cluster,#=dataset");
       
       plot.new()
       #want community numbers from smallest to largest.
@@ -558,8 +558,8 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
       networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
                                    vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
-                                                                                                         numCommunitiesOrig," communities of any size found\n",
-                                                                                                         "with community detection method ",commMethod,"."),xlab="color=community, #=study");
+                                                                                                         numCommunitiesOrig," meta-clusters of any size found ",
+                                                                                                         "\nwith community detection method ",commMethod,"."),xlab="color=meta-cluster,node=cluster,#=dataset");
       
       plot.new()
       #want community numbers from smallest to largest.
@@ -657,7 +657,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
       networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
                               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " datasets.\n",
-                                                                                               finalNumCommunities," pruned communities found\n with community method ",commMethod,"."),xlab="color=community, #=study");
+                                                                                               finalNumCommunities," pruned meta-clusters found with\n community method ",commMethod,"."),xlab="color=meta-cluster,node=cluster,#=dataset");
       
       
       plot.new()
@@ -677,7 +677,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
       networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
                               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " datasets.\n",
-                                                                                               finalNumCommunities," pruned communities found\n with community method ",commMethod,"."),xlab="color=community, #=study");
+                                                                                               finalNumCommunities," pruned meta-clusters found with\n community method ",commMethod,"."),xlab="color=meta-cluster,node=cluster,#=dataset");
       
       plot.new()
       #want community numbers from smallest to largest.

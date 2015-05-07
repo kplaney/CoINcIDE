@@ -129,7 +129,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
   #number of communities.
   #number of clusters (nodes) and # started out with.
   #let's add size of each cluster
-  
+  expName <- gsub("_"," ",experimentName)
   network_stats <- c(length(unique(communityMembership$attrDF$community)),
                      length(unique(communityMembership$attrDF$clust)),
                      nrow(clustIndexMatrix),
@@ -180,7 +180,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
         
         layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,node size=#samples");
     
     
     plot.new()
@@ -199,7 +199,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_scaledNodes_studyNumlabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
     layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset,node size=#samples");
     
 
     plot.new()
@@ -219,7 +219,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
       
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
           plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,
-               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,node size=#samples");
           
           
           plot.new()
@@ -236,7 +236,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
           #with study numbers
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
           plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset,node size=#samples");
           
           plot.new()
           #want community numbers from smallest to largest.
@@ -260,7 +260,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     
     layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster");
     plot.new()
     #want community numbers from smallest to largest.
     colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
@@ -275,7 +275,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_unscaledNodes_studyNumlabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
     layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset");
     plot.new()
     #want community numbers from smallest to largest.
     colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
@@ -291,7 +291,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     
     layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster");
     
     plot.new()
     #want community numbers from smallest to largest.
@@ -305,7 +305,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     
     layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset");
     
     plot.new()
     #want community numbers from smallest to largest.

@@ -165,9 +165,22 @@ outcomesVarBinary=NA
 outcomesVarCont = NA
 ovarian <- FALSE
 eset_uniquePatientID="dbUniquePatientID"
-fisherTestVariables <- c("OS","DFS","RFS","RCB","metastasis","pCR","near_pCR","clinical_AJCC_stage" ,"tumor_stage_preTrt",
-                         "preTrt_lymph_node_status" , "preTrt_numPosLymphNodes","family_history","race","nationality",
-                         "neoadjuvant_or_adjuvant","PR_preTrt","HER2_preTrt","hist_grade","path_diagnosis","path")
+fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                         "tumor_stage_preTrt" ,
+                         "preTrt_lymph_node_status" , 
+                         "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                         "anti_HER2","anti_estrogen")
+
+fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                             "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                             "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                             "anti-ER\ntreat")
+
+
+fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                   "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                   "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                   "anti-ER treatment")
 
 breast_pam50FullCentroidsOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                              meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
@@ -175,10 +188,10 @@ breast_pam50FullCentroidsOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFea
                                              commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                              survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                              CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                             ovarian=ovarian)
+                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
 
 
-save(breast_pam50FullCentroidsOut,file="/home/kplaney/breast_analysis/breast_pam50FullCentroid_features_2015-05-06//breast_pam50FullCentroidsOut.RData.gzip",compress="gzip")
+save(breast_pam50FullCentroidsOut,file="/home/kplaney/breast_analysis/breast_pam50FullCentroid_features_2015-05-07//breast_pam50FullCentroidsOut.RData.gzip",compress="gzip")
 
 #####pam50 full kmeans
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
@@ -203,9 +216,22 @@ outcomesVarBinary=NA
 outcomesVarCont = NA
 ovarian <- FALSE
 eset_uniquePatientID="dbUniquePatientID"
-fisherTestVariables <- c("OS","DFS","RFS","RCB","metastasis","pCR","near_pCR","clinical_AJCC_stage" ,"tumor_stage_preTrt",
-                         "preTrt_lymph_node_status" , "preTrt_numPosLymphNodes","family_history","race","nationality",
-                         "neoadjuvant_or_adjuvant","PR_preTrt","HER2_preTrt","hist_grade","path_diagnosis","path")
+fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                         "tumor_stage_preTrt" ,
+                         "preTrt_lymph_node_status" , 
+                         "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                         "anti_HER2","anti_estrogen")
+
+fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                   "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                   "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                   "anti-ER\ntreat")
+
+
+fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                  "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                  "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                  "anti-ER treatment")
 
 breast_pam50FullOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                             meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
@@ -213,9 +239,9 @@ breast_pam50FullOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,ese
                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                            ovarian=ovarian)
+                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
 
-save(breast_pam50FullOut,file="/home/kplaney/breast_analysis/breast_pam50Full_features_2015-05-06//breast_pam50FullOut.RData.gzip",compress="gzip")
+save(breast_pam50FullOut,file="/home/kplaney/breast_analysis/breast_pam50Full_features_2015-05-07//breast_pam50FullOut.RData.gzip",compress="gzip")
 
 
 ####pam50 short kmeans
@@ -239,9 +265,22 @@ outcomesVarBinary=NA
 outcomesVarCont = NA
 ovarian <- FALSE
 eset_uniquePatientID="dbUniquePatientID"
-fisherTestVariables <- c("OS","DFS","RFS","RCB","metastasis","pCR","near_pCR","clinical_AJCC_stage" ,"tumor_stage_preTrt",
-                         "preTrt_lymph_node_status" , "preTrt_numPosLymphNodes","family_history","race","nationality",
-                         "neoadjuvant_or_adjuvant","PR_preTrt","HER2_preTrt","hist_grade","path_diagnosis","path")
+fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                         "tumor_stage_preTrt" ,
+                         "preTrt_lymph_node_status" , 
+                         "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                         "anti_HER2","anti_estrogen")
+
+fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                   "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                   "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                   "anti-ER\ntreat")
+
+
+fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                  "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                  "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                  "anti-ER treatment")
 
 breast_pam50ShortOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
@@ -249,9 +288,9 @@ breast_pam50ShortOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,es
                                                    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                    survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                    CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                   ovarian=ovarian)
+                                                   ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
 
-save(breast_pam50ShortOut,file="/home/kplaney/breast_analysis/breast_pam50Short_features_2015-05-06//breast_pam50ShortOut.RData.gzip",compress="gzip")
+save(breast_pam50ShortOut,file="/home/kplaney/breast_analysis/breast_pam50Short_features_2015-05-07//breast_pam50ShortOut.RData.gzip",compress="gzip")
 
 
 ###200
@@ -264,7 +303,7 @@ load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9200Features
 clusterCoINcIDE_output =  kmeansConsensus
 load(paste0(saveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
-load(paste0(saveDir,"/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData.gzip")
+load(paste0(saveDir,"/adjMatrices_200F_pearson_meanMatrix_2015-05-05.RData.gzip"))
 CoINcIDE_output = breast200F_pearson_meanMatrix
 experimentName <- "breast_200_features"
 eset_featureDataFieldName="gene_symbol"
@@ -274,9 +313,22 @@ outcomesVarBinary=NA
 outcomesVarCont = NA
 ovarian <- FALSE
 eset_uniquePatientID="dbUniquePatientID"
-fisherTestVariables <- c("OS","DFS","RFS","RCB","metastasis","pCR","near_pCR","clinical_AJCC_stage" ,"tumor_stage_preTrt",
-  "preTrt_lymph_node_status" , "preTrt_numPosLymphNodes","family_history","race","nationality",
-  "neoadjuvant_or_adjuvant","PR_preTrt","HER2_preTrt","hist_grade","path_diagnosis","path")
+fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                         "tumor_stage_preTrt" ,
+                         "preTrt_lymph_node_status" , 
+                         "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                         "anti_HER2","anti_estrogen")
+
+fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                   "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                   "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                   "anti-ER\ntreat")
+
+
+fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                  "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                  "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                  "anti-ER treatment")
 
 breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                           meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
@@ -285,25 +337,25 @@ breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=ese
                                           eset_featureDataFieldName=eset_featureDataFieldName,
                                           survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                           CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                          ovarian=ovarian)
+                                          ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
 
 
 
-save(breast_200Out,file="/home/kplaney/breast_analysis/breast_200_features_2015-05-06/breast_200_features_analysisOut.RData.gzip",compress="gzip")
+save(breast_200Out,file="/home/kplaney/breast_analysis/breast_200_features_2015-05-07/breast_200_features_analysisOut.RData.gzip",compress="gzip")
 
 ####500
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
 saveDir <- "/home/kplaney/breast_analysis/"
-load(paste0(saveDir,"/metaFeatures_200.RData.gzip"))
+load(paste0(saveDir,"/metaFeatures_500.RData.gzip"))
 metaFeatures =metaFeatures
-load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip"))
+load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9500Features_2015-05-04.RData.gzip"))
 clusterCoINcIDE_output =  kmeansConsensus
 load(paste0(saveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
-load(paste0(saveDir,"/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData.gzip")
-     CoINcIDE_output = breast200F_pearson_meanMatrix
-     experimentName <- "breast_200_features"
+load(paste0(saveDir,"/adjMatrices_500F_pearson_meanMatrix_2015-05-05.RData.gzip"))
+     CoINcIDE_output = breast500F_pearson_meanMatrix
+     experimentName <- "breast_500_features"
      eset_featureDataFieldName="gene_symbol"
      networkColors = "Set3"
      outcomesVarBinary=NA
@@ -311,37 +363,50 @@ load(paste0(saveDir,"/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData
      outcomesVarCont = NA
      ovarian <- FALSE
      eset_uniquePatientID="dbUniquePatientID"
-     fisherTestVariables <- c("OS","DFS","RFS","RCB","metastasis","pCR","near_pCR","clinical_AJCC_stage" ,"tumor_stage_preTrt",
-                              "preTrt_lymph_node_status" , "preTrt_numPosLymphNodes","family_history","race","nationality",
-                              "neoadjuvant_or_adjuvant","PR_preTrt","HER2_preTrt","hist_grade","path_diagnosis","path")
+     fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                              "tumor_stage_preTrt" ,
+                              "preTrt_lymph_node_status" , 
+                              "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                              "anti_HER2","anti_estrogen")
      
-     breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+     fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                        "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                        "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                        "anti-ER\ntreat")
+     
+     
+     fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                       "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                       "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                       "anti-ER treatment")
+     
+     breast_500Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                   meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
                                                   clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
                                                   commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,
                                                   eset_featureDataFieldName=eset_featureDataFieldName,
                                                   survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                   CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                  ovarian=ovarian)
+                                                  ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
      
      
      
-     save(breast_200Out,file="/home/kplaney/breast_analysis/breast_200_features_2015-05-06/breast_200_features_analysisOut.RData.gzip",compress="gzip")
+     save(breast_500Out,file="/home/kplaney/breast_analysis/breast_500_features_2015-05-07/breast_500_features_analysisOut.RData.gzip",compress="gzip")
      
      
 ####1000
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
 saveDir <- "/home/kplaney/breast_analysis/"
-load(paste0(saveDir,"/metaFeatures_200.RData.gzip"))
+load(paste0(saveDir,"/metaFeatures_1000.RData.gzip"))
 metaFeatures =metaFeatures
-load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip"))
+load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem91000Features_2015-05-05.RData.gzip"))
 clusterCoINcIDE_output =  kmeansConsensus
 load(paste0(saveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
-load(paste0(saveDir,"/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData.gzip")
-     CoINcIDE_output = breast200F_pearson_meanMatrix
-     experimentName <- "breast_200_features"
+load(paste0(saveDir,"/adjMatrices_1000F_pearson_meanMatrix_2015-05-05.RData.gzip"))
+CoINcIDE_output = breast1000F_pearson_meanMatrix
+experimentName <- "breast_1000_features"
      eset_featureDataFieldName="gene_symbol"
      networkColors = "Set3"
      outcomesVarBinary=NA
@@ -349,36 +414,52 @@ load(paste0(saveDir,"/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData
      outcomesVarCont = NA
      ovarian <- FALSE
      eset_uniquePatientID="dbUniquePatientID"
-     fisherTestVariables <- c("OS","DFS","RFS","RCB","metastasis","pCR","near_pCR","clinical_AJCC_stage" ,"tumor_stage_preTrt",
-                              "preTrt_lymph_node_status" , "preTrt_numPosLymphNodes","family_history","race","nationality",
-                              "neoadjuvant_or_adjuvant","PR_preTrt","HER2_preTrt","hist_grade","path_diagnosis","path")
+
+     fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                              "tumor_stage_preTrt" ,
+                              "preTrt_lymph_node_status" , 
+                              "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                              "anti_HER2","anti_estrogen")
      
-     breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+     fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                        "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                        "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                        "anti-ER\ntreat")
+     
+     
+     fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                       "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                       "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                       "anti-ER treatment")
+     
+     breast_1000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                   meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
                                                   clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
                                                   commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,
                                                   eset_featureDataFieldName=eset_featureDataFieldName,
                                                   survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                   CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                  ovarian=ovarian)
+                                                  ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
      
      
      
-     save(breast_200Out,file="/home/kplaney/breast_analysis/breast_200_features_2015-05-06/breast_200_features_analysisOut.RData.gzip",compress="gzip")
+     save(breast_1000Out,file="/home/kplaney/breast_analysis/breast_1000_features_2015-05-07/breast_1000_features_analysisOut.RData.gzip",compress="gzip")
      
 ###2000
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
+
 saveDir <- "/home/kplaney/breast_analysis/"
-load(paste0(saveDir,"/metaFeatures_200.RData.gzip"))
+load(paste0(saveDir,"/metaFeatures_2000.RData.gzip"))
 metaFeatures =metaFeatures
-load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip"))
+load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-05.RData.gzip"))
 clusterCoINcIDE_output =  kmeansConsensus
 load(paste0(saveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
-load(paste0(saveDir,"/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData.gzip")
-     CoINcIDE_output = breast200F_pearson_meanMatrix
-     experimentName <- "breast_200_features"
+load(paste0(saveDir,"/adjMatrices_2000F_pearson_meanMatrix_2015-05-05.RData.gzip"))
+CoINcIDE_output = breast2000F_pearson_meanMatrix
+experimentName <- "breast_2000_features"
+
      eset_featureDataFieldName="gene_symbol"
      networkColors = "Set3"
      outcomesVarBinary=NA
@@ -386,20 +467,33 @@ load(paste0(saveDir,"/adjMatrices_pam50Short_pearson_meanMatrix_2015-04-29.RData
      outcomesVarCont = NA
      ovarian <- FALSE
      eset_uniquePatientID="dbUniquePatientID"
-     fisherTestVariables <- c("OS","DFS","RFS","RCB","metastasis","pCR","near_pCR","clinical_AJCC_stage" ,"tumor_stage_preTrt",
-                              "preTrt_lymph_node_status" , "preTrt_numPosLymphNodes","family_history","race","nationality",
-                              "neoadjuvant_or_adjuvant","PR_preTrt","HER2_preTrt","hist_grade","path_diagnosis","path")
+     fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                              "tumor_stage_preTrt" ,
+                              "preTrt_lymph_node_status" , 
+                              "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                              "anti_HER2","anti_estrogen")
      
-     breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+     fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                        "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                        "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                        "anti-ER\ntreat")
+     
+     
+     fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                       "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                       "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                       "anti-ER treatment")
+     
+     breast_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                   meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
                                                   clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
                                                   commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,
                                                   eset_featureDataFieldName=eset_featureDataFieldName,
                                                   survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                   CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                  ovarian=ovarian)
+                                                  ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
      
      
      
-     save(breast_200Out,file="/home/kplaney/breast_analysis/breast_200_features_2015-05-06/breast_200_features_analysisOut.RData.gzip",compress="gzip")
+     save(breast_2000Out,file="/home/kplaney/breast_analysis/breast_2000_features_2015-05-07/breast_2000_features_analysisOut.RData.gzip",compress="gzip")
      
