@@ -36,7 +36,7 @@ clustIndexMatrix <- output$clustIndexMatrix
 ###inputs for edge detection
 meanEdgePairPvalueThresh <- .01
 indEdgePvalueThresh <- .05
-minTrueSimilThresh <- .5
+minTrueSimilThresh <- .4
 maxTrueSimilThresh <- Inf
 clustSizeFractThresh <- inputVariablesDF$clustSizeFractThresh
 clustSizeThresh <- 5
@@ -67,13 +67,13 @@ finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,
                               meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
                               minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
                               fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
-                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",restrictEdges=FALSE,clustIndexMatrix=clustIndexMatrix
+                              clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",restrictEdges=TRUE,clustIndexMatrix=clustIndexMatrix
 )
 #COME BACK: fastgreedy or edgeBetween
 commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,
                                         clustIndexMatrix=output$clustIndexMatrix,fileTag="autoReport",
                             saveDir=saveDir,minNumUniqueStudiesPerCommunity=3,clustMethodName="",
-                            commMethod=c("fastgreedy"),
+                            commMethod=c("edgeBetween"),
                             makePlots=TRUE,saveGraphData=FALSE,plotToScreen=TRUE)
  advancedNetworkPlots(communityMembership=commInfo,
                                   brewPal = c("Set3"),

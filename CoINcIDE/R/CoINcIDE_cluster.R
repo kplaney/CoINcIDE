@@ -12,8 +12,9 @@ clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=
   
   if(pickKMethod=="gap"){
     
-    if(clustMethod=="kmeans"){
+    if(clustMethod=="km"){
       
+
       clusterOutputList <- clustMatrixListKmeansGap(dataMatrixList=dataMatrixList,clustFeaturesList=clustFeaturesList,iter.max=iter.max,nstart=nstart,maxNumClusters=maxNumClusters,numSims=numSims,outputFile=outputFile)
         
     }else if(clustMethod=="hc"){
@@ -23,7 +24,7 @@ clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=
                                                               corUse=corUse,numSims=numSims)      
     }else{
       
-      stop("In clustMatrixListWrapper: did not pick hc or kmeans as clustMethod input")
+      stop("In clustMatrixListWrapper: did not pick hc or km as clustMethod input")
     }
     
   }else if(pickKMethod=="consensus"){

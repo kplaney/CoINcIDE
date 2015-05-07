@@ -111,13 +111,18 @@ plotMetaFeatureES <- function(ESMatrix,saveFile=FALSE,plotToScreen=TRUE,
   
 }
 
-advancedNetworkPlots <- function(communityMembership,
+advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
-                                  saveDir="/home/kplaney/ISMB/",saveName="networks",colorCodes,
-                                 plotToScreen=FALSE){
+                                  saveDir="/home/kplaney/ISMB/",experimentName="networks",colorCodes,
+                                 plotToScreen=FALSE,nodePlotSize=10,nodeFontSize=.7){
   
 
-
+   if(!plotToScreen){
+     
+     dir.create(saveDir)
+     #dir.create(paste0(saveDir,"/",experimentName,"_",Sys.Date()),showWarnings=TRUE);
+     #saveDir <- paste0(saveDir,"/",experimentName,"_",Sys.Date())
+   }
   #study summary.
   #number of edges
   #number of studies
@@ -127,7 +132,7 @@ advancedNetworkPlots <- function(communityMembership,
   
   network_stats <- c(length(unique(communityMembership$attrDF$community)),
                      length(unique(communityMembership$attrDF$clust)),
-                     (length(communityMembership$clustLose)+ length(unique(communityMembership$attrDF$clust))),
+                     nrow(clustIndexMatrix),
                      nrow(communityMembership$edgeDF),
                      length(unique(communityMembership$attrDF$studyNum)));
   
@@ -166,60 +171,151 @@ advancedNetworkPlots <- function(communityMembership,
   
   
   if(!is.null(communityMembership$attrDF$size)){
-    
+
     V(undirGraph)$size <- communityMembership$attrDF$size;
     
     if(!plotToScreen){
     #save plots
-    png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),
-        width = 700, height = 800,res=160);
+    png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+        
+        layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+    
+    
+    plot.new()
+    #want community numbers from smallest to largest.
+    colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+    colours = unique(V(undirGraph)$color)[colorOrder]
+    #labels = paste(1:length(colours))
+    labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+    
+    legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+           title="Meta-clusters")
     dev.off();
     
     
     #with study numbers
-    png(filename=paste0(saveDir,"/",saveName,"_communityPlot_scaledNodes_studyNumlabels_",Sys.Date(),".png"),
-        width = 700, height = 800,res=160);
+    png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_scaledNodes_studyNumlabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+    layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-    dev.off();
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
     
+
+    plot.new()
+    #want community numbers from smallest to largest.
+    colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+    colours = unique(V(undirGraph)$color)[colorOrder]
+    #labels = paste(1:length(colours))
+    labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+    
+    legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+           title="Meta-clusters")
+    dev.off();
+
+    
+
     }else{
       
-      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-           vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-      
-      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-           vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-      
-      
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+          plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,
+               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+          
+          
+          plot.new()
+          #want community numbers from smallest to largest.
+          colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+          colours = unique(V(undirGraph)$color)[colorOrder]
+          #labels = paste(1:length(colours))
+          labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+          
+          legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+                 title="Meta-clusters")
+
+          
+          #with study numbers
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+          plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
+               vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+          
+          plot.new()
+          #want community numbers from smallest to largest.
+          colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+          colours = unique(V(undirGraph)$color)[colorOrder]
+          #labels = paste(1:length(colours))
+          labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+          
+          legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+                 title="Meta-clusters")
+             
       
     }
-    }
+    
+  }
   
   if(!plotToScreen){
     
-  #without relative sizes
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),
-      width = 700, height = 800,res=160);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  #with study nums
-  png(filename=paste0(saveDir,"/",saveName,"_communityPlot_unscaledNodes_studyNumlabels_",Sys.Date(),".png"),
-      width = 700, height = 800,res=160);
-  plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-       vertex.color= V(undirGraph)$color, edge.arrow.size=3);
-  dev.off();
-  
+    #without relative sizes
+    png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+    
+    layout(matrix(c(1,2), 1,2), widths=c(3,1))
+    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+    plot.new()
+    #want community numbers from smallest to largest.
+    colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+    colours = unique(V(undirGraph)$color)[colorOrder]
+    #labels = paste(1:length(colours))
+    labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+    
+    legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+           title="Meta-clusters")
+    dev.off();
+    #with study nums
+    png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_unscaledNodes_studyNumlabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+    layout(matrix(c(1,2), 1,2), widths=c(3,1))
+    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+    plot.new()
+    #want community numbers from smallest to largest.
+    colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+    colours = unique(V(undirGraph)$color)[colorOrder]
+    #labels = paste(1:length(colours))
+    labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+    
+    legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+           title="Meta-clusters")
+    dev.off();
+    
   }else{
     
-    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
+    layout(matrix(c(1,2), 1,2), widths=c(3,1))
+    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
     
-    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=7,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3);
+    plot.new()
+    #want community numbers from smallest to largest.
+    colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+    colours = unique(V(undirGraph)$color)[colorOrder]
+    #labels = paste(1:length(colours))
+    labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+    
+    legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+           title="Meta-clusters")
+    
+    layout(matrix(c(1,2), 1,2), widths=c(3,1))
+    plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=experimentName);
+    
+    plot.new()
+    #want community numbers from smallest to largest.
+    colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+    colours = unique(V(undirGraph)$color)[colorOrder]
+    #labels = paste(1:length(colours))
+    labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+    
+    legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+           title="Meta-clusters")
     
     
   }
@@ -284,12 +380,11 @@ assignCentroidSubtype <- function(origDataMatrix,minNumGenes=30,centroidRData="/
   
 }
 ####
-#TO DO:  copy most of this function to allow to bucket by ANY sample attribute you input
-#(i.e. a column found in data frame you feed in.)
+
 #pam50 colors:  t(data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")))
 #(and name for subtypes-look up order in old clust robust code.)
 phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",fileTag="clust method",
-                                                variableColorMatrix=NULL){
+                                                variableColorMatrix=NULL,phenoVar){
   
 
 
@@ -321,18 +416,14 @@ phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",file
       
     }else{
       #this is a more distinct color palette
-      variableColorMatrix <- brewer.pal(numColors,"Dark2")
+      variableColorMatrix <- brewer.pal(numColors,"Paired")
     }
  
     names(variableColorMatrix) <- unique(sampleClustCommKey[,phenoVar]);
   }
   #pam50 colors:  t(data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")))
 
-
-
-  warning("\nThis code assumes your clusters have genes in the columns and patients in the rows.\n")
-
-  
+ 
   subtype_plot <- list();
   subtype_dfList <- list();
   subtype_plot_stacked <- list();
@@ -493,7 +584,7 @@ phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",file
   colnames(phenoVarBreakdowns) <- c(phenoVar,"number","communitySize","community","numStudyPerComm","numClustPerComm","fract");
 
   #plot some piechars too.
-  p <- ggplot(phenoVarBreakdowns, aes(x=1,y=fract, fill=subtype)) +facet_grid(.~community)+
+  p <- ggplot(phenoVarBreakdowns, aes(x=1,y=fract, fill=subtype)) +facet_grid(.~community,scales="free_x")+
 
     geom_bar(stat="identity", color='black') +scale_fill_manual(values = t(phenoVar))+
     # remove black diagonal line from legend
@@ -520,7 +611,7 @@ phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",file
   return(output);
   
 }
-# communitySubtypeBreakdown_plots <- function(community_membership,biclust,origDataMatrices,saveDir="./",clustMethodName="clust method",
+# communitySubtypeBreakdown_plots <- function(community_membership,biclust,origDataMatrices,saveDir="./",experimentName="clust method",
 #                                              centroidSetName="pam50",centroidRData="/home/data/breast_microarrayDB/pam50_centroids.RData"){
 #   
 #   
@@ -710,7 +801,7 @@ phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",file
 #           axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
 #     theme(plot.title=element_text(colour="black",size=28,vjust=1,hjust=.2));
 #   
-#   png(filename=paste0(saveDir,"/",clustMethodName,"_subtype_plotALL_",Sys.Date(),".png"),
+#   png(filename=paste0(saveDir,"/",experimentName,"_subtype_plotALL_",Sys.Date(),".png"),
 #       width = 700, height = 1000);
 #   
 #   plot(subtype_plotALL);
@@ -730,7 +821,7 @@ phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",file
 #    
 #   
 #   
-#   png(filename=paste0(saveDir,"/",clustMethodName,"_subtype_plot_stackedALL_",Sys.Date(),".png"),
+#   png(filename=paste0(saveDir,"/",experimentName,"_subtype_plot_stackedALL_",Sys.Date(),".png"),
 #       width = 700, height = 1000);
 #   
 #   plot(subtype_plot_stackedALL);
@@ -747,7 +838,7 @@ phenoVarCommunityBreakdownPlots <- function(sampleClustCommKey,saveDir="./",file
 #     theme(plot.title=element_text(colour="black",size=28,vjust=1,hjust=.2));
 #     
 #   
-#   png(filename=paste0(saveDir,"/",clustMethodName,"_subtype_plot_fractALL_",Sys.Date(),".png"),
+#   png(filename=paste0(saveDir,"/",experimentName,"_subtype_plot_fractALL_",Sys.Date(),".png"),
 #       width = 700, height = 1000);
 #   plot(subtype_plot_fractALL);
 #   dev.off();
@@ -806,12 +897,12 @@ plot_communitiesWithSubtypes  <- function(subtype_dfMaster,community_membership,
   #vertex.size=4,vertex.label.dist=0.5,edge.weight=E(undirGraph)$sampleFract,
   #size is size of vertex
   finalNumCommunities <- length(unique(community_membership[,"community"]));
-  png(filename=paste0(saveDir,clustMethodName,"_communitySubtypePlot_",Sys.Date(),".png"),
+  png(filename=paste0(saveDir,experimentName,"_communitySubtypePlot_",Sys.Date(),".png"),
       width = 700, height = 1000);
   # vertex.color= V(undirGraph)$color,
   plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$subtype,vertex.size=5,vertex.label.color="black",vertex.label.cex=.7,
                           vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(community_membership[,"studyNum"])), "studies.\n",
-                                                                                           finalNumCommunities," pruned communities found using method ",clustMethodName, "."),xlab="color=community, label=subtype");
+                                                                                           finalNumCommunities," pruned communities found using method ",experimentName, "."),xlab="color=community, label=subtype");
   
   
   dev.off();
@@ -824,7 +915,7 @@ plot_communitiesWithSubtypes  <- function(subtype_dfMaster,community_membership,
   }
 
 plot_subtypes_network <- function(clustRobust_output,analysisOutput,
-                                  clustMethodName,saveDir="/home/kplaney/pre_proposal/",
+                                  experimentName,saveDir="/home/kplaney/pre_proposal/",
                                   centroidRData="/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData"){
   
   #source("/home/kplaney/gitRepos/IGP_network/igp_network/pre_proposal_2015_new_communitySubtypeBreakdown_plots.R")
@@ -836,16 +927,16 @@ plot_subtypes_network <- function(clustRobust_output,analysisOutput,
   
   subtype_plots <- new_communitySubtypeBreakdown_plots(community_membership=commDF,biclust=clustMatrixList,
                                                        origDataMatrices=origDataMatrices,saveDir=saveDir,
-                                                       clustMethodName=clustMethodName,
+                                                       experimentName=experimentName,
                                                        centroidSetName="",centroidRData=centroidRData);
   
-  write.table(subtype_plots$communityStats,file=paste0(saveDir,"/",clustMethodName,"_communityStats_",Sys.Date(),".txt"),row.names=FALSE,
+  write.table(subtype_plots$communityStats,file=paste0(saveDir,"/",experimentName,"_communityStats_",Sys.Date(),".txt"),row.names=FALSE,
               quote=FALSE);
   network_plots <- advanced_networkPlots(analysisOutput=analysisOutput,
                                          brewPal <- c("Set1"),
-                                         saveDir=saveDir,saveName=clustMethodName);
+                                         saveDir=saveDir,experimentName=experimentName);
   
-  write.table(t(as.matrix(network_plots$network_stats)),file=paste0(saveDir,"/",clustMethodName,"_networkStats_",Sys.Date(),".txt"),row.names=FALSE,
+  write.table(t(as.matrix(network_plots$network_stats)),file=paste0(saveDir,"/",experimentName,"_networkStats_",Sys.Date(),".txt"),row.names=FALSE,
               quote=FALSE);
   
   output <- list(subtype_plots=subtype_plots,network_plots=network_plots);
@@ -854,7 +945,7 @@ plot_subtypes_network <- function(clustRobust_output,analysisOutput,
   
 }
 
-merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,clustMethodName,
+merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,experimentName,
                                                    saveDir,centroidRData="/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData",
                                                    clusterMatrixList){
 
@@ -899,7 +990,7 @@ merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,clustMethodN
    colnames(subtypeDF)[5] <- "subtype";
    colnames(subtypeDF)[2] <- "community";
    saveDir <- "/home/kplaney/ISMB/FINAL_figs";
-   clustMethodName <- "Kmeans BMC merged";
+   experimentName <- "Kmeans BMC merged";
    centroidSetName <- "";
    #do a facetted plot by all communities too
    subtypeDF$community <- paste0("metacluster_",subtypeDF$community);
@@ -932,7 +1023,7 @@ merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,clustMethodN
    
    
    #make a bit wider..
-   png(filename=paste0(saveDir,"/",clustMethodName,"_",Sys.Date(),".png"),
+   png(filename=paste0(saveDir,"/",experimentName,"_",Sys.Date(),".png"),
        width = 800, height = 1000,res=160);
    
    plot(subtype_plot_stackedALL);

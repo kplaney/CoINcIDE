@@ -11,10 +11,10 @@ First, I loaded up my data just past the CoINcIDE" "getAdjMatrices() function (t
 
 ```{r}
 #grab data matrix list, clust features list
-CoINcIDE_rankFeatures <- "/home/kplaney/ovarian_analysis/metaFeatures_500.RData.gzip"
+CoINcIDE_rankFeatures <- "/home/kplaney/ovarian_analysis/metaFeatures_1000.RData.gzip"
 load(CoINcIDE_rankFeatures)
 metaFeatures <- metaFeatures
-CoINcIDE_clusterOutput <-  "/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_nstart1_500Features_2015-04-29.RData.gzip"
+CoINcIDE_clusterOutput <-  "/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_nstart1_1000Features_2015-04-29.RData.gzip"
 load(CoINcIDE_clusterOutput)
 clusterOutput <- kmeansConsensus
 load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
@@ -43,9 +43,9 @@ clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
 clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
 
 
-CoINcIDE_computeEdgesObject <- "/home/kplaney/ovarian_analysis/adjMatrices_500F_pearson_meanMatrix_2015-04-29RData.gzip"
+CoINcIDE_computeEdgesObject <- "/home/kplaney/ovarian_analysis/adjMatrices_1000F_pearson_meanMatrix_2015-04-29RData.gzip"
 load(CoINcIDE_computeEdgesObject)
-output <- ov_500F_pearson_meanMatrix
+output <- ov_1000F_pearson_meanMatrix
 inputVariablesDF <- output$inputVariablesDF
 computeTrueSimilOutput <- output$computeTrueSimilOutput
 pvalueMatrix <- output$pvalueMatrix
@@ -93,7 +93,7 @@ finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,
 commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,
                                         clustIndexMatrix=output$clustIndexMatrix,fileTag="autoReport",
                             saveDir=saveDir,minNumUniqueStudiesPerCommunity=3,clustMethodName="",
-                            commMethod=c("edgeBetween"),
+                            commMethod=c("fastgreedy"),
                             makePlots=TRUE,saveGraphData=FALSE,plotToScreen=TRUE)
 
 aggregateData <- returnSampleMemberMatrix(clustSampleIndexList=clustSampleIndexList,
@@ -144,6 +144,8 @@ message("Running effect size analysis:")
 ES_out <- computeMetaclustEffectSizes(metaClustSampleNames=binInfo$metaClustSampleNames,dataMatrixList=dataMatrixList,featureNames=metaFeatures$finalFeatures,minOtherClass=5)
 sigGenes <- selectMetaclustSigGenes(computeMetaclustEffectSizesOutput=ES_out,qvalueThresh=1,
                                     ESthresh=.5)
+
+save(sigGenes,file="/home/kplaney/ovarian_analysis/DAVID/sigGenes_1000F_pearson_ESpt5.RData.gzip",compress="gzip")
 summSigGenes <- summarizePosMetaclustGenes(selectMetaclustSigGenesOut=sigGenes,computeMetaclustEffectSizesOutput)
 
 
@@ -164,7 +166,7 @@ GSEA_out[[c]] <- GSEA(testGeneVector=testGeneSet,refGeneLists=NULL,method=c("hyp
                   refGeneListDir="/home/data/MSigDB/GSEA_base_MSigDB_lists_merged.RData.gzip")
 
 }
-save(GSEA_out,file="/home/kplaney/ovarian_analysis/DAVID/GSEA_out_500F_pearson_ESpt5.RData.gzip",compress="gzip")
+save(GSEA_out,file="/home/kplaney/ovarian_analysis/DAVID/GSEA_out_1000F_pearson_ESpt5.RData.gzip",compress="gzip")
 #this doesn't work too well - but that is perhaps because I'm calculating this wrong...
 #this is filtering on wilcoxon p-value; by ES alone gives too many results for certain meta-clusters.
 # #(could filter by higher ES in future.)

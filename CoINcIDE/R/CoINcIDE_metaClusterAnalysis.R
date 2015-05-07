@@ -1,13 +1,13 @@
-library("GSEABase")
 library("plyr")
+#library("GSEABase")
 library("Biobase")
 library("fdrtool")
 library("rmeta")
 library("RCurl")
-library("RDAVIDWebService")
+#library("RDAVIDWebService")
 library("limma")
-library("biomaRt")
-library("biomaRt")
+#library("biomaRt")
+#library("biomaRt")
 #library("Rgraphviz")
 #http://david.abcc.ncifcrf.gov/content.jsp?file=WS.html
 #http://bioinformatics.oxfordjournals.org/content/29/21/2810
@@ -96,6 +96,7 @@ createPhenoMasterTableFromMatrixList <- function(esetList,dataMatrixList,sampleK
 
 addClinicalVarToNodeAttributes <- function(sampleClustCommKey,phenoMasterDF){
   
+  message("Note: assumes there is a column variable \'sampleName\' in both input data frames.")
   #do by study, in case sample names from matrix are actually duplicated.
   colnames(phenoMasterDF)[which(colnames(phenoMasterDF)=="studyNum")] <- "origStudyNum"
   #need to first cluster by studyNum: some names are duplicated across different studies.
@@ -594,7 +595,7 @@ commMedianRank <- function(rankMatrix,groupings){
 #remember: samr's version for rna-seq requires you to normalize it
 #using their read depth method. so not as readily applicable after clustering.
 computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
-                                        featureNames,minOtherClass=5){
+                                        featureNames,minOtherClass=5,computeWilcoxon=FALSE){
   
   
   fishersMethod = function(x) pchisq(-2 * sum(log(x)),df=2*length(x),lower=FALSE);
@@ -680,15 +681,23 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
           hedgeG[g,s]   <- cf * mean_diff/pooled_sd;
           hedgeG_se[g,s] <- sqrt( (n1+n2)/(n1*n2) + 0.5*(hedgeG[g,s] )^2 /(n1+n2-3.94) );
           
+          if(computeWilcoxon){
           #get p-value; compute/update to q-value after loop through all genes
           wilcoxon_qvalue[g,s] <- wilcox.test(t(matrix1[featureNames[g], ]), t(matrix2[featureNames[g],]),alternative = c("two.sided"),
                                                     paired=FALSE)$p.value
+          
+          }
+          
+          
+          
             }else{
               
               hedgeG[g,s]    <- NA
               hedgeG_se[g,s] <- NA
               wilcoxon_qvalue[g,s] <- NA         
             }
+          
+          
       
       #end of looping through all features
       }
@@ -701,10 +710,15 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
         wilcoxon_qvalue[ ,s] <- NA         
         
       }
+      
+      
+      if(computeWilcoxon){
       #for this study: fdr correct all of the genes.
       wilcoxon_qvalue[which(!is.na(wilcoxon_qvalue[,s])), s] <- 
         
         p.adjust(wilcoxon_qvalue[which(!is.na(wilcoxon_qvalue[ ,s])), s],method="fdr")
+      
+      }
       
       
       #end of looping through all studies for this meta-cluster/community
@@ -730,24 +744,37 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
     summHedgeG_ES[g,c] <- ES$summary;
     summHedgeG_ES_se[g,c] <- ES$se.summary;
     #summarize p-value across all studies (can use Fisher's because studies are independent.)
+    
+    if(computeWilcoxon){
     summWilcoxon_qvalue[g,c] <-  fishersMethod(wilcoxon_qvalue[g, which(!is.na(wilcoxon_qvalue[g,]))])
+    
+    }
     
     #end of looping over genes
     }
     #save all community-specific data matrices.
+    
+    
+    if(computeWilcoxon){
     wilcoxon_qvalueList[[commNames[c]]] <- wilcoxon_qvalue
+    }
+    
     hedgeGList[[commNames[c]]] <- hedgeG
     hedgeG_seList[[commNames[c]]] <- hedgeG_se
     
     #end of looping over communities
   }
   
+  
+  if(computeWilcoxon){
   #correct across the number of meta-clusters testing.
   #could do apply I guess here...but just sticking for for loop format throughout the function:
   for(g in 1:length(featureNames)){
     
     summWilcoxon_qvalue[g,which(!is.na(summWilcoxon_qvalue[g, ]))] <- p.adjust(summWilcoxon_qvalue[g,which(!is.na(summWilcoxon_qvalue[g, ]))],method="fdr");
   
+  
+  }
   
   }
   
@@ -761,8 +788,8 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
 }
 
 #thresh is greater than.
-selectMetaclustSigGenes <- function(computeMetaclustEffectSizesOutput,qvalueThresh=.1,
-                                    ESthresh=0){
+selectMetaclustSigGenes <- function(computeMetaclustEffectSizesOutput,includeWilcoxon=FALSE,
+                                    ESthresh=0,qvalueThresh=1){
   
   commNames <- colnames(computeMetaclustEffectSizesOutput$summHedgeG_ES)
   
@@ -772,26 +799,39 @@ selectMetaclustSigGenes <- function(computeMetaclustEffectSizesOutput,qvalueThre
   sigMetaclustGenesES_neg <- list()
   sigMetaclustGenes_neg <- list()
   
+
+    
   for(c in 1:length(commNames)){
     
+    if(includeWilcoxon){
+      
     sigMetaclustGenesWilcox[[commNames[c]]] <- rownames(computeMetaclustEffectSizesOutput$summWilcoxon_qvalue[
       which(computeMetaclustEffectSizesOutput$summWilcoxon_qvalue[,commNames[c]]<=qvalueThresh),commNames[c],drop=FALSE])
+    
+    }
     
     sigMetaclustGenesES_pos[[commNames[c]]] <- rownames(computeMetaclustEffectSizesOutput$summHedgeG_ES[
       which(computeMetaclustEffectSizesOutput$summHedgeG_ES[,commNames[c]]>=ESthresh),commNames[c],drop=FALSE])
     
+    if(includeWilcoxon){
+      
     sigMetaclustGenes_pos[[commNames[c]]] <- intersect(sigMetaclustGenesWilcox[[commNames[c]]],
                                                        sigMetaclustGenesES_pos[[commNames[c]]])
     
+    }
     
     sigMetaclustGenesES_neg[[commNames[c]]] <- rownames(computeMetaclustEffectSizesOutput$summHedgeG_ES[
       which(computeMetaclustEffectSizesOutput$summHedgeG_ES[,commNames[c]]<=ESthresh),commNames[c],drop=FALSE])
     
+    if(includeWilcoxon){
+      
     sigMetaclustGenes_neg[[commNames[c]]] <- intersect(sigMetaclustGenesWilcox[[commNames[c]]],
                                                        sigMetaclustGenesES_neg[[commNames[c]]])
-    
+    }
       
   }
+  
+  
   
   output <- list( sigMetaclustGenesWilcox= sigMetaclustGenesWilcox, sigMetaclustGenesES_pos= sigMetaclustGenesES_pos,
                   sigMetaclustGenes_pos=sigMetaclustGenes_pos,sigMetaclustGenesES_neg=sigMetaclustGenesES_neg,
@@ -801,14 +841,14 @@ selectMetaclustSigGenes <- function(computeMetaclustEffectSizesOutput,qvalueThre
   
 }
 
-summarizePosMetaclustGenes <- function(selectMetaclustSigGenesOut,computeMetaclustEffectSizesOutput){
+summarizePosESMetaclustGenes <- function(selectMetaclustSigGenesOut,computeMetaclustEffectSizesOutput){
   
   featureNames <- c()
-  commNames <- colnames(computeMetaclustEffectSizesOutput$summWilcoxon_qvalue)
+  commNames <- colnames(computeMetaclustEffectSizesOutput$summHedgeG_ES)
   
   for(c in 1:length(commNames)){
     
-    featureNames <- append(featureNames,selectMetaclustSigGenesOut$sigMetaclustGenes_pos[[commNames[c]]])
+    featureNames <- append(featureNames,selectMetaclustSigGenesOut$sigMetaclustGenesES_pos[[commNames[c]]])
     
   }
   
@@ -818,8 +858,8 @@ summarizePosMetaclustGenes <- function(selectMetaclustSigGenesOut,computeMetaclu
   #all featureNames will be in this matrix, even if NA.
   for(c in 1:length(commNames)){
     
-    ESMatrix[selectMetaclustSigGenesOut$sigMetaclustGenes_pos[[commNames[c]]],commNames[c]] <-
-      computeMetaclustEffectSizesOutput$summHedgeG_ES[selectMetaclustSigGenesOut$sigMetaclustGenes_pos[[commNames[c]]], commNames[c]]
+    ESMatrix[selectMetaclustSigGenesOut$sigMetaclustGenesES_pos[[commNames[c]]],commNames[c]] <-
+      computeMetaclustEffectSizesOutput$summHedgeG_ES[selectMetaclustSigGenesOut$sigMetaclustGenesES_pos[[commNames[c]]], commNames[c]]
     
   }
   

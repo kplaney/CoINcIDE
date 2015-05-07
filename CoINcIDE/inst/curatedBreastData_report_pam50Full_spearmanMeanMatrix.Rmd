@@ -1,4 +1,4 @@
-curatedOvarianData meta-clustering with 200 (meta-rank) features using kmeans consensus
+k-means spearman
 ========================================================
 **Data loading**
 

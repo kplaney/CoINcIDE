@@ -1,4 +1,4 @@
-
+###consensus clustering on pam50 genes.
 
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 load("/home/kplaney/breast_analysis/pam50Short_genes.RData")

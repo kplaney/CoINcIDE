@@ -99,16 +99,122 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
+#no need to do k-means here; we created naive clustering assignments with the pam50 centroids
 saveDir <- "/home/kplaney/breast_analysis/"
-kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
-                                         pickKMethod=c("consensus"),iter.max=20,nstart=1,
-                                         numSims=500,maxNumClusters=10,
-                                         outputFile=paste0(saveDir,"/",numFeatures,"F_clust.txt"),distMethod=c("euclidean"),
-                                         hclustAlgorithm=c("average"),
-                                         consensusHclustAlgorithm=c("average"),
-                                         minClustConsensus=.7, minMeanClustConsensus=.85,
-                                         corUse="everything",pItem=.9,maxPAC=.15)
+pam50Full_centroidCluster <- list()
+pam50Full_centroidCluster$clustSampleIndexList <- clustSampleIndexList
+pam50Full_centroidCluster$clustFeatureIndexList <- clustFeatureIndexList 
+save(pam50Full_centroidCluster,file=paste0(saveDir,"/pam50Full_centroidCluster.RData.gzip"),compress="gzip")
 
-save(kmeansConsensus,file=paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9",numFeatures,"Features_",Sys.Date(),".RData.gzip"),compress="gzip")
+#############################now try gap test not for actual k-means pam50 clustering (consensus is in selectK script.)
 
-#############################now try gap test for sh
+##with short, nstart=25
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/kplaney/breast_analysis/pam50Short_genes.RData")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+saveDir <- "/home/kplaney/breast_analysis/"
+
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50Short
+  
+}
+
+#we know these are strong clusters. have  minMeanClustConsensus around .85
+kmeansGapTest_pam50_short_Nstart25 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                                                    pickKMethod=c("gap"),iter.max=20,nstart=25,
+                                                                    numSims=500,maxNumClusters=15,
+                                                                    outputFile="/home/kplaney/breast_analysis/test.txt"
+                                                                  )
+
+
+save(kmeansGapTest_pam50_short_Nstart25,
+     file=paste0(saveDir,"/gapTestKmeans_pam50Short_nstart25",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+###with short, nstart =1
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/kplaney/breast_analysis/pam50Short_genes.RData")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+saveDir <- "/home/kplaney/breast_analysis/"
+
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50Short
+  
+}
+
+#we know these are strong clusters. have  minMeanClustConsensus around .85
+kmeansGapTest_pam50_short_Nstart1 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                                             pickKMethod=c("gap"),iter.max=20,nstart=1,
+                                                             numSims=500,maxNumClusters=15,
+                                                             outputFile="/home/kplaney/breast_analysis/test.txt"
+)
+
+
+save(kmeansGapTest_pam50_short_Nstart1,
+     file=paste0(saveDir,"/gapTestKmeans_pam50Short_nstart1",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+####with full, nstart=25
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData")
+pam50GenesFull <- centroidMatrix[,1]
+saveDir <- "/home/kplaney/breast_analysis/"
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+numFeatures <- "pam50Full"
+
+
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50GenesFull
+  
+}
+
+
+kmeansGapTest_pam50_full_Nstart25 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                                             pickKMethod=c("gap"),iter.max=20,nstart=25,
+                                                             numSims=500,maxNumClusters=15,
+                                                             outputFile="/home/kplaney/breast_analysis/test.txt"
+)
+
+
+save(kmeansGapTest_pam50_full_Nstart25,
+     file=paste0(saveDir,"/gapTestKmeans_pam50Full_nstart25",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+
+
+
+####with full, nstart=1
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData")
+pam50GenesFull <- centroidMatrix[,1]
+saveDir <- "/home/kplaney/breast_analysis/"
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+numFeatures <- "pam50Full"
+
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50GenesFull
+  
+}
+
+#we know these are strong clusters. have  minMeanClustConsensus around .85
+kmeansGapTest_pam50_full_Nstart1 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                                            pickKMethod=c("gap"),iter.max=20,nstart=1,
+                                                            numSims=500,maxNumClusters=15,
+                                                            outputFile="/home/kplaney/breast_analysis/test.txt"
+)
+
+
+save(kmeansGapTest_pam50_full_Nstart1,
+     file=paste0(saveDir,"/gapTestKmeans_pam50Full_nstart1",Sys.Date(),".RData.gzip"),compress="gzip")

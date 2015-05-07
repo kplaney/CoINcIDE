@@ -282,9 +282,9 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
 # plot(undirGraph)
 
 findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag="IGPN_communityNodeAttributes_",
-                            saveDir="./",minNumUniqueStudiesPerCommunity=3,clustMethodName="sparseBC",
+                            saveDir="./",minNumUniqueStudiesPerCommunity=3,experimentName="sparseBC",
                             commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel"),
-                            makePlots=TRUE,plotToScreen=FALSE,saveGraphData=TRUE,edgeWeightsColName=c(NULL),nodeFontSize=1,nodePlotSize=10,
+                            makePlots=TRUE,plotToScreen=FALSE,saveGraphData=TRUE,edgeWeightsColName=c(NULL),nodeFontSize=.7,nodePlotSize=10,
                             findCommWithWeights=FALSE){
   
   if(!is.null(edgeWeightsColName) && edgeWeightsColName != "meanPvalue"){
@@ -298,9 +298,9 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     commMethod <- "edgeBetween"
   
   }
-  dir.create(saveDir,showWarnings=TRUE);
-  #add on community detection name.
-  clustMethodName <- paste0(clustMethodName,"_commMethod_",commMethod);
+  dir.create(saveDir)
+  #dir.create(paste0(saveDir,"/",experimentName,"_",Sys.Date()),showWarnings=TRUE);
+  #saveDir <- paste0(saveDir,"/",experimentName,"_",Sys.Date())
 
   #  undirGraph <- graph.edgeMatrix(edgeMatrix,directed=FALSE);
   #igraph likes an edge list that is continous - i.e. if there's not an edge from node 10, it will still include node 10.
@@ -356,18 +356,19 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
     if(!plotToScreen){
       
-    png(filename=paste0(saveDir,clustMethodName,"_origNetworkPlot",Sys.Date(),".png"),
+    png(filename=paste0(saveDir,"/",experimentName,"_origNetworkPlot",Sys.Date(),".png"),
         width = 700, height = 1000)
     
     origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
                             edge.arrow.size=3,main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
                             ),xlab="#=Study Number");
     
+    
     dev.off();
     
     if(!is.null(edgeWeightsColName)){
-    png(filename=paste0(saveDir,clustMethodName,"_origNetworkPlot_edgesScaled",Sys.Date(),".png"),
-      width = 700, height = 1000)
+    png(filename=paste0(saveDir,"/",experimentName,"_origNetworkPlot_edgesScaled",Sys.Date(),".png"),
+      width = 700, height = 1000,res=160)
     
     origNetworkPlot <- plot(undirGraph_base, layout=layout.fruchterman.reingold,vertex.size=nodePlotSize,vertex.label=V(undirGraph_base)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,
        edge.arrow.size=3,edge.width = plotEdgeWeights,edge.color="black", main=paste0(length(union(unique(edgeMatrix[,1]),unique(edgeMatrix[,2]))), " clusters deemed similar\n across ",length(unique(studyNames))," studies before community detection."
@@ -462,7 +463,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     #this just creates a rainbow.
     #add x2 in the bias to make the colors a wee bit more distinct from each other.
     #bias: a positive number. Higher values give more widely spaced colors at the high end.
-    colorCodeF <- colorRampPalette(c("violet","blue","red"), bias = length(unique(membership[,"community"]))*2,
+    colorCodeF <- colorRampPalette(c("pink","deepskyblue","yellow"), bias = length(unique(membership[,"community"]))*2,
                                    space = "rgb", interpolate = "linear");
     
     #this will produce RGB representation in HEX, which cytoscape can take in.
@@ -529,22 +530,46 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   if(makePlots){
   
     if(!plotToScreen){
-    png(filename=paste0(saveDir,clustMethodName,"_communityPlotFull_",Sys.Date(),".png"),
-      width = 700, height = 1000);
-    networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                               vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
-                                                                                                     numCommunitiesOrig," communities of any size found \nusing method ",clustMethodName,
-                                                                                                     "with community detection ",commMethod,"."),xlab="color=community, #=study");
+        
+      png(filename=paste0(saveDir,"/",commMethod,"_communityPlotFull_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+      #,width = 700, height = 1000,res=160);
+       
   
-    dev.off();
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
+                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
+                                                                                                         numCommunitiesOrig," communities of any size found\n",
+                                                                                                         "with community detection method ",commMethod,"."),xlab="color=community, #=study");
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph_full)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph_full)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph_full)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      dev.off();
     
     }else{
       
-      networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters deemed similar across ",length(unique(membership[,ncol(membership)])), " studies.\n",
-                                                                                                         numCommunitiesOrig," communities of any size found \nusing method ",clustMethodName,
-                                                                                                         "with community detection ",commMethod,"."),xlab="color=community, #=study");
       
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
+                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
+                                                                                                         numCommunitiesOrig," communities of any size found\n",
+                                                                                                         "with community detection method ",commMethod,"."),xlab="color=community, #=study");
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph_full)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph_full)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph_full)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
       
     }
     
@@ -586,6 +611,8 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   }
   
   }
+
+
   if(nrow(igraph_edgeDF)==0){
     
     warning("all edges removed after pruning - no communities left.");
@@ -595,6 +622,23 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
   }else{
     
+    if(length(commLose)>0){
+      #NOW: update community numbers (don't want communit 1, 3, 6...but 1, 2, 3)
+      commNums <- as.numeric(as.character(unique(igraph_attrDF$community)))
+      newCommNums <- c(1:length(commNums))
+      
+      #remove factor status 
+      igraph_attrDF$community <- as.numeric(as.character(igraph_attrDF$community))
+      
+      #renaming community numbers: index on original!
+      commOrig <- igraph_attrDF$community
+      for(c in 1:length(commNums)){
+        
+        igraph_attrDF$community[which(commOrig==commNums[c])] <- newCommNums[c]
+        
+      }
+      
+    }
   undirGraph <- graph.data.frame(igraph_edgeDF,directed=FALSE,vertices=igraph_attrDF);
   #color the nodes. V() gets the vertices. can do V()$ what added  with igraph_attrDF, like $clust.
   #vertex.size=4,vertex.label.dist=0.5,edge.weight=E(undirGraph)$sampleFract,
@@ -604,24 +648,49 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   if(makePlots){
     
     if(!plotToScreen){
-    #COME BACK: update resolutions, colors.
-    png(filename=paste0(saveDir,clustMethodName,"_communityPlotPruned_",Sys.Date(),".png"),
-      width = 700, height = 1000);
+    
+      
+      png(filename=paste0(saveDir,"/",commMethod,"_communityPlotPruned_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+      #,width = 700, height = 1000,res=160);
+      
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
   
-    networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                          vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " studies.\n",
-                                                                                           finalNumCommunities," pruned communities found using method ",clustMethodName, "with community detection ",
-                                                                                           commMethod,"."),xlab="color=community, #=study");
-
-  
-    dev.off();
+      networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
+                              vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " datasets.\n",
+                                                                                               finalNumCommunities," pruned communities found\n with community method ",commMethod,"."),xlab="color=community, #=study");
+      
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      dev.off();
+    
   
     }else{
       
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
       networkCommPlot <- plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                              vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " studies.\n",
-                                                                                               finalNumCommunities," pruned communities found using method ",clustMethodName, "with community detection ",
-                                                                                               commMethod,"."),xlab="color=community, #=study");
+                              vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=paste0("Clusters deemed similar across ",length(unique(igraph_attrDF[,"studyNum"])), " datasets.\n",
+                                                                                               finalNumCommunities," pruned communities found\n with community method ",commMethod,"."),xlab="color=community, #=study");
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+
+      
+      
       
     }
   }
