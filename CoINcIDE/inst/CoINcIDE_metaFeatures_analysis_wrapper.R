@@ -274,6 +274,10 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         next;
       }
       
+      #if any are "", make NA.
+      sampleClustCommPhenoData[which(sampleClustCommPhenoData[,fisherTestVariables[f]]==""),
+                               fisherTestVariables[f]] <- NA
+      
       clinicalTables[[fisherTestVariables[f]]] <- table(sampleClustCommPhenoData[,groupingTerm],sampleClustCommPhenoData[,fisherTestVariables[f]],exclude=FALSE)
       textOut <- capture.output(table(sampleClustCommPhenoData[,groupingTerm],sampleClustCommPhenoData[,fisherTestVariables[f]],exclude=FALSE))
       cat(textOut,sep="\n",file=paste0(saveDir,"/",experimentName,"_tableStats_",fisherTestVariables[f],"_",Sys.Date(),".txt"),append=FALSE)
@@ -284,9 +288,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       colnames(dataF) <- c("meta_cluster","clinVar")
       
     if(any(!is.na(dataF[,2]))){
-      #if any are ""
-      sampleClustCommPhenoData[which(sampleClustCommPhenoData[,fisherTestVariables[f]]==""),
-                               fisherTestVariables[f]] <- NA
+
       
       #pam50 colors:  t(data.frame(c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")))
       #(and name for subtypes-look up order in old clust robust code.)
@@ -295,7 +297,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
       #no scale_fill_manual(values = variableColorMatrix)+
         #fill must be a factor.
-        plotG <-    ggplot(dataF,aes(clinVar,fill=as.factor(clinVar)))+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
+        plotG <-    ggplot(dataF,aes(factor(clinVar),fill=factor(clinVar)))+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
           labs(y="Number of samples",fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName,"\n"))+
@@ -314,7 +316,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         dev.off()
         
-        plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=as.factor(clinVar)))+geom_bar() + 
+        plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=factor(clinVar)))+geom_bar() + 
           labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName,"\n"))+
@@ -339,7 +341,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         variableColorMatrix <- c("#970eec","#ec0e58","#0e58ec","#7d7d7d","#0eec97")
         names(variableColorMatrix) <- c("LumB","LumA","Her2","Normal","Basal")
       
-        plotG <-    ggplot(dataF,aes(clinVar,fill=as.factor(clinVar)))+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
+        plotG <-    ggplot(dataF,aes(factor(clinVar),fill=factor(clinVar)))+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
           labs(y="Number of samples", fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName))+
@@ -347,18 +349,18 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                 axis.title=element_blank())+
           theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
           theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
-          theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
+          theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
           theme(plot.title=element_text(colour="black",size=20,vjust=1))
-          
+          #above: font size needs to be smaller for subtypes
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
         plot( plotG)
         
         dev.off()
         
-        plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=as.factor(clinVar)))+geom_bar() + 
+        plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=factor(clinVar)))+geom_bar() + 
           labs(y="Number of samples", fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName,"\n"))+
@@ -366,7 +368,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                 axis.title=element_blank())+
           theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
           theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
-          theme(axis.text.x = element_text(colour = "black",size=18,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
+          theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
           theme(plot.title=element_text(colour="black",size=20,vjust=1))
@@ -451,11 +453,18 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       result$km_overall_pvalue <- 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)
       
     #  message("calculating the sign of the survival relationship")
+    
+    colorCodes <- rev(brewer.pal(length(unique(commInfo$attrDF[,"community"])),networkColors));
+    #want color codes to be same as in networ plot.
+    colorCodes <- colorCodes[na.omit(match(unique(groupings),unique(commInfo$attrDF[,"community"])))]
+    
       mfit=survfit(OverallSurvival ~ groupings)
       
       png(filename=paste0(saveDir,"/",experimentName,"_kaplanMeier_OS_",Sys.Date(),".png"),width=1000,height=1000,res=160)
       
-      plot(mfit,main=paste0("Overall survival for ",experimentName))
+      plot(mfit,main=paste0("Overall survival for ",expName), lty=c(1:length(unique(groupings))),col= colorCodes)
+    
+      legend(60,.35,unique(groupings),lty=c(1:length(unique(groupings))),col= colorCodes)
       
       dev.off()
       
@@ -465,8 +474,10 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       
       png(filename=paste0(saveDir,"/",experimentName,"_kaplanMeier_OS",CutoffPointYears,"years_",Sys.Date(),".png"),width=1000,height=1000,res=160)
       
-      plot(mfitCut,main=paste0("Overall survival for ",experimentName, "\nwith cutoff at ",
-                               CutoffPointYears," years"))
+      plot(mfitCut,main=paste0("Overall survival for ",expName, "\nwith cutoff at ",
+                               CutoffPointYears," years"),lty=c(1:length(unique(groupings))),col= colorCodes)
+    
+    legend(25,.35,unique(groupings),lty=c(1:length(unique(groupings))),col= colorCodes)
       
       dev.off()
       

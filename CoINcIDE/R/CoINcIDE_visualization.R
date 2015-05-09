@@ -180,7 +180,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
         
         layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,node size=#samples");
+         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,size=#samples");
     
     
     plot.new()
