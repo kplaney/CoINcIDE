@@ -537,8 +537,8 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
       networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
-                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," meta-clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
-                                                                                                         numCommunitiesOrig," communities of any size found ",
+                                   vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
+                                                                                                         numCommunitiesOrig," meta-clusters of any size found ",
                                                                                                          "with\n community detection method ",commMethod,"."),xlab="color=meta-cluster,node=cluster,#=dataset");
       
       plot.new()
