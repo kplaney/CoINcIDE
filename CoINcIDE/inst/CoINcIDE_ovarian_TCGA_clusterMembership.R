@@ -4,6 +4,10 @@ TCGA_clusterAssign <- read.table("/home/kplaney/ovarian_analysis//gdac.broadinst
 
 
 TCGA_clusterAssign_NMF_cHclust <- TCGA_clusterAssign[,c(1:3)]
+#some are NA: remove these. were they normal patients?
+TCGA_clusterAssign_NMF_cHclust <- TCGA_clusterAssign_NMF_cHclust [-which(is.na(TCGA_clusterAssign_NMF_cHclust [,2])), ]
+#no extra ones in third column
+which(is.na(TCGA_clusterAssign_NMF_cHclust [,3]))
 #remove last number, and replace "-" with "."
 library("limma")
 TCGA_clusterAssign_NMF_cHclust[,1] <- substr(TCGA_clusterAssign_NMF_cHclust[,1],start=1,stop=12)
@@ -64,10 +68,13 @@ all(TCGA_2000F_cKmeans[,1]==TCGA_200F_cKmeans[,1])
 #569 patients left
 dim(TCGA_clusterAssign_NMF_cHclust)
 
+#looks like 2 of these patients aren't in the curatedOvarianData - remove then.
 TCGA_clusterAssign_NMF_cHclust <- TCGA_clusterAssign_NMF_cHclust[na.omit(match(TCGA_200F_cKmeans[,1],
                                                                        TCGA_clusterAssign_NMF_cHclust[,1])), ]
 
-masterTable <- cbind(TCGA_2000F_cKmeans,TCGA_200F_cKmeans[,2],TCGA_clusterAssign_NMF_cHclust[,c(2:3)])
+masterTable <- cbind(TCGA_2000F_cKmeans[na.omit(match(
+  TCGA_clusterAssign_NMF_cHclust[,1],TCGA_2000F_cKmeans[,1],)), ],TCGA_200F_cKmeans[na.omit(match(
+  TCGA_clusterAssign_NMF_cHclust[,1],TCGA_2000F_cKmeans[,1],)),2],TCGA_clusterAssign_NMF_cHclust[,c(2:3)])
 colnames(masterTable) <- c("Patient","cKmeans_2000F","cKmeans_200F","cNMF","cHclust")
 
 
@@ -79,8 +86,8 @@ which(is.na(plotData[,3]))
 which(is.na(plotData[,4]))
 #501 483 
 #168 502 
-#remove these two patients
-plotData <- plotData[-which(is.na(plotData[,4])), ]
+#removed these two patients earlier now - updated code.
+#plotData <- plotData[-which(is.na(plotData[,4])), ]
 library("gplots")
 library("RColorBrewer")
 colorCodeF <- brewer.pal(8,"Dark2")
@@ -103,7 +110,8 @@ plotData[which(plotDataOrig[,4]==3) ,4] <- 2
 heatmap.2(t(plotData),Rowv=NULL,Colv=NULL,dendrogram='none',cexRow=1,srtRow=45, trace="none",
           scale="none",notecol="black",key=FALSE,col=colorCodeF)
 
-png(filename=paste0("/home/kplaney/ovarian_analysis/TCGA_clusterMembership_",Sys.Date(),".png"),width=1000,height=800,res=160)
+#get a white line if resolution isn't high enough so plot at extra high resolution.
+png(filename=paste0("/home/kplaney/ovarian_analysis/TCGA_clusterMembership_",Sys.Date(),".png"),width=1000,height=800,res=250)
 #,width = 700, height = 1000,res=160);
 
 heatmap.2(t(plotData),Rowv=NULL,Colv=NULL,dendrogram='none',cexRow=1,srtRow=45, trace="none",
