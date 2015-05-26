@@ -159,6 +159,31 @@ kmeansGapTest_pam50_short_Nstart1 <- clustMatrixListWrapper(dataMatrixList,clust
 save(kmeansGapTest_pam50_short_Nstart1,
      file=paste0(saveDir,"/gapTestKmeans_pam50Short_nstart1",Sys.Date(),".RData.gzip"),compress="gzip")
 
+####hierarchical
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/kplaney/breast_analysis/pam50Short_genes.RData")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+saveDir <- "/home/kplaney/breast_analysis/"
+
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50Short
+  
+}
+
+hclustGapTest_pam50_short <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
+                       pickKMethod=c("gap"),iter.max=20,nstart=25,distMethod=c("euclidean"),hclustAlgorithm=c("average"),
+                       numSims=500,maxNumClusters=15,
+                       outputFile="/home/kplaney/breast_analysis/test.txt"
+)
+
+
+save(hclustGapTest_pam50_short,
+     file=paste0(saveDir,"/hclustGapTest_pam50_short_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
 
 ####with full, nstart=25
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
@@ -218,3 +243,38 @@ kmeansGapTest_pam50_full_Nstart1 <- clustMatrixListWrapper(dataMatrixList,clustF
 
 save(kmeansGapTest_pam50_full_Nstart1,
      file=paste0(saveDir,"/gapTestKmeans_pam50Full_nstart1",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+####with hierachical
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData")
+pam50GenesFull <- centroidMatrix[,1]
+saveDir <- "/home/kplaney/breast_analysis/"
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
+numFeatures <- "pam50Full"
+
+
+
+clustFeaturesList <- list()
+for(d in 1:length(dataMatrixList)){
+  
+  clustFeaturesList[[d]] <- pam50GenesFull
+  
+}
+
+
+hclustGapTest_pam50_full_Nstart25 <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
+                                                            pickKMethod=c("gap"),iter.max=20,nstart=25,distMethod=c("euclidean"),hclustAlgorithm=c("average"),
+                                                            numSims=500,maxNumClusters=15,
+                                                            outputFile="/home/kplaney/breast_analysis/test.txt"
+)
+
+
+save(hclustGapTest_pam50_full_Nstart25,
+     file=paste0(saveDir,"/gapTesthclust_pam50Full_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+
+
+

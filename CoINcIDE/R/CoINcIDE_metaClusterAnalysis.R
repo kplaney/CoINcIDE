@@ -695,6 +695,7 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
               hedgeG[g,s]    <- NA
               hedgeG_se[g,s] <- NA
               wilcoxon_qvalue[g,s] <- NA         
+           
             }
           
           
@@ -736,13 +737,22 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
       
     d <- as.vector(hedgeG[g, which(!is.na(hedgeG[g, ]))]);
     se <- as.vector(hedgeG_se[g, which(!is.na(hedgeG[g, ]))]);
-    #weighted mean; inverse weigthing by standard deviation
-    ES <- meta.summaries(d=d, se=se, method=c("random"),
-                         logscale=TRUE,
-                         conf.level=0.95);
     
-    summHedgeG_ES[g,c] <- ES$summary;
-    summHedgeG_ES_se[g,c] <- ES$se.summary;
+    if(length(d)>0 && length(se)>0){
+      #weighted mean; inverse weigthing by standard deviation
+      ES <- meta.summaries(d=d, se=se, method=c("random"),
+                           logscale=TRUE,
+                           conf.level=0.95);
+      
+      summHedgeG_ES[g,c] <- ES$summary;
+      summHedgeG_ES_se[g,c] <- ES$se.summary;
+    
+    }else{
+      
+      summHedgeG_ES[g,c] <- NA
+      summHedgeG_ES_se[g,c] <- NA
+      
+    }
     #summarize p-value across all studies (can use Fisher's because studies are independent.)
     
     if(computeWilcoxon){

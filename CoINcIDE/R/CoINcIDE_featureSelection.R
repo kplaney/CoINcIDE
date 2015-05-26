@@ -180,20 +180,24 @@ selectFeaturesMetaVariance <- function(rankMatrix,rankList, numNAstudiesAllowedP
       
     })
     
-  }
-  
-  topFeatures <- unique(unlist(topFeatures))
-  #don't take features that were only in a few datasets - ie that were
-  #already filtered out of the rankMatrix
-  topFeatures <- topFeatures[na.omit(match(rownames(rankMatrix),topFeatures))]
-  
-  if(length(topFeatures)==0){
     
-    m <- paste0("\nIn selectFeaturesMetaVariance: No topFeatures from each dataset will be used because all of the features did not pass the numNAstudiesAllowedPerFeat=",numNAstudiesAllowedPerFeat," threshold.\n")
-    message(m)
-    cat(m,append=TRUE,file=outputFile)
-  
+    topFeatures <- unique(unlist(topFeatures))
+    #don't take features that were only in a few datasets - ie that were
+    #already filtered out of the rankMatrix
+    topFeatures <- topFeatures[na.omit(match(rownames(rankMatrix),topFeatures))]
+    
+    if(length(topFeatures)==0){
+      
+      m <- paste0("\nIn selectFeaturesMetaVariance: No topFeatures from each dataset will be used because all of the features did not pass the numNAstudiesAllowedPerFeat=",numNAstudiesAllowedPerFeat," threshold.\n")
+      message(m)
+      cat(m,append=TRUE,file=outputFile)
+      
+    }
+  }else{
+    
+    topFeatures <- NA
   }
+
   
   if(selectMethod=="mean"){
     #we are looking for the SMALL means...
@@ -226,10 +230,19 @@ selectFeaturesMetaVariance <- function(rankMatrix,rankList, numNAstudiesAllowedP
       metric <- sort(metric,decreasing=FALSE)[c(1:numFeatSelectByGlobalRank)]
   }
 
-  uniqueFeat <- union(names(metric),topFeatures)
+  if(numTopFeatFromEachDataset>0){
+    
+    uniqueFeat <- union(names(metric),topFeatures)
   
   cat(paste0(length(topFeatures)," features from numNAstudiesAllowedPerFeat= ",numNAstudiesAllowedPerFeat," threshold\n",
              "and ",numFeatSelectByGlobalRank, " from general meta-ranking for a total of ",length(uniqueFeat)," unique features.\n"),append=TRUE,file=outputFile)
+  
+  }else{
+    uniqueFeat <- names(metric)
+    
+    cat(paste0("\nThere is a total of ",length(uniqueFeat)," unique meta-ranked features.\n"),append=TRUE,file=outputFile)
+    
+  }
 
   #now "best" feature will be in the first row of the matrix.
   rankMatrix <- rankMatrix[uniqueFeat, ,drop=FALSE]

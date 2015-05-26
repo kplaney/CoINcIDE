@@ -749,7 +749,7 @@ studyClustNum <- c()
 studyNum <- c()
 community <- c()
 for(d in 1:length(clustSampleIndexList)){
-  
+
   for(c in 1:length(clustSampleIndexList[[d]])){
 
     #just take first match - all 

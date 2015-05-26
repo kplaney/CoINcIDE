@@ -217,7 +217,8 @@ dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene")
 
 names(dataMatrixList) <- names(esets)
 ###save this dataMatrixList now.
-
+save(dataMatrixList,file="/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_procDataMatrixList.RData.gzip")
+save(dataMatrixList,file="/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 #ran meta-feature analysis for 1000,500,1000,2000 features.
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
@@ -228,34 +229,114 @@ metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("
 message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
 
 #(saved each one after ran)
-save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_200.RData.gzip",compress="gzip")
+save(metaFeatures,file="/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_200.RData.gzip",compress="gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
                                                    numFeatSelectByGlobalRank=500,
                                                    numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis_withTop20Genes//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_500.RData.gzip",compress="gzip")
+
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=1000,
+                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis_withTop20Genes//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_1000.RData.gzip",compress="gzip")
+
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=2000,
+                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis_withTop20Genes//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_2000.RData.gzip",compress="gzip")
+
+
+###now do without top 20
+#ran meta-feature analysis for 1000,500,1000,2000 features.
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=200,
+                                                   numTopFeatFromEachDataset=0,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+#(saved each one after ran)
+save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_200.RData.gzip",compress="gzip")
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=500,
+                                                   numTopFeatFromEachDataset=0,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
                                                    outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
 
 message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
 
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_500.RData.gzip",compress="gzip")
 
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
                                                    numFeatSelectByGlobalRank=1000,
-                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   numTopFeatFromEachDataset=0,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
                                                    outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
 
 message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
 
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_1000.RData.gzip",compress="gzip")
 
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
                                                    numFeatSelectByGlobalRank=2000,
-                                                   numTopFeatFromEachDataset=20,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   numTopFeatFromEachDataset=0,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
                                                    outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
 
 message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
 
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_2000.RData.gzip",compress="gzip")
+
+##now do 250, 300
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=250,
+                                                   numTopFeatFromEachDataset=0,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_250.RData.gzip",compress="gzip")
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
+load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
+metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
+                                                   numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
+                                                   numFeatSelectByGlobalRank=300,
+                                                   numTopFeatFromEachDataset=0,fractNATopFeatAllowedPerDataset=.1,selectMethod=c("median"),
+                                                   outputFile="/home/kplaney/ovarian_analysis//selectFeaturesMetaVarianceOut.txt")
+
+message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[metaFeatures$datasetListIndicesToRemove],collapse=" ")))
+
+save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_300.RData.gzip",compress="gzip")
+
+
+
 

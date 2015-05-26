@@ -1,4 +1,4 @@
-
+library("pROC")
 library("ggplot2")
 library("RColorBrewer")
 library("plyr")
@@ -119,7 +119,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   cat(paste("\nMeta-cluster sizes:\n",collapse="_"),textOut,sep="\n",
       append=TRUE,file=paste0(saveDir,"/",experimentName,"_metaclusterSizes.txt"))
   #add clusterSizes to node attributes
-  commInfo$attrDF$size <- clustSizes[na.omit(match(commInfo$attrDF$clust,names(clustSizes)))]
+  commInfo$attrDF$size <- clustSizes[na.omit(match(as.numeric(as.character(commInfo$attrDF$clust)),as.numeric(names(clustSizes))))]
  textOut <- capture.output(table(aggregateData$sampleClustCommKey$community,aggregateData$sampleClustCommKey$studyNum,exclude=FALSE))
  cat(paste("\nMeta-cluster number of samples by studies:\n",collapse="_"),textOut,sep="\n",append=TRUE,file=paste0(saveDir,"/",experimentName,"_metaclusterNumSamplesByStudies.txt"))
  
@@ -511,15 +511,39 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     cat(paste("\nLinear analysis with only RFS:\n",collapse="_"),append=TRUE,file=survFile)
     
     dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$RFS))), ]
+    cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
     cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+
+
+    linearModels[["RFS_logitAlone"]] <- tryCatch(glm(RFS~community,data=dataMatrix,family=binomial(link="logit")),
+                                                 error = function(e) {
+                                                   return(NA)
+                                                 }
+    )
     
-    #strongly predicts RFS.
-    linearModels[["RFS_linearAlone"]] <- lm(RFS~community,data=dataMatrix)
-     linearModelsSumm[["RFS_linearAlone"]] <- summary(  linearModels[["RFS_linearAlone"]] ) 
-    textOut <- capture.output( linearModelsSumm [["RFS_linearAlone"]]$coefficients)
+    if(any(!is.na(  linearModels[["RFS_logitAlone"]]))){
+    ##ROC curves
+    #above: font size needs to be smaller for subtypes
+    predictor <- predict(linearModels[["RFS_logitAlone"]],type="response")
+   
+    png(filename=paste0(saveDir,"/",experimentName,"_RFS_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+    roc_data <- roc(response=dataMatrix$RFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+    dev.off()
+    textOut <- capture.output(roc_data)
+    cat("roc_info\n",textOut,sep="\n",append=TRUE,file=survFile)
+    cat("\nAUC : ",roc_data$auc,"\n",append=TRUE,file=survFile)
+    
+     linearModelsSumm[["RFS_logitAlone"]] <- summary(linearModels[["RFS_logitAlone"]] ) 
+    textOut <- capture.output( linearModelsSumm [["RFS_logitAlone"]]$coefficients)
     cat(textOut,sep="\n",append=TRUE,file=survFile)
      linearModelsSumm[["RFS_numPatients"]] <- nrow(dataMatrix)
+    cat("\nNumber_of_patients_for_RFS__model: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
      linearModelsSumm[["RFS_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
+    
+    }else{
+      cat("\nRFS model alone returned NA.\n")
+      cat("\nRFS model alone returned NA.\n",append=TRUE,file=outputFile)
+    }
     ##with therapies
     #interesting: community becomes insignificant if add in therapies now: this could be
     #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
@@ -532,27 +556,17 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
     
      linearModelsSumm [["RFS_withRx_numPatients"]] <- nrow(dataMatrix)
+    cat("\nNumber_of_patients_for_RFS_with_Rx_model: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
     
     if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 
        && length(unique(dataMatrix$anti_HER2))>1 ){
          
-         linearModels[["RFS_linearWithRx"]] <- tryCatch(lm(RFS~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix),
+         linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
                                                         error = function(e) {
                                                           return(NA)
                                                         }
          )
 
-        if(!is.na(linearModels[["RFS_linearWithRx"]])){
-          linearModelsSumm[["RFS_linearWithRx"]] <- summary( linearModels[["RFS_linearWithRx"]])
-         textOut <- capture.output( linearModelsSumm[["RFS_linearWithRx"]]$coefficients)
-         cat(textOut,sep="\n",append=TRUE,file=survFile)
-         
-          linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-         
-        }else{
-          
-          cat(paste("\nRFS analysis with therapies returned NA.\n",collapse="_"),append=TRUE,file=survFile)
-        }
          
        }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 
                 && length(unique(dataMatrix$anti_HER2))==1 ){
@@ -560,13 +574,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
          
          cat(paste("\nFor RFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",collapse="_"),
              append=TRUE,file=survFile)
-         linearModels[["RFS_linearWithRx"]] <- lm(RFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix)
-          linearModelsSumm[["RFS_linearWithRx"]] <- summary( linearModels[["RFS_linearWithRx"]])
-         textOut <- capture.output( linearModelsSumm[["RFS_linearWithRx"]]$coefficients)
-         cat(textOut,sep="\n",append=TRUE,file=survFile)
-         
-          linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-         
+         linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
+                                                        error = function(e) {
+                                                          return(NA)
+                                                        }
+        
+         )
          
        }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
                 && length(unique(dataMatrix$anti_HER2))>1 ){
@@ -574,14 +587,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
          cat(paste("\nFor RFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",collapse="_"),
              append=TRUE,file=survFile)
          
-         linearModels[["RFS_linearWithRx"]] <- lm(RFS~community+chemotherapyClass+anti_HER2,data=dataMatrix)
-          linearModelsSumm[["RFS_linearWithRx"]] <- summary( linearModels[["RFS_linearWithRx"]])
-         textOut <- capture.output( linearModelsSumm[["RFS_linearWithRx"]]$coefficients)
-         cat(textOut,sep="\n",append=TRUE,file=survFile)
-         
-          linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-         
-         
+         linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                        error = function(e) {
+                                                          return(NA)
+                                                        }
+
+         )
          
        }else if(length(unique(dataMatrix$chemotherapyClass))==1 && length(unique(dataMatrix$anti_estrogen))>1 
                 && length(unique(dataMatrix$anti_HER2))>1 ){
@@ -590,13 +601,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
          cat(paste("\nFor RFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",collapse="_"),
              append=TRUE,file=survFile)
          
-         linearModels[["RFS_linearWithRx"]] <- lm(RFS~community+anti_estrogen+anti_HER2,data=dataMatrix)
-          linearModelsSumm[["RFS_linearWithRx"]] <- summary( linearModels[["RFS_linearWithRx"]])
-         textOut <- capture.output( linearModelsSumm[["RFS_linearWithRx"]]$coefficients)
-         cat(textOut,sep="\n",append=TRUE,file=survFile)
-         
-          linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-         
+         linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                        error = function(e) {
+                                                          return(NA)
+                                                        }
+       
+         )
          
        }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
                 && length(unique(dataMatrix$anti_HER2))==1 ){
@@ -604,40 +614,69 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
          
          cat(paste("\nFor RFS analysis, the anti HER2 and estrogen variables have only one unique value each.\n",collapse="_"),append=TRUE,
              file=survFile)
-         
-         
-         linearModels[["RFS_linearWithRx"]] <- lm(RFS~community+chemotherapyClass,data=dataMatrix)
-          linearModelsSumm[["RFS_linearWithRx"]] <- summary( linearModels[["RFS_linearWithRx"]])
-         textOut <- capture.output( linearModelsSumm[["RFS_linearWithRx"]]$coefficients)
-         cat(textOut,sep="\n",append=TRUE,file=survFile)
-         
-          linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-         
+
          
        }else{
          
-         # don't run models
+         linearModels[["RFS_logitWithRx"]] <- NA
          
        }
 
 
+    if(any(!is.na(linearModels[["RFS_logitWithRx"]]))){
+      
+      linearModelsSumm[["RFS_logitWithRx"]] <- summary( linearModels[["RFS_logitWithRx"]])
+      textOut <- capture.output( linearModelsSumm[["RFS_logitWithRx"]]$coefficients)
+      cat(textOut,sep="\n",append=TRUE,file=survFile)
+      
+      linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",") 
+      predictor <- predict(linearModels[["RFS_logitWithRx"]],type="response")
+      png(filename=paste0(saveDir,"/",experimentName,"_RFS_withRx_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+      roc_data <- roc(response=dataMatrix$RFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+      dev.off()
+      textOut <- capture.output(roc_data)
+      cat("roc_info:",textOut,sep="\n",append=TRUE,file=survFile)
+      cat("\nAUC : ",roc_data$auc,"\n",append=TRUE,file=survFile)
+      
+      linearModelsSumm[["RFS_logitWithRx"]] <- summary( linearModels[["RFS_logitWithRx"]])
+      textOut <- capture.output( linearModelsSumm[["RFS_logitWithRx"]]$coefficients)
+      cat(textOut,sep="\n",append=TRUE,file=survFile)
+      
+      linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
+      
+    }else{
+      
+      cat(paste("\nRFS analysis with therapies returned NA.\n",collapse="_"),append=TRUE,file=survFile)
+    }
 
-  #now try with stage, grade.
+    
+  #now try with  grade.
   cat(paste("\nLinear analysis with RFS and histological grade :\n",collapse="_"),append=TRUE,file=survFile)
   dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$RFS))), ]
-  dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$hist_grade))),]
+  dataMatrix <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
   dataMatrix <- data.frame(dataMatrix)
+  cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
   cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
   
    linearModelsSumm[["RFS_withGrade_numPatients"]] <- nrow(dataMatrix)
-  linearModels[["RFS_linearWithGrade"]] <- tryCatch( lm(RFS~community+hist_grade,data=dataMatrix),
+  cat("\nNumber_of_patients_for_RFS_with_grade_model: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
+  linearModels[["RFS_logitWithGrade"]] <- tryCatch( glm(RFS~community+hist_grade,data=dataMatrix,family=binomial(link="logit")),
                                                      error = function(e) {
                                                        return(NA)
                                                      }
   )
-  if(!is.na(linearModels[["RFS_linearWithGrade"]])){
-    linearModelsSumm[["RFS_linearWithGrade"]] <- summary( linearModels[["RFS_linearWithGrade"]])
-    textOut <- capture.output( linearModelsSumm[["RFS_linearWithGrade"]]$coefficients)
+  if(any(!is.na(linearModels[["RFS_logitWithGrade"]]))){
+
+    predictor <- predict(linearModels[["RFS_logitWithGrade"]],type="response")
+    png(filename=paste0(saveDir,"/",experimentName,"_RFS_withGrade_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+    roc_data <- roc(response=dataMatrix$RFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+    dev.off()
+    textOut <- capture.output(roc_data)
+    cat("roc_info:\n",textOut,sep="\n",append=TRUE,file=survFile)
+    cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=survFile)
+    
+    linearModelsSumm[["RFS_logitWithGrade"]] <- summary( linearModels[["RFS_logitWithGrade"]])
+    textOut <- capture.output( linearModelsSumm[["RFS_logitWithGrade"]]$coefficients)
     cat(textOut,sep="\n",append=TRUE,file=survFile) 
     linearModelsSumm[["RFS_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
     
@@ -650,15 +689,25 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
    cat(paste("\nLinear analysis with only DFS:\n",collapse="_"),append=TRUE,file=survFile)
    
    dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
+cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    
-   #strongly predicts DFS.
-   linearModels[["DFS_linearAlone"]] <- lm(DFS~community,data=dataMatrix)
-    linearModelsSumm[["DFS_linearAlone"]] <- summary(  linearModels[["DFS_linearAlone"]] ) 
-   textOut <- capture.output( linearModelsSumm[["DFS_linearAlone"]]$coefficients)
-   cat(textOut,sep="\n",append=TRUE,file=survFile)
+    #strongly predicts DFS.
+    linearModels[["DFS_logitAlone"]] <- glm(DFS~community,data=dataMatrix,family=binomial(link="logit"))
+    png(filename=paste0(saveDir,"/",experimentName,"_DFS_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+  predictor <- predict(linearModels[["DFS_logitAlone"]],type="response")
+    roc_data <- roc(response=dataMatrix$DFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+    dev.off()
+    textOut <- capture.output(roc_data)
+    cat("roc_info\n",textOut,sep="\n",append=TRUE,file=survFile)
+    cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=survFile)
+    linearModelsSumm[["DFS_logitAlone"]] <- summary( linearModels[["DFS_logitAlone"]] ) 
+    textOut <- capture.output( linearModelsSumm[["DFS_logitAlone"]]$coefficients)
+    cat(textOut,sep="\n",append=TRUE,file=survFile)
     linearModelsSumm[["DFS_numPatients"]] <- nrow(dataMatrix)
+    cat("\nNumber of patients: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
     linearModelsSumm[["DFS_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
+
    ##with therapies
    #interesting: community becomes insignificant if add in therapies now: this could be
    #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
@@ -668,6 +717,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
    dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
    dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
    dataMatrix <- data.frame(dataMatrix)
+cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    
     linearModelsSumm[["DFS_withRx_numPatients"]] <- nrow(dataMatrix)
@@ -675,24 +725,13 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
    if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 && 
         length(unique(dataMatrix$anti_HER2))>1 ){
         
-   linearModels[["DFS_linearWithRx"]] <- tryCatch(lm(DFS~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix),
+   linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
                                                   error = function(e) {
                                                     return(NA)
                                                   }
    )
    
-  if(!is.na(  linearModels[["DFS_linearWithRx"]] )){
-    linearModelsSumm[["DFS_linearWithRx"]] <- summary( linearModels[["DFS_linearWithRx"]])
-   textOut <- capture.output( linearModelsSumm[["DFS_linearWithRx"]]$coefficients)
-   cat(textOut,sep="\n",append=TRUE,file=survFile)
-   
-    linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-   
-  }else{
-    
-    cat(paste("\nDFS with therapies analysis returned NA.\n",collapse="_"),append=TRUE,file=survFile)
-    
-  }
+
    
       }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 &&
                 length(unique(dataMatrix$anti_HER2))==1 ){
@@ -700,29 +739,24 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         cat(paste("\nFor DFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",collapse="_"),
             append=TRUE,file=survFile)
-        linearModels[["DFS_linearWithRx"]] <- lm(DFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix)
-         linearModelsSumm[["DFS_linearWithRx"]] <- summary( linearModels[["DFS_linearWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["DFS_linearWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=survFile)
-        
-         linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-        
-        
+        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
+                                                       error = function(e) {
+                                                         return(NA)
+                                                       }
+        )
+     
       }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
                && length(unique(dataMatrix$anti_HER2))>1 ){
         
         cat(paste("\nFor DFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",collapse="_"),
             append=TRUE,file=survFile)
         
-        linearModels[["DFS_linearWithRx"]] <- lm(DFS~community+chemotherapyClass+anti_HER2,data=dataMatrix)
-         linearModelsSumm[["DFS_linearWithRx"]] <- summary( linearModels[["DFS_linearWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["DFS_linearWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=survFile)
-        
-         linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-        
-        
-        
+        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                       error = function(e) {
+                                                         return(NA)
+                                                       }
+        )
+  
       }else if(length(unique(dataMatrix$chemotherapyClass))==1 && length(unique(dataMatrix$anti_estrogen))>1 
                && length(unique(dataMatrix$anti_HER2))>1 ){
         
@@ -730,14 +764,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         cat(paste("\nFor DFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",collapse="_"),
             append=TRUE,file=survFile)
         
-        linearModels[["DFS_linearWithRx"]] <- lm(DFS~community+anti_estrogen+anti_HER2,data=dataMatrix)
-         linearModelsSumm[["DFS_linearWithRx"]] <- summary( linearModels[["DFS_linearWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["DFS_linearWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=survFile)
-        
-         linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-        
-      
+        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                       error = function(e) {
+                                                         return(NA)
+                                                       }
+        )
+   
       }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
                && length(unique(dataMatrix$anti_HER2))==1 ){
         
@@ -746,110 +778,139 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
             file=survFile)
 
         
-        linearModels[["DFS_linearWithRx"]] <- lm(DFS~community+chemotherapyClass,data=dataMatrix)
-         linearModelsSumm[["DFS_linearWithRx"]] <- summary( linearModels[["DFS_linearWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["DFS_linearWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=survFile)
-        
-         linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-        
-        
+        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
+                                                       error = function(e) {
+                                                         return(NA)
+                                                       }
+        )
+
       }else{
         
        # don't run models
 
       }
-   
 
-   #now try with stage, grade.
+    if(any(!is.na(linearModels[["DFS_logitWithRx"]]))){
+      
+        predictor <- predict(linearModels[["DFS_logitWithRx"]],type="response")
+        png(filename=paste0(saveDir,"/",experimentName,"_DFS_withRx_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+        roc_data <- roc(response=dataMatrix$DFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+        dev.off()
+        textOut <- capture.output(roc_data)
+        cat("roc_info\n",textOut,sep="\n",append=TRUE,file=survFile)
+        cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=survFile)
+        
+        linearModelsSumm[["DFS_logitWithRx"]] <- summary( linearModels[["DFS_logitWithRx"]])
+        textOut <- capture.output( linearModelsSumm[["DFS_logitWithRx"]]$coefficients)
+        cat(textOut,sep="\n",append=TRUE,file=survFile)
+        linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
+        
+    }else{
+      
+      cat(paste("\nRx with DFS analysis returned NA.\n",collapse="_"),append=TRUE,file=survFile)  
+    }
+  
+
+  #now try with grade.
    cat(paste("\nLinear analysis with DFS and histological grade :\n",collapse="_"),append=TRUE,file=survFile)
    dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
-   dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$hist_grade))),]
+   dataMatrix <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
   dataMatrix <- data.frame(dataMatrix)
+  cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
    
     linearModelsSumm[["DFS_withGrade_numPatients"]] <- nrow(dataMatrix)
-
-  linearModels[["DFS_linearWithGrade"]] <- tryCatch( lm(DFS~community+hist_grade,data=dataMatrix),
+cat("\nNumber_of_patients_for_DFS_withGrade_model: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
+  linearModels[["DFS_logitWithGrade"]] <- tryCatch( glm(DFS~community+hist_grade,data=dataMatrix,family=binomial(link="logit")),
                                                      error = function(e) {
                                                        return(NA)
                                                      }
   )
-  if(!is.na(linearModels[["DFS_linearWithGrade"]])){
-    linearModelsSumm[["DFS_linearWithGrade"]] <- summary( linearModels[["DFS_linearWithGrade"]])
-    textOut <- capture.output( linearModelsSumm[["DFS_linearWithGrade"]]$coefficients)
+
+
+  if(!is.na(linearModels[["DFS_logitWithGrade"]])){
+    
+    linearModelsSumm[["DFS_logitWithGrade"]] <- summary( linearModels[["DFS_logitWithGrade"]])
+    textOut <- capture.output( linearModelsSumm[["DFS_logitWithGrade"]]$coefficients)
     cat(textOut,sep="\n",append=TRUE,file=survFile) 
     linearModelsSumm[["DFS_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
     
+    predictor <- predict(linearModels[["DFS_logitWithGrade"]],type="response")
+    png(filename=paste0(saveDir,"/",experimentName,"_DFS_withGrade_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+    roc_data <- roc(response=dataMatrix$DFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+    dev.off()
+    textOut <- capture.output(roc_data)
+    cat("roc_info\n",textOut,sep="\n",append=TRUE,file=survFile)
+    cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=survFile)
+
   }else{
     
     cat(paste("\nHist grade with DFS analysis returned NA\n.",collapse="_"),append=TRUE,file=survFile)  
   }
 
 
+
 #####pCR
-cat(paste("\nLinear analysis with only pCR:\n",collapse="_"),append=TRUE,file=survFile)
+  cat(paste("\nLinear analysis with only pCR:\n",collapse="_"),append=TRUE,file=survFile)
 
-dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
-cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+  dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
+  cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+  cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
 
-#strongly predicts pCR.
-linearModels[["pCR_linearAlone"]] <- lm(pCR~community,data=dataMatrix)
- linearModelsSumm[["pCR_linearAlone"]] <- summary(  linearModels[["pCR_linearAlone"]] ) 
-textOut <- capture.output( linearModelsSumm[["pCR_linearAlone"]]$coefficients)
-cat(textOut,sep="\n",append=TRUE,file=survFile)
- linearModelsSumm[["pCR_numPatients"]] <- nrow(dataMatrix)
- linearModelsSumm[["pCR_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-##with therapies
-#interesting: community becomes insignificant if add in therapies now: this could be
-#because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
-#low Rsquared.
-cat(paste("\nLinear analysis with pCR and treatment:\n",collapse="_"),append=TRUE,file=survFile)
-dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
-dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
-dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
-dataMatrix <- data.frame(dataMatrix)
-cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+  #strongly predicts pCR.
+  linearModels[["pCR_logitAlone"]] <- glm(pCR~community,data=dataMatrix,family=binomial(link="logit"))
 
- linearModelsSumm[["pCR_withRx_numPatients"]] <- nrow(dataMatrix)
+  predictor <- predict(linearModels[["pCR_logitAlone"]],type="response")
+  png(filename=paste0(saveDir,"/",experimentName,"_pCR_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+  roc_data <- roc(response=dataMatrix$pCR,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+  dev.off()
+  textOut <- capture.output(roc_data)
+  cat("roc_info\n",textOut,sep="\n",append=TRUE,file=survFile)
+  cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=survFile)
+
+
+   linearModelsSumm[["pCR_logitAlone"]] <- summary(  linearModels[["pCR_logitAlone"]] ) 
+   textOut <- capture.output( linearModelsSumm[["pCR_logitAlone"]]$coefficients)
+  cat(textOut,sep="\n",append=TRUE,file=survFile)
+   linearModelsSumm[["pCR_numPatients"]] <- nrow(dataMatrix)
+  cat("\nNumber_of_patients_for_pCR__model: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
+   linearModelsSumm[["pCR_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
+  ##with therapies
+  #interesting: community becomes insignificant if add in therapies now: this could be
+  #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
+  #low Rsquared.
+  cat(paste("\nLinear analysis with pCR and treatment:\n",collapse="_"),append=TRUE,file=survFile)
+  dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
+  dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
+  dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
+  dataMatrix <- data.frame(dataMatrix)
+  cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+  cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+  
+   linearModelsSumm[["pCR_withRx_numPatients"]] <- nrow(dataMatrix)
+  cat("\nNumber_of_patients_for_pCR_withRx_model: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
 
 if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 &&
     length(unique(dataMatrix$anti_HER2))>1 ){
      
-     linearModels[["pCR_linearWithRx"]] <- tryCatch(lm(pCR~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix),
+     linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
                                                     error = function(e) {
                                                       return(NA)
                                                     }
      )
-     
-     if(!is.na(linearModels[["pCR_linearWithRx"]])){
-      linearModelsSumm[["pCR_linearWithRx"]] <- summary( linearModels[["pCR_linearWithRx"]])
-     textOut <- capture.output( linearModelsSumm[["pCR_linearWithRx"]]$coefficients)
-     cat(textOut,sep="\n",append=TRUE,file=survFile)
-     
-      linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-     
-     }else{
-       
-       
-       linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- NA
-       cat(paste("\nDFS analysis with therapies gave factor errors.\n",collapse="_"),append=TRUE,file=survFile)
-       
-     }
-     
+
    }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 
             && length(unique(dataMatrix$anti_HER2))==1 ){
      
      
      cat(paste("\nFor pCR analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n",collapse="_"),
          append=TRUE,file=survFile)
-     linearModels[["pCR_linearWithRx"]] <- lm(pCR~community+chemotherapyClass+anti_estrogen,data=dataMatrix)
-      linearModelsSumm[["pCR_linearWithRx"]] <- summary( linearModels[["pCR_linearWithRx"]])
-     textOut <- capture.output( linearModelsSumm[["pCR_linearWithRx"]]$coefficients)
-     cat(textOut,sep="\n",append=TRUE,file=survFile)
-     
-      linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-     
+     linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
+                                                    error = function(e) {
+                                                      return(NA)
+                                                    }
+     )
+
      
    }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
             && length(unique(dataMatrix$anti_HER2))>1 ){
@@ -857,14 +918,13 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
      cat(paste("\nFor pCR analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n",collapse="_"),
          append=TRUE,file=survFile)
      
-     linearModels[["pCR_linearWithRx"]] <- lm(pCR~community+chemotherapyClass+anti_HER2,data=dataMatrix)
-      linearModelsSumm[["pCR_linearWithRx"]] <- summary( linearModels[["pCR_linearWithRx"]])
-     textOut <- capture.output( linearModelsSumm[["pCR_linearWithRx"]]$coefficients)
-     cat(textOut,sep="\n",append=TRUE,file=survFile)
+     linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                    error = function(e) {
+                                                      return(NA)
+                                                    }
+     )
      
-      linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-     
-     
+
      
    }else if(length(unique(dataMatrix$chemotherapyClass))==1 && length(unique(dataMatrix$anti_estrogen))>1 
             && length(unique(dataMatrix$anti_HER2))>1 ){
@@ -873,14 +933,13 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
      cat(paste("\nFor pCR analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n",collapse="_"),
          append=TRUE,file=survFile)
      
-     linearModels[["pCR_linearWithRx"]] <- lm(pCR~community+anti_estrogen+anti_HER2,data=dataMatrix)
-      linearModelsSumm[["pCR_linearWithRx"]] <- summary( linearModels[["pCR_linearWithRx"]])
-     textOut <- capture.output( linearModelsSumm[["pCR_linearWithRx"]]$coefficients)
-     cat(textOut,sep="\n",append=TRUE,file=survFile)
+     linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                    error = function(e) {
+                                                      return(NA)
+                                                    }
+     )
      
-      linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-     
-     
+  
    }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
             && length(unique(dataMatrix$anti_HER2))==1 ){
      
@@ -889,45 +948,77 @@ if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$an
          file=survFile)
      
      
-     linearModels[["pCR_linearWithRx"]] <- lm(pCR~community+chemotherapyClass,data=dataMatrix)
-      linearModelsSumm[["pCR_linearWithRx"]] <- summary( linearModels[["pCR_linearWithRx"]])
-     textOut <- capture.output( linearModelsSumm[["pCR_linearWithRx"]]$coefficients)
-     cat(textOut,sep="\n",append=TRUE,file=survFile)
+     linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
+                                                    error = function(e) {
+                                                      return(NA)
+                                                    }
+     )
      
-      linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-     
-     
+  
    }else{
      
      # don't run models
      
    }
 
+  if(any(!is.na(linearModels[["pCR_logitWithRx"]]))){
+    
+    linearModelsSumm[["pCR_logitWithRx"]] <- summary( linearModels[["pCR_logitWithRx"]])
+    textOut <- capture.output( linearModelsSumm[["pCR_logitWithRx"]]$coefficients)
+    cat(textOut,sep="\n",append=TRUE,file=survFile) 
+    linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
+    
+    predictor <- predict(linearModels[["pCR_logitWithRx"]],type="response")
+    png(filename=paste0(saveDir,"/",experimentName,"_pCR_withRx_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+    roc_data <- roc(response=dataMatrix$pCR,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+    dev.off()
+    textOut <- capture.output(roc_data)
+    cat("roc_info\n",textOut,sep="\n",append=TRUE,file=survFile)
+    cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=survFile)
+  
+    
+    
+  }else{
+    
+    cat(paste("\nRx with pCR analysis returned NA\n.",collapse="_"),append=TRUE,file=survFile)  
+  }
 
-#now try with stage, grade.
-cat(paste("\nLinear analysis with pCR and histological grade :\n",collapse="_"),append=TRUE,file=survFile)
-dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
-dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$hist_grade))),]
-dataMatrix <- data.frame(dataMatrix)
-cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
 
- linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrix)
-linearModels[["pCR_linearWithGrade"]] <- tryCatch( lm(pCR~community+hist_grade,data=dataMatrix),
-                                                  error = function(e) {
-                                                    return(NA)
-                                                  }
-)
- if(!is.na(linearModels[["pCR_linearWithGrade"]])){
- linearModelsSumm[["pCR_linearWithGrade"]] <- summary( linearModels[["pCR_linearWithGrade"]])
-textOut <- capture.output( linearModelsSumm[["pCR_linearWithGrade"]]$coefficients)
-cat(textOut,sep="\n",append=TRUE,file=survFile) 
- linearModelsSumm[["pCR_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-   
+  #now try with stage, grade.
+  cat(paste("\nLinear analysis with pCR and histological grade :\n",collapse="_"),append=TRUE,file=survFile)
+  dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
+  dataMatrix <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
+  dataMatrix <- data.frame(dataMatrix)
+  cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+  cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
+  
+   linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrix)
+  cat("\nNumber_of_patients_for_pCR_withGrade_model: ",nrow(dataMatrix),"\n",append=TRUE,file=survFile)
+  linearModels[["pCR_logitWithGrade"]] <- tryCatch( glm(pCR~community+hist_grade,data=dataMatrix,family=binomial(link="logit")),
+                                                    error = function(e) {
+                                                      return(NA)
+                                                    }
+  )
+ if(any(!is.na(linearModels[["pCR_logitWithGrade"]]))){
+  
+   linearModelsSumm[["pCR_logitWithGrade"]] <- summary( linearModels[["pCR_logitWithGrade"]])
+  textOut <- capture.output( linearModelsSumm[["pCR_logitWithGrade"]]$coefficients)
+  cat(textOut,sep="\n",append=TRUE,file=survFile) 
+   linearModelsSumm[["pCR_logitWithGrade"]] <- paste(unique(dataMatrix$community),collapse=",")
+  
+  predictor <- predict(linearModels[["pCR_logitWithGrade"]],type="response")
+  png(filename=paste0(saveDir,"/",experimentName,"_pCR_withGrade_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
+  roc_data <- roc(response=dataMatrix$pCR,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
+  dev.off()
+  textOut <- capture.output(roc_data)
+  cat("roc_info\n",textOut,sep="\n",append=TRUE,file=survFile)
+  cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=survFile)
+
   }else{
     
   cat(paste("\nHist grade with pCR analysis returned NA.",collapse="_"),append=TRUE,file=survFile)  
   }
-  
+
 #end of if not ovarian.
 }
 #end of if survival analysis.

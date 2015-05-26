@@ -1507,7 +1507,8 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
     colorList = setClusterColors(res[[t-1]][[3]],tmp,thisPal,colorList)
     
   }
-  
+  #png("/home/kplaney/breast_analysis/GSE2034_consensus.png",
+   #  width=1000,height=1000,res=200)
   
   pc <- fm#for k; from a list 
   pc=pc[hc$order,] #pc is matrix for plotting, same as c but is row-ordered and has names and extra row of zeros.
@@ -1519,7 +1520,7 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
   # with tree:
   heatmap(pc, Colv=as.dendrogram(hc), Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=F,labCol=F,mar=c(5,5),main=paste("consensus matrix k=",k,sep="") , ColSideCol=colorList[[1]] )
   legend("topright",legend=unique(ct),fill=unique(colorList[[1]]),horiz=FALSE )
-  
+  #dev.off()
 } 
   setClusterColors = function(past_ct,ct,colorU,colorList){
     #description: sets common color of clusters between different K
@@ -1567,9 +1568,16 @@ CDF_CoINcIDE <- function(consensusClustOutput,breaks=100){
     ml[[c]] <- consensusClustOutput[[c]]$ml
     }
   #plot CDF distribution
+  #png("/home/kplaney/breast_analysis/GSE2034_CDF_2.png",
+   #   width=2000,height=1000,res=200)
+  par(oma = c(1, 1, 1, 4))
+  
   plot(c(0),xlim=c(0,1),ylim=c(0,1),col="white",bg="white",xlab="consensus index",ylab="CDF",main="consensus CDF", las=2)
   k=length(ml)
   this_colors = rainbow(k-1)
+  #grr...still can't get legend to show up if save! oh well...
+  legend(1.1,1,legend=paste(rep("",k-1),seq(2,k,by=1),sep=""),inset=c(0,1),
+         xpd = TRUE,fill=this_colors)
   #legend(0.7,0.35, # places a legend at the appropriate place ,
   #      legend= as.character(c(1:length(ml)+1)))
   #col=this_colors
@@ -1590,16 +1598,16 @@ CDF_CoINcIDE <- function(consensusClustOutput,breaks=100){
     areaK = c(areaK,thisArea)
     lines(h$mids,h$counts,col=this_colors[i-1],lwd=2,type='l')
   }
-  #Katie: changed where the legend is:
-  legend(0.7,0.4,legend=paste(rep("",k-1),seq(2,k,by=1),sep=""),fill=this_colors)
-  
+
+  #dev.off()
   #plot area under CDF change.
   deltaK=areaK[1] #initial auc at k=2
   for(i in 2:(length(areaK))){
     #proportional increase relative to prior K.
     deltaK = c(deltaK,( areaK[i] - areaK[i-1])/areaK[i-1])
   }
-  plot(1+(1:length(deltaK)),y=deltaK,xlab="k",ylab="relative change in area under CDF curve",main="Delta area",type="b")
+ plot(1+(1:length(deltaK)),y=deltaK,xlab="k",ylab="relative change in area under CDF curve",main="Delta area",type="b")
+ 
 }
 
 #for consensus clustering.
