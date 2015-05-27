@@ -648,11 +648,11 @@ source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeat
 saveDir <- "/home/kplaney/breast_analysis/"
 load(paste0(saveDir,"/metaFeatures_1000.RData.gzip"))
 metaFeatures =metaFeatures
-load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem91000Features_2015-05-05.RData.gzip"))
+load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem91000Features_2015-05-20.RData.gzip"))
 clusterCoINcIDE_output =  kmeansConsensus
 load(paste0(saveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
-load(paste0(saveDir,"/adjMatrices_1000F_pearson_meanMatrix_2015-05-05.RData.gzip"))
+load(paste0(saveDir,"/adjMatrices_1000F_pearson_meanMatrix_2015-05-20.RData.gzip"))
 CoINcIDE_output = breast1000F_pearson_meanMatrix
 experimentName <- "breast_1000_features"
      eset_featureDataFieldName="gene_symbol"
@@ -700,11 +700,11 @@ source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeat
 saveDir <- "/home/kplaney/breast_analysis/"
 load(paste0(saveDir,"/metaFeatures_2000.RData.gzip"))
 metaFeatures =metaFeatures
-load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-05.RData.gzip"))
+load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-20.RData.gzip"))
 clusterCoINcIDE_output =  kmeansConsensus
 load(paste0(saveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
-load(paste0(saveDir,"/adjMatrices_2000F_pearson_meanMatrix_2015-05-05.RData.gzip"))
+load(paste0(saveDir,"/adjMatrices_2000F_pearson_meanMatrix_2015-05-27.RData.gzip"))
 CoINcIDE_output = breast2000F_pearson_meanMatrix
 experimentName <- "breast_2000_features"
 

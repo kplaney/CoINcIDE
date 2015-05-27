@@ -553,7 +553,7 @@ sigMethod <- "meanMatrix"
 
 # 2000features, pearson:
 edgeMethod <- "pearson"
-load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-05.RData.gzip")
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-20.RData.gzip")
 load("/home/kplaney/breast_analysis/metaFeatures_2000.RData.gzip")
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 #load("/home/kplaney/breast_analysis/esets_proc_TCGAcombat.RData.gzip")
