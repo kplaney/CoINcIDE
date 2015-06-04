@@ -1,14 +1,18 @@
 #use default Ward's method
 library("cluster")
-
+#proxy not working...
+library("proxy")
 
 #for more specific options: use the individual clustMatrixList functions
 #note: for consenus clustering: need a high # sims otherwise will get NaN values in your consensus matrix (two samples were next chosen in the same resampling run.)
 clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=c("km","hc"),pickKMethod=c("gap","consensus"),numSims=1000,maxNumClusters=30,
-                                   outputFile="./cluster_output.txt",iter.max=30,nstart=25,distMethod=c("euclidean","pearson","spearman", "binary", "maximum", "canberra", "minkowski"),
+                                   outputFile="./cluster_output.txt",iter.max=10,nstart=1,distMethod=c("euclidean","pearson","spearman", "binary", "maximum", "canberra", "minkowski"),
                                    hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
                                    consensusHclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"),
                                    minClustConsensus=.7, minMeanClustConsensus=.7,maxPAC=.1,corUse="everything",pItem=.9){
+  
+  
+  message("This code assumes your patients are in the columns of the data matrix.")
   
   if(pickKMethod=="gap"){
     
@@ -78,7 +82,6 @@ clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=
         }else if(clustMethod=="hc"){
           
 
-          
           if(distMethod==("pearson") || distMethod=="spearman"){
             
               #for cor: don't transpose dataset.
@@ -89,14 +92,23 @@ clustMatrixListWrapper <- function(dataMatrixList,clustFeaturesList,clustMethod=
 
           }else{
 
+            if(distMethod=="euclidean"){
+              #capitalize
+              distMethod <- "Euclidean"
+              
+            }
+                          #convert similarities: does 1- similarity.
+              distMatrix <- dist(dataset,method=distMethod,by_rows=FALSE,
+                       convert_similarities = TRUE)
               #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
               #tried passing in parent.frame() to make a more elegant solution but didn't work.
               
-              clustObject <- hclust(dist(t(dataset),method=distMethod), method=algorithm);
+              clustObject <- hclust(distMatrix, method=algorithm);
               clusterAssignments <- cutree(clustObject,k=K)
 
         
           }
+          
         }else{
           
           stop("In clustMatrixListWrapper: did not pick hc or kmeans as clustMethod input")
@@ -212,15 +224,15 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
     cat(paste0("\nDid not find an optimal k below ",maxNumClusters," setting K=1\n"),
         append=TRUE,file=outputFile)
     best_k <- 1
-  
-  }
+    bestK <- 1
+  }else{
  
-  
   if(bestK != best_k){
     
     stop("\nError when selecting best K in clusGap function in cluster package.")
   }
 
+  }
   cat(paste0("\nBest K as determined by k-means and gap test is: ", bestK ,"\n"),
       append=TRUE,file=outputFile);
 
@@ -245,7 +257,7 @@ clusterMatrixKmeansGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,it
 }
 
 clusterMatrixListHclustGap <- function(dataMatrixList,clustFeaturesList,maxNumClusters=30,algorithm="ward.D",
-                              distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_hclustGap_output.txt",
+                              distMethod=c("pearson","spearman","Euclidean", "Pearson", "cosine", "Manhattan", "Minkowski"),outputFile="./cluster_hclustGap_output.txt",
                               corUse=c("everything","pairwise.complete.obs", "complete.obs"),numSims=1000){
   
   outputList <- list()
@@ -272,7 +284,7 @@ return(output)
 
 clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
                                    algorithm=c("complete","ward.D", "ward.D2", "single", "average","mcquitty","median","centroid"),                     
-                              distMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),outputFile="./cluster_kmeansGap_output.txt",
+                              distMethod=c("pearson","spearman","Euclidean", "cosine", "Manhattan", "Minkowski"),outputFile="./cluster_kmeansGap_output.txt",
                               corUse=c("everything","pairwise.complete.obs", "complete.obs"),numSims=1000){
   
   dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
@@ -293,6 +305,12 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
     K.max <- maxNumClusters
     
   }
+  
+    if(distMethod=="euclidean"){
+      #capitalize
+      distMethod <- "Euclidean"
+              
+    }
   
   if(distMethod==("pearson") || distMethod=="spearman"){
     
@@ -315,8 +333,12 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
   clustF <- function(x,k){
        #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
     #tried passing in parent.frame() to make a more elegant solution but didn't work.
-
-    clustObject <- hclust(dist(x,method=distMethod), method=algorithm);
+    
+    #convert similarities: does 1- similarity.
+    distMatrix <- dist(dataset,method=distMethod,by_rows=FALSE,
+                       convert_similarities = TRUE)
+       
+    clustObject <- hclust(distMatrix, method=algorithm);
     output <- list()
     output$cluster <- cutree(clustObject,k=k)
     return(output)
@@ -343,11 +365,14 @@ clusterMatrixHclustGap <- function(dataMatrix,clustFeatures,maxNumClusters=30,
     cat(paste0("\nDid not find an optimal k below ",maxNumClusters," setting K=1\n"),
         append=TRUE,file=outputFile)
     best_k <- 1
-  }
+    bestK <- 1
+    
+  }else{
  
   if(bestK != best_k){
     
     stop("\nError when selecting best K in clusGap function in cluster package.")
+  }
   }
 
   cat(paste0("\nBest K as determined by hclust and gap test is: ", bestK ,"\n"),
@@ -394,6 +419,8 @@ outputFile="./consensusOut.txt",iter.max=30,nstart=25,maxPAC=.15){
     message(paste0("\nClustering dataset ",d, " ",names(dataMatrixList)[d]))
     cat(paste0("\nClustering dataset ",d, " ",names(dataMatrixList)[d]),
         append=TRUE,file=outputFile);
+    
+
     outputList[[d]] <- consensusClusterMatrix(dataMatrix=dataMatrixList[[d]],clustFeatures=clustFeaturesList[[d]],
                                                      maxNumClusters=maxNumClusters, numSims=numSims, nstart=nstart,iter.max=iter.max,
                                                      pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
@@ -548,8 +575,38 @@ outputFile="./consensusOut.txt",minClustConsensus=.7,maxPAC=.15,studyName="test"
     
     stop("\nIn clusterMatrixHclustGap function: no clustFeatures were found in the data matrix inputted.")
     
-  } 
-  
+  }
+ 
+     if(clusterAlg==c("hc")){
+      #make distance matrix ahead of time and feed in as object; have more distance options with proxy package.
+            if(distMethod==("pearson") || distMethod=="spearman"){
+            
+              #for cor: don't transpose dataset.
+              #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
+              clustDataset <- as.dist((1-cor(dataset,use=corUse,method=distMethod)), method=algorithm)
+              #clustGap needs a list output
+       #       clusterAssignments <- cutree(clustObject,k=K)
+        #      distMethod=distMethod
+
+         }else{
+
+            if(distMethod=="euclidean"){
+              #capitalize
+              distMethod <- "Euclidean"
+              
+            }
+             clustDataset <- dist(dataset,method=distMethod,by_rows = FALSE,
+                       convert_similarities = TRUE)
+ 
+            
+          }
+          
+    }else{
+      
+      clustDataset <- dataset
+    }
+
+ 
   #remember: we're clustering pItem*ncol(dataset) each time...so
   #our max K is NOT ncol(dataset), but rather pItem*ncol(dataset)
   if(floor(ncol(dataset)*pItem)<maxNumClusters){
@@ -564,16 +621,29 @@ outputFile="./consensusOut.txt",minClustConsensus=.7,maxPAC=.15,studyName="test"
   }
 
 
+ #   if(nstart==1 && iter.max==10){
+#  library("ConsensusClusterPlus")  
+  #using default k-means settings; can use ConsensusClusterPlus package.
+ # consensusClustOutput <- ConsensusClusterPlus_CoINcIDE (d=clustDataset,
+  #                                             maxK=K.max,reps=numSims,
+   #                                            pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
+  #innerLinkage=innerLinkage, finalLinkage=finalLinkage, ml=NULL,distance=distMethod,
+  #tmyPal=NULL,seed=NULL,plot='pngBMP',writeTable=FALSE,weightsItem=NULL,weightsFeature=NULL,verbose=F,corUse=corUse)
+  
+ 
+      
+      
+   # }else{
   #using Bioconductor's kmeans consensus code, but I altered it so that the user can specify iter.max
  #and nstart for kmeans algorithms.  otherwise you must always run it with nstart=1...this will
  #naturally not product optimal clusterings for each resampling.
-  consensusClustOutput <- ConsensusClusterPlus_CoINcIDE (d=dataset,iter.max=iter.max,nstart=nstart,
+  consensusClustOutput <- ConsensusClusterPlus_CoINcIDE(d=clustDataset,iter.max=iter.max,nstart=nstart,
                                                maxK=K.max,reps=numSims,
                                                pItem=pItem, pFeature=pFeature, clusterAlg=clusterAlg,
   innerLinkage=innerLinkage, finalLinkage=finalLinkage, ml=NULL,distance=distMethod,
   tmyPal=NULL,seed=NULL,plot='pngBMP',writeTable=FALSE,weightsItem=NULL,weightsFeature=NULL,verbose=F,corUse=corUse)
   
-
+  #  }
   #get consensus score for each cluster for each k: 
   #hmm..doesn't work for k=1?? not so great...
   #weird...can't NOT have the plots outputted...tried title=NULL
@@ -1470,7 +1540,7 @@ triangle = function(m,mode=1){
 #   text("*",x=xr+0.5,y=maxH,col=myc[cc],cex=1.4) #rect(xr,1.4,xr+1,1.5,col=myc[cc] )
 # }
 
-plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
+plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k,plotSave=TRUE,saveDir="./",fileTag=""){
   
   #   #18 colors for marking different clusters
   thisPal <- c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFFF99","#B15928",
@@ -1507,8 +1577,12 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
     colorList = setClusterColors(res[[t-1]][[3]],tmp,thisPal,colorList)
     
   }
-  #png("/home/kplaney/breast_analysis/GSE2034_consensus.png",
-   #  width=1000,height=1000,res=200)
+  
+  if(plotSave){
+  #plot heatmap
+  png(paste0(plotSaveDir,"/",fileTag,"_consensus_heatmap.png",width=1000,height=1000,res=200))
+      
+  }
   
   pc <- fm#for k; from a list 
   pc=pc[hc$order,] #pc is matrix for plotting, same as c but is row-ordered and has names and extra row of zeros.
@@ -1520,9 +1594,15 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
   # with tree:
   heatmap(pc, Colv=as.dendrogram(hc), Rowv=NA, symm=FALSE, scale='none', col=tmyPal, na.rm=TRUE,labRow=F,labCol=F,mar=c(5,5),main=paste("consensus matrix k=",k,sep="") , ColSideCol=colorList[[1]] )
   legend("topright",legend=unique(ct),fill=unique(colorList[[1]]),horiz=FALSE )
-  #dev.off()
+  
+  if(plotSave){
+    dev.off()
+    
+  }
+  
 } 
-  setClusterColors = function(past_ct,ct,colorU,colorList){
+  
+setClusterColors = function(past_ct,ct,colorU,colorList){
     #description: sets common color of clusters between different K
     newColors = c()
     if(length(colorList)==0){
@@ -1548,28 +1628,31 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k){
       }
     }
     return(list(newColors,colori,unique(newColors) ))
-  }
+}
   
-  myPal = function(n=10){
+myPal = function(n=10){
     #returns n colors
     seq = rev(seq(0,255,by=255/(n)))
     palRGB = cbind(seq,seq,255)
     rgb(palRGB,maxColorValue=255)
-  }
+}
   
 
 
 
-CDF_CoINcIDE <- function(consensusClustOutput,breaks=100){
+CDF_CoINcIDE <- function(consensusClustOutput,breaks=100,plotSave=TRUE,plotSaveDir="./",fileTag=""){
    
   ml <- list()
   #need to grab all ml values from each k:
   for(c in 2:length(consensusClustOutput)){
     ml[[c]] <- consensusClustOutput[[c]]$ml
     }
+  
+  if(plotSave){
   #plot CDF distribution
-  #png("/home/kplaney/breast_analysis/GSE2034_CDF_2.png",
-   #   width=2000,height=1000,res=200)
+  png(paste0(plotSaveDir,"/",fileTag,"_consensus_CDF.png",width=2000,height=1000,res=200))
+      
+  }
   par(oma = c(1, 1, 1, 4))
   
   plot(c(0),xlim=c(0,1),ylim=c(0,1),col="white",bg="white",xlab="consensus index",ylab="CDF",main="consensus CDF", las=2)
@@ -1599,14 +1682,18 @@ CDF_CoINcIDE <- function(consensusClustOutput,breaks=100){
     lines(h$mids,h$counts,col=this_colors[i-1],lwd=2,type='l')
   }
 
-  #dev.off()
-  #plot area under CDF change.
-  deltaK=areaK[1] #initial auc at k=2
-  for(i in 2:(length(areaK))){
-    #proportional increase relative to prior K.
-    deltaK = c(deltaK,( areaK[i] - areaK[i-1])/areaK[i-1])
+  if(plotSave){
+    
+    dev.off()
+  
   }
- plot(1+(1:length(deltaK)),y=deltaK,xlab="k",ylab="relative change in area under CDF curve",main="Delta area",type="b")
+  #plot area under CDF change.
+ # deltaK=areaK[1] #initial auc at k=2
+#  for(i in 2:(length(areaK))){
+ #   #proportional increase relative to prior K.
+#    deltaK = c(deltaK,( areaK[i] - areaK[i-1])/areaK[i-1])
+#  }
+# plot(1+(1:length(deltaK)),y=deltaK,xlab="k",ylab="relative change in area under CDF curve",main="Delta area",type="b")
  
 }
 
