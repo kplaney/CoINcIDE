@@ -1580,7 +1580,7 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k,plotSave=TRUE,s
   
   if(plotSave){
   #plot heatmap
-  png(paste0(plotSaveDir,"/",fileTag,"_consensus_heatmap.png",width=1000,height=1000,res=200))
+  png(paste0(plotSaveDir,"/",fileTag,"_consensus_heatmap.png"),width=1000,height=1000,res=200)
       
   }
   
@@ -1650,7 +1650,7 @@ CDF_CoINcIDE <- function(consensusClustOutput,breaks=100,plotSave=TRUE,plotSaveD
   
   if(plotSave){
   #plot CDF distribution
-  png(paste0(plotSaveDir,"/",fileTag,"_consensus_CDF.png",width=2000,height=1000,res=200))
+  png(paste0(plotSaveDir,"/",fileTag,"_consensus_CDF.png"),width=2000,height=1000,res=200)
       
   }
   par(oma = c(1, 1, 1, 4))
