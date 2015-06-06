@@ -934,7 +934,7 @@ ConsensusClusterPlus_CoINcIDE <- function( d=NULL,iter.max=20,nstart=15,
       d <- exprs(d)
     }
     
-    ml <- ccRun( d=d,
+    ml <- ccRun(d=d,
                  maxK=maxK,
                  repCount=reps,
                  diss=inherits(d,"dist"),
@@ -1563,6 +1563,7 @@ plotConsensusHeatmap_CoINcIDE <- function(consensusClustOutput,k,plotSave=TRUE,s
   res <- consensusClustOutput
   
   #ml in output list is ml[[tk]] inside the ConsensusClusterPlus code.
+  #this is the consenusus matrix
   fm = consensusClustOutput[[k]]$ml
   hc=hclust( as.dist( 1 - fm ), method="average");
   message("clustered")  
