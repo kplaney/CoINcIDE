@@ -13,9 +13,9 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
     clustSizeThresh = 5,saveDir = "/home/kplaney/ovarian_analysis/",experimentName = "ovarian_2000F",networkColors = "Set3",
     commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName="gene",
-    survivalAnalysis=TRUE,outcomesVarBinary="vital_status",outcomesVarCont = "days_to_death",
+    survivalAnalysis=TRUE,GSEAanalysis=TRUE,clinVarPlots=TRUE,outcomesVarBinary="vital_status",outcomesVarCont = "days_to_death",
     CutoffPointYears=5, eset_uniquePatientID="unique_patient_ID", ovarian=TRUE, fisherTestVariables = c("histological_type","tumorstage","recurrence_status","grade"),
-    fisherTestVariableLegendNames=fisherTestVariables,fisherTestVariableTitleNames=fisherTestVariables
+    fisherTestVariableLegendNames=fisherTestVariables,fisherTestVariableTitleNames=fisherTestVariables,plotPAm50YLimit=1000
     ){
   
   
@@ -134,6 +134,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   sampleClustCommKey<-aggregateData$sampleClustCommKey
   binInfo <- binarizeMetaclustStudyStatus(aggregateData$sampleClustCommKey)
   
+ if(GSEAanalysis){
   message("Running effect size analysis")
   ES_out <- computeMetaclustEffectSizes(metaClustSampleNames=binInfo$metaClustSampleNames,dataMatrixList=dataMatrixList,featureNames=metaFeatures$finalFeatures,minOtherClass=5,
                                         computeWilcoxon=FALSE)
@@ -207,15 +208,18 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   }
   #cat(GSEA_out_sig,sep="\n",file=paste0(saveDir,"/",experimentName,"_GSEA_allSig.txt"),append=FALSE)
   
+ }else{
+   
+   GSEA_out_unique <- NA
+   sigGenes <- NA
+   
+ }
+  ###now on to plotting
 
-  ###now on to survival analysis
-  result <- list()
   clinicalTables <- list()
-  linearModels <- list()
- linearModelsSumm <- list()
-  if(survivalAnalysis){
-    
 
+    
+  if(clinVarPlots){
     #already have esets loaded:
     #load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
     phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets)
@@ -316,7 +320,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         dev.off()
         
-        plotGStacked <-  ggplot(dataF,aes(factor(meta_cluster),fill=factor(clinVar)),scales="free_x")+geom_bar() + 
+        plotGStacked <-  ggplot(dataF,aes(factor(meta_cluster),fill=factor(clinVar)),scales="free_x")+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
           labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName,"\n"))+
@@ -361,7 +365,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         dev.off()
         
-        plotGStacked <- ggplot(dataF,aes(factor(meta_cluster),fill=factor(clinVar)),scales="free_x")+geom_bar() + 
+        plotGStacked <- ggplot(dataF,aes(factor(meta_cluster),fill=factor(clinVar)),scales="free_x")+geom_bar() + facet_grid(.~meta_cluster,scales="free_x")+
           labs(y="Number of samples", fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName,"\n"))+
@@ -372,7 +376,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
           theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-          theme(plot.title=element_text(colour="black",size=20,vjust=1))+coord_cartesian(ylim=c(0,1000))
+          theme(plot.title=element_text(colour="black",size=20,vjust=1))+coord_cartesian(ylim=c(0,plotPAm50YLimit))
         
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
@@ -402,7 +406,16 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       }
   #end of looping over fisher variables.
   }
-    
+  
+  }
+   
+ result <- list()
+ clinicalTables <- list()
+ linearModels <- list()
+ linearModelsSumm <- list()
+ 
+ if(survivalAnalysis){
+   
   if(ovarian){
       
       message("running survival analysis on ovarian")

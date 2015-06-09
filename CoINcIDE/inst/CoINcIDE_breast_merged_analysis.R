@@ -115,7 +115,7 @@ plot( plotG)
 dev.off()
 
 #stacked
-plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + facet_grid(.~clustNum,scales="free_x")+
   labs(y="Number of samples", fill=paste0("pam50 subtype"),
        title=paste0("Pam50 subtype with 35 gene list",
                     " by cluster for merged \nno dataset normalization and k-means"))+
@@ -169,7 +169,7 @@ plot( plotG)
 
 dev.off()
 
-plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + facet_grid(.~clustNum,scales="free_x")+
   labs(y="Number of samples", fill=paste0("pam50 subtype"),
        title=paste0("Pam50 subtype with 35 gene list",
                     " by cluster for merged \ncombat normalization and k-means"))+
@@ -223,7 +223,7 @@ plot( plotG)
 
 dev.off()
 
-plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + facet_grid(.~clustNum,scales="free_x")+
   labs(y="Number of samples", fill=paste0("pam50 subtype"),
        title=paste0("Pam50 subtype with 35 gene list",
                     " by cluster for merged \ncombat normalization and k-means"))+
@@ -277,7 +277,7 @@ plot( plotG)
 
 dev.off()
 
-plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + facet_grid(.~clustNum,scales="free_x")+
   labs(y="Number of samples", fill=paste0("pam50 subtype"),
        title=paste0("Pam50 subtype with 35 gene list",
                     " by cluster for merged \nBMC normalization and k-means"))+
@@ -334,7 +334,7 @@ plot( plotG)
 
 dev.off()
 #stacked
-plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + facet_grid(.~clustNum,scales="free_x")+
   labs(y="Number of samples", fill=paste0("pam50 subtype"),
        title=paste0("Pam50 subtype with 35 gene list",
                     " by cluster for merged \nBMC normalization and k-means"))+
