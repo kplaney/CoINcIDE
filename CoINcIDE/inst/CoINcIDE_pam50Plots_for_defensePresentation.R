@@ -57,7 +57,8 @@ breast_pam50FullCentroidsOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFea
                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                              survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                            plotStackedYLimit=1000)
 
 
 save(breast_pam50FullCentroidsOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50FullCentroid_features_2015-05-07//breast_pam50FullCentroidsOut.RData.gzip",compress="gzip")
@@ -109,68 +110,9 @@ breast_pam50ShortOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,es
                                                     survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                     CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                     ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,                                      
-                                                    plotPAm50YLimit=2000)
+                                                    plotStackedYLimit=2000)
 
 save(breast_pam50ShortOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Short_features_",Sys.Date(),"/breast_pam50ShortOut.RData.gzip",compress="gzip")
-
-
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
-#grab data matrix list, clust features list
-saveDir <- "/home/kplaney/breast_analysis_withTop20Genes/updatedSurvivalAnalyses"
-load(paste0("/home/kplaney/breast_analysis_withTop20Genes/","/metaFeatures_200.RData.gzip"))
-metaFeatures =metaFeatures
-load(paste0("/home/kplaney/breast_analysis_withTop20Genes/","/curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip"))
-clusterCoINcIDE_output =  kmeansConsensus
-load(paste0("/home/kplaney/breast_analysis_withTop20Genes/","/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
-esets=esets_minVar001_17_studies
-load(paste0("/home/kplaney/breast_analysis_withTop20Genes/","/adjMatrices_200F_pearson_meanMatrix_2015-05-05.RData.gzip"))
-CoINcIDE_output = breast200F_pearson_meanMatrix
-experimentName <- "200_pearson_meanMatrix"
-eset_featureDataFieldName="gene_symbol"
-networkColors = "Set3"
-outcomesVarBinary=NA
-#not enough continuous variables for breast data
-outcomesVarCont = NA
-ovarian <- FALSE
-eset_uniquePatientID="dbUniquePatientID"
-fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
-                         "tumor_stage_preTrt" ,
-                         "preTrt_lymph_node_status" , 
-                         "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
-                         "anti_HER2","anti_estrogen")
-
-fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
-                                   "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
-                                   "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
-                                   "anti-ER\ntreat")
-
-
-fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
-                                  "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
-                                  "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
-                                  "anti-ER treatment")
-
-breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                             meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
-                                             clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
-                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,
-                                             eset_featureDataFieldName=eset_featureDataFieldName,
-                                             survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
-                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
-
-
-
-save(breast_200Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_200_features_",Sys.Date(),"/breast_200_features_analysis_withTop20GenesOut.RData.gzip",compress="gzip")
-
-
-
-
-
-
-
-
-
 
 
 
@@ -220,7 +162,8 @@ breast_pam50FullOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,ese
                                                    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                     survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                    CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                   ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                   ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                   plotStackedYLimit=1000)
 
 save(breast_pam50FullOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Full_features_2015-05-08//breast_pam50FullOut.RData.gzip",compress="gzip")
 
@@ -271,7 +214,8 @@ breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=ese
                                              eset_featureDataFieldName=eset_featureDataFieldName,
                                               survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                              CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                             plotStackedYLimit=800)
 
 
 
@@ -323,7 +267,8 @@ breast_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=es
                                               eset_featureDataFieldName=eset_featureDataFieldName,
                                               survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                              plotStackedYLimit=800)
 
 
 
@@ -1062,4 +1007,312 @@ breast_centroid_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures
 
 save(breast_centroid_2000Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
                                          "/",experimentName,"Out.RData.gzip"),compress="gzip")
+
+
+#####histological plots for ovarian
+
+######ovarian 200
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_200.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_200Features_2015-04-28.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_200F_pearson_meanMatrix_2015-04-29RData.gzip")
+CoINcIDE_output = ov_200F_pearson_meanMatrix
+experimentName <- "ovarian_200_features"
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                         clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                          survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                         CutoffPointYears=5, eset_uniquePatientID="unique_patient_ID", fisherTestVariables = fisherTestVariables,fisherTestVariableLegendNames=fisherTestVariableLegendNames,
+                                         fisherTestVariableTitleNames=fisherTestVariableTitleNames,plotStackedYLimit=1500)
+
+
+save(ov_200Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov200Out.RData.gzip"),compress="gzip")
+
+#2000
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_2000.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_2000Features_2015-04-30.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_2000F_pearson_meanMatrix_updated2015-05-01RData.gzip")
+CoINcIDE_output = ov_2000F_pearson_meanMatrix
+experimentName <- "ovarian_2000_features"
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+eset_uniquePatientID="unique_patient_ID"
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                          meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                          clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                          commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                           survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                          CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                          fisherTestVariableTitleNames =fisherTestVariableTitleNames ,fisherTestVariableLegendNames=fisherTestVariableLegendNames,
+                                          plotStackedYLimit=1500)
+
+
+save(ov_2000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov2000Out.RData.gzip"),compress="gzip")
+
+
+
+######did not run below this line
+###with spearman
+######ovarian 200
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_200.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_200Features_2015-04-28.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_200F_spearman_meanMatrix_2015-04-29RData.gzip")
+CoINcIDE_output = ov_200F_spearman_meanMatrix
+experimentName <- "ovarian_200_spearman"
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                         clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                          survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                         CutoffPointYears=5, eset_uniquePatientID="unique_patient_ID", fisherTestVariables = fisherTestVariables,fisherTestVariableLegendNames=fisherTestVariableLegendNames,
+                                         fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+
+
+save(ov_200Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov200Out.RData.gzip"),compress="gzip")
+
+
+######ovarian 500
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_500.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_500Features_2015-04-29.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_500F_pearson_meanMatrix_2015-04-29RData.gzip")
+CoINcIDE_output = ov_500F_pearson_meanMatrix
+experimentName <- "ovarian_500_pearson"
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+eset_uniquePatientID="unique_patient_ID"
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_500Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                         clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                          survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                         CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                         fisherTestVariableTitleNames=fisherTestVariableTitleNames,fisherTestVariableLegendNames =fisherTestVariableLegendNames )
+
+save(ov_500Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov500Out.RData.gzip"),compress="gzip")
+
+##with spearman
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_500.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_500Features_2015-04-29.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_500F_spearman_meanMatrix_2015-04-29RData.gzip")
+CoINcIDE_output = ov_500F_spearman_meanMatrix
+experimentName <- "ovarian_500_spearman"
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+eset_uniquePatientID="unique_patient_ID"
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_500Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                         clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                          survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                         CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                         fisherTestVariableTitleNames=fisherTestVariableTitleNames,fisherTestVariableLegendNames =fisherTestVariableLegendNames )
+
+save(ov_500Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov500Out.RData.gzip"),compress="gzip")
+
+##########ovarian 1000
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_1000.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_1000Features_2015-04-29.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_1000F_pearson_meanMatrix_2015-04-29RData.gzip")
+CoINcIDE_output = ov_1000F_pearson_meanMatrix
+experimentName <- "ovarian_1000_features"
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+eset_uniquePatientID="unique_patient_ID"
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_1000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                          meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                          clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                          commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                           survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                          CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                          fisherTestVariableTitleNames=fisherTestVariableTitleNames,fisherTestVariableLegendNames=fisherTestVariableLegendNames)
+
+
+
+
+save(ov_1000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov1000Out.RData.gzip"),compress="gzip")
+
+###spearman
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_1000.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_1000Features_2015-04-29.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_1000F_pearson_meanMatrix_updated2015-05-21.RData.gzip")
+CoINcIDE_output = ov_1000F_spearman_meanMatrix
+experimentName <- "ovarian_1000_spearman"
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+eset_uniquePatientID="unique_patient_ID"
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_1000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                          meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                          clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                          commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                           survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                          CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                          fisherTestVariableTitleNames=fisherTestVariableTitleNames,fisherTestVariableLegendNames=fisherTestVariableLegendNames)
+
+
+
+
+save(ov_1000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov1000Out.RData.gzip"),compress="gzip")
+
+###########
+
+
+##spearman
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
+#grab data matrix list, clust features list
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_2000.RData.gzip")
+metaFeatures =metaFeatures
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_2000Features_2015-04-30.RData.gzip")
+clusterCoINcIDE_output =  kmeansConsensus
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+esets = esets
+#dataMatrixList
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_2000F_spearman_meanMatrix2015-05-21.RData.gzip")
+CoINcIDE_output = ov_2000F_spearman_meanMatrix
+experimentName <- "ovarian_2000_spearman"
+fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
+fisherTestVariableLegendNames <- c("hist\ntype","tumor\nstage","recurrence","tumor\ngrade","age")
+fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence status","tumor grade","age at diagnosis")
+
+eset_featureDataFieldName="gene"
+networkColors = "Set2"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
+outcomesVarBinary="vital_status"
+outcomesVarCont = "days_to_death"
+ovarian <- TRUE
+eset_uniquePatientID="unique_patient_ID"
+#breast: must also input dataMatrixList
+#brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+ov_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                          meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                          clustSizeThresh = 5,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                          commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                           survivalAnalysis=FALSE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                          CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                          fisherTestVariableTitleNames =fisherTestVariableTitleNames ,fisherTestVariableLegendNames=fisherTestVariableLegendNames)
+
+
+save(ov_2000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov2000Out.RData.gzip"),compress="gzip")
+
+##############
 

@@ -354,3 +354,13 @@ plot( plotG)
 dev.off()
 
 
+##check: got all patients? yes
+length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]) + length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]]) + length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])
+###how many of GSE32646 are in each combat cluster? they have an "809" tag
+length(grep("809",names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])))
+#two are not from GSE32646 that contain 809:
+names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])[grep("809",names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]]))]
+length(grep("809",names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]])))
+names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]])[grep("809",names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]]))]
+length(grep("809",names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]])))
+names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]])[grep("809",names(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]))]
