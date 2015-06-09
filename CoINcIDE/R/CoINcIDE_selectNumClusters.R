@@ -947,6 +947,8 @@ distMatrixWhole <-  foreach(p=1:ncol(dataset),.combine='rbind') %dopar%{
    rownames(distMatrixWhole) <- colnames(dataset)
    colnames(distMatrixWhole) <- colnames(dataset)
 
+#save(distMatrixWhole,file="Harvard_distMatrixWhole_cui_6Months_cosine_2015-06-08.RData.gzip",compress="gzip")
+
   #no need to copy over to create a full distance matrix - as.dist() works on a lower triangle matrix.
   #distMatrixWhole[upper.tri(distMatrixWhole,diag=FALSE)] <- distMatrixWhole[lower.tri(distMatrixWhole,diag=FALSE)]
 
