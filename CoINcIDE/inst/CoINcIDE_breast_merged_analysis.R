@@ -106,7 +106,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
         axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-  theme(plot.title=element_text(colour="black",size=12,vjust=1))
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
 png(filename=paste0(saveDir,"/mergedNoNorm_subtype_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
 
@@ -114,7 +114,25 @@ plot( plotG)
 
 dev.off()
 
+#stacked
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+  labs(y="Number of samples", fill=paste0("pam50 subtype"),
+       title=paste0("Pam50 subtype with 35 gene list",
+                    " by cluster for merged \nno dataset normalization and k-means"))+
+  theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
+        axis.title=element_blank())+
+  theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
+  theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
+  theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
+        axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
+  theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
+#above: font size needs to be smaller for subtypes
+png(filename=paste0(saveDir,"/mergedNoNorm_subtype_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
 
+plot( plotG)
+
+dev.off()
 
 ########combat plotting
 load("/home/kplaney/breast_analysis_withTop20Genes//curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart12015-05-04.RData.gzip")
@@ -143,7 +161,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
         axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-  theme(plot.title=element_text(colour="black",size=12,vjust=1))
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
 png(filename=paste0(saveDir,"/mergedCombat_subtype_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
 
@@ -151,7 +169,24 @@ plot( plotG)
 
 dev.off()
 
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+  labs(y="Number of samples", fill=paste0("pam50 subtype"),
+       title=paste0("Pam50 subtype with 35 gene list",
+                    " by cluster for merged \ncombat normalization and k-means"))+
+  theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
+        axis.title=element_blank())+
+  theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
+  theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
+  theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
+        axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
+  theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 
+png(filename=paste0(saveDir,"/mergedCombat_subtype_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+
+plot( plotG)
+
+dev.off()
 ###ALSO: with original non-transformed PAM50 statuses
 load("/home/kplaney/breast_analysis_withTop20Genes//curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart12015-05-04.RData.gzip")
 #do patient names all match up? yup
@@ -180,9 +215,28 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
         axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-  theme(plot.title=element_text(colour="black",size=12,vjust=1))
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
 png(filename=paste0(saveDir,"/mergedCombat_subtype_breakdowns_assignedBEFOREcombat_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+
+plot( plotG)
+
+dev.off()
+
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+  labs(y="Number of samples", fill=paste0("pam50 subtype"),
+       title=paste0("Pam50 subtype with 35 gene list",
+                    " by cluster for merged \ncombat normalization and k-means"))+
+  theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
+        axis.title=element_blank())+
+  theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
+  theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
+  theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
+        axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
+  theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
+
+png(filename=paste0(saveDir,"/mergedCombat_subtype_breakdowns_assignedBEFOREcombat_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -215,7 +269,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
         axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-  theme(plot.title=element_text(colour="black",size=12,vjust=1))
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
 png(filename=paste0(saveDir,"/mergedBMC_subtype_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
 
@@ -223,7 +277,24 @@ plot( plotG)
 
 dev.off()
 
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+  labs(y="Number of samples", fill=paste0("pam50 subtype"),
+       title=paste0("Pam50 subtype with 35 gene list",
+                    " by cluster for merged \nBMC normalization and k-means"))+
+  theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
+        axis.title=element_blank())+
+  theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
+  theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
+  theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
+        axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
+  theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 
+png(filename=paste0(saveDir,"/mergedBMC_subtype_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+
+plot( plotG)
+
+dev.off()
 ####ALSO: with original non-transformed PAM50 statuses
 #do patient names name up? yup
 all(colnames(mergedBMC)==colnames(mergedNoNorm))
@@ -255,11 +326,31 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
         axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-  theme(plot.title=element_text(colour="black",size=12,vjust=1))
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
 png(filename=paste0(saveDir,"/mergedBMC_subtype_breakdowns_assignedBEFOREBMC_",Sys.Date(),".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
 dev.off()
+#stacked
+plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="free_x")+geom_bar() + 
+  labs(y="Number of samples", fill=paste0("pam50 subtype"),
+       title=paste0("Pam50 subtype with 35 gene list",
+                    " by cluster for merged \nBMC normalization and k-means"))+
+  theme(axis.text.x = element_text(colour = "black",size=8,angle=45,vjust=1,hjust=1),
+        axis.title=element_blank())+
+  theme(legend.title=element_text(size=12))+ scale_fill_manual(values = variableColorMatrix)+  theme(strip.text.x = element_text(size = 17, colour = "black",face="bold"))+
+  theme(legend.title=element_text(colour="black",size=17),legend.text=element_text(colour="black",size=15))+
+  theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
+        axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
+  theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
+  theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
+
+png(filename=paste0(saveDir,"/mergedBMC_subtype_breakdowns_assignedBEFOREBMC_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+
+plot( plotG)
+
+dev.off()
+
 

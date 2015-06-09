@@ -316,7 +316,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         dev.off()
         
-        plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=factor(clinVar)))+geom_bar() + 
+        plotGStacked <-  ggplot(dataF,aes(factor(meta_cluster),fill=factor(clinVar)),scales="free_x")+geom_bar() + 
           labs(y="Number of samples", x=paste0("",fisherTestVariables[f],""),fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName,"\n"))+
@@ -352,7 +352,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
           theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-          theme(plot.title=element_text(colour="black",size=20,vjust=1))
+          theme(plot.title=element_text(colour="black",size=20,vjust=1))+coord_cartesian(ylim=c(0,1000))
+        #+coord_cartesian(ylim=c(0,900)) #if want axes to all be the same.
           #above: font size needs to be smaller for subtypes
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
@@ -360,7 +361,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         dev.off()
         
-        plotGStacked <- ggplot(dataF,aes(x=meta_cluster,fill=factor(clinVar)))+geom_bar() + 
+        plotGStacked <- ggplot(dataF,aes(factor(meta_cluster),fill=factor(clinVar)),scales="free_x")+geom_bar() + 
           labs(y="Number of samples", fill=paste0("",fisherTestVariableLegendNames[f],""),
                title=paste0(fisherTestVariableTitleNames[f],
                             " by meta-cluster \nfor ",expName,"\n"))+
@@ -371,7 +372,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
           theme(axis.text.x = element_text(colour = "black",size=12,angle=45,vjust=1,hjust=1),axis.title.x= element_blank(),
                 axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1))+
           theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
-          theme(plot.title=element_text(colour="black",size=20,vjust=1))
+          theme(plot.title=element_text(colour="black",size=20,vjust=1))+coord_cartesian(ylim=c(0,1000))
         
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         

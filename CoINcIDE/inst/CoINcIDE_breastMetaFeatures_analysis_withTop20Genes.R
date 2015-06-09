@@ -1,5 +1,5 @@
 
-
+#CHANGE: /home/kplaney/breast_analysis to /home/kplaney/breast_analysis_withTop20Genes/
 fractFeatIntersectThresh=.8
 #we know these all share at least 35 genes.
 numFeatIntersectThresh=150
@@ -11,16 +11,16 @@ minTrueSimilThresh=.3
 includeRefClustInNull=TRUE
 numSims=500
 checkNA=FALSE
-outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+outputFile="/home/kplaney/breast_analysis_withTop20Genes//CoINcIDE_messages.txt"
 sigMethod <- "meanMatrix"
 
 #200 features, pearson:
 edgeMethod <- "pearson"
-load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip")
-load("/home/kplaney/breast_analysis/metaFeatures_200.RData.gzip")
+load("/home/kplaney/breast_analysis_withTop20Genes///curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip")
+load("/home/kplaney/breast_analysis_withTop20Genes//metaFeatures_200.RData.gzip")
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 #load data matrix list
-load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+load("/home/kplaney/breast_analysis_withTop20Genes//curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 
 #remove datasets with too many missing top gene features
 if(length(metaFeatures$datasetListIndicesToRemove)>0){
