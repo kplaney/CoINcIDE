@@ -619,6 +619,12 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
                              dimnames=list(featureNames,
                              commNames)); 
   
+  
+  numDatasetsPerGene <- matrix(data=NA,nrow=length(featureNames),        
+                           ncol=length(commNames),
+                           dimnames=list(featureNames,
+                                         paste0("num_datasets_comm",commNames))); 
+  
   wilcoxon_qvalueList <- list()
   hedgeGList <- list()
   hedgeG_seList <- list()
@@ -737,6 +743,7 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
       
     d <- as.vector(hedgeG[g, which(!is.na(hedgeG[g, ]))]);
     se <- as.vector(hedgeG_se[g, which(!is.na(hedgeG[g, ]))]);
+    numDatasetsPerGene[g,c] <- length(which(!is.na(hedgeG[g, ])))
     
     if(length(d)>0 && length(se)>0){
       #weighted mean; inverse weigthing by standard deviation
@@ -762,7 +769,7 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
     
     #end of looping over genes
     }
-    #save all community-specific data matrices.
+
     
     
     if(computeWilcoxon){
@@ -790,7 +797,7 @@ computeMetaclustEffectSizes <- function(metaClustSampleNames,dataMatrixList,
   
   output <- list(summWilcoxon_qvalue=summWilcoxon_qvalue,summHedgeG_ES=summHedgeG_ES,
                  summHedgeG_ES_se=summHedgeG_ES_se,wilcoxon_qvalueList=wilcoxon_qvalueList,
-                 hedgeGList=hedgeGList,hedgeG_seList=hedgeG_seList)
+                 hedgeGList=hedgeGList,hedgeG_seList=hedgeG_seList,numDatasetsPerGene=numDatasetsPerGene)
   
   return(output)
 
@@ -877,6 +884,9 @@ summarizePosESMetaclustGenes <- function(selectMetaclustSigGenesOut,computeMetac
     
     stop("Not computing ESMatrix correctly; getting all NAs in some rows.")
   }
+  
+  #now add # datsets per gene
+  ESMatrix <- cbind(ESMatrix,computeMetaclustEffectSizesOutput$numDatasetsPerGene[featureNames, ])
   #now can do a heatmap of these genes by effect size.
   return(ESMatrix)
   

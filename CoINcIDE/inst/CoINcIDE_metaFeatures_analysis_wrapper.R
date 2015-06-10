@@ -218,26 +218,40 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
 
   clinicalTables <- list()
 
-    
+  #already have esets loaded:
+   #load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
+   phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets)
+   
+   #load("/home/kplaney/ovarian_analysis/curatedOvarian_phenoMasterDF.RData.gzip")
+   #study numbers won't align here because some filtered out (had no robust clusters); need to "translate"
+   
+   origToNewIndexMap <- data.frame(origToNewIndexMap,stringsAsFactors=FALSE)
+   colnames(origToNewIndexMap) <- c("studyNum","origStudyNum","esetName")
+   #want to intersect on "new" study numbers, as this is what sampleClustCommKey has.
+   #NOTE: graph will override this join function....it also has a "join"!
+   #RDavidWebservice was the culprit...
+   #detach("package:graph",unload=TRUE,force=TRUE)
+   #left: only take studies in the sampleClustCommKey.
+   sampleClustCommKey <- join(sampleClustCommKey,origToNewIndexMap,by="studyNum",type="left",match="all")
+   sampleClustCommPhenoData <- addClinicalVarToNodeAttributes(sampleClustCommKey,phenoMasterDF=phenoMasterDF)
+   
+ 
+  sampleClustCommPhenoDataOrig <- sampleClustCommPhenoData
+ 
+   groupingTerm="community"
+ 
+  #only take samples with the groupingTerm you're looking at.
+  sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
+  #remove samples with NA values.
+  groupings <- sampleClustCommPhenoData[, groupingTerm]
+ 
+ cat(paste("\n",length(groupings), " patients included across all final meta-clusters.\n",collapse="_"),
+     append=TRUE,file=outputFile)
+ 
+ expName <- gsub("_"," ",experimentName)
+ 
   if(clinVarPlots){
-    #already have esets loaded:
-    #load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
-    phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets)
-  
-    #load("/home/kplaney/ovarian_analysis/curatedOvarian_phenoMasterDF.RData.gzip")
-    #study numbers won't align here because some filtered out (had no robust clusters); need to "translate"
-    
-    origToNewIndexMap <- data.frame(origToNewIndexMap,stringsAsFactors=FALSE)
-    colnames(origToNewIndexMap) <- c("studyNum","origStudyNum","esetName")
-    #want to intersect on "new" study numbers, as this is what sampleClustCommKey has.
-    #NOTE: graph will override this join function....it also has a "join"!
-    #RDavidWebservice was the culprit...
-    #detach("package:graph",unload=TRUE,force=TRUE)
-    #left: only take studies in the sampleClustCommKey.
-    sampleClustCommKey <- join(sampleClustCommKey,origToNewIndexMap,by="studyNum",type="left",match="all")
-    sampleClustCommPhenoData <- addClinicalVarToNodeAttributes(sampleClustCommKey,phenoMasterDF=phenoMasterDF)
 
-    
     if(!ovarian){
       #need to add pam50 centroids
       
@@ -255,21 +269,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       #add on subtype variables
       fisherTestVariables <- append(fisherTestVariables,c("subtype","subtype_short"))
       fisherTestVariableTitleNames <- append(fisherTestVariableTitleNames,c("pam50 subtype","35-gene pam50 subtype"))
-      fisherTestVariableLegendNames <- append( fisherTestVariableLegendNames,c("pam50\nsubtype","pam50\nsubtype"))                      
-    }   
-    sampleClustCommPhenoDataOrig <- sampleClustCommPhenoData
+      fisherTestVariableLegendNames <- append( fisherTestVariableLegendNames,c("pam50\nsubtype","pam50\nsubtype"))     
 
-    groupingTerm="community"
+    }   
+
     
-    #only take samples with the groupingTerm you're looking at.
-    sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
-    #remove samples with NA values.
-    groupings <- sampleClustCommPhenoData[, groupingTerm]
-    
-    cat(paste("\n",length(groupings), " patients included across all final meta-clusters.\n",collapse="_"),
-        append=TRUE,file=outputFile)
-    
-    expName <- gsub("_"," ",experimentName)
+
     for(f in 1:length(fisherTestVariables)){
       
       if(!fisherTestVariables[f] %in% colnames(sampleClustCommPhenoData)){
@@ -481,7 +486,18 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       nonCensoredTerm=1
       censoredTerm=0
       Survival <- outcomesDataShort
+      
+      nonNAs <- intersect(which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary])), which(!is.na(sampleClustCommPhenoData[,outcomesVarCont])))
+      numOutcomesPerMetacluster <- table(sampleClustCommPhenoData[nonNAs,"studyNum"],groupings[nonNAs])
+      textOut <- capture.output(numOutcomesPerMetacluster)
+      cat("numNonNAs_info\n",textOut,sep="\n",file=paste0(saveDir,"/",experimentName,"_numNonNAOutcomesByMetacluster_",Sys.Date(),".txt"))
       #creating the survival objects with the time and censoring variables
+      #EVENT is nonCensoredTerm
+      #For counting process data, event indicates whether an event occurred at the end of the interval
+      #if provide a true/false like this: Surv knows that this is the event variable
+      #From Surv documentation:
+      #When the type argument is missing the code assumes a type based on the following rules:
+      #If there are two unnamed arguments, they will match time and event in that order. 
       OverallSurvival <- Surv(Survival$TimeToLastContactOrEvent,Survival$Censoring==nonCensoredTerm);
       #creating a survival object cutoff at a certain point
       CutoffPoint <- CutoffPointYears*365;

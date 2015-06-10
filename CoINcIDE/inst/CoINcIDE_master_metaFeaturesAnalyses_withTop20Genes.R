@@ -227,14 +227,14 @@ save(ov_1000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov1000Ou
 
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/metaFeatures_2000.RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_2000.RData.gzip")
 metaFeatures =metaFeatures
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_2000Features_2015-04-30.RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_2000Features_2015-04-30.RData.gzip")
 clusterCoINcIDE_output =  kmeansConsensus
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
 esets = esets
 #dataMatrixList
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/adjMatrices_2000F_pearson_meanMatrix_updated2015-05-01RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_2000F_pearson_meanMatrix_updated2015-05-01RData.gzip")
 CoINcIDE_output = ov_2000F_pearson_meanMatrix
 experimentName <- "ovarian_2000_features"
 fisherTestVariables <- c("histological_type","tumorstage","recurrence_status","grade","age_at_initial_pathologic_diagnosis")
@@ -243,7 +243,7 @@ fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence
 
 eset_featureDataFieldName="gene"
 networkColors = "Set2"
-saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
 outcomesVarBinary="vital_status"
 outcomesVarCont = "days_to_death"
 ovarian <- TRUE
@@ -257,7 +257,6 @@ ov_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,
                                           survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                           CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                           fisherTestVariableTitleNames =fisherTestVariableTitleNames ,fisherTestVariableLegendNames=fisherTestVariableLegendNames)
-
 
 save(ov_2000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov2000Out.RData.gzip"),compress="gzip")
 

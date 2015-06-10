@@ -113,9 +113,9 @@ save(ov_1000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov1000Ou
 
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
-load("/home/kplaney/ovarian_analysis/metaFeatures_2000.RData.gzip")
+load("/home/kplaney/ovarian_analysis//metaFeatures_2000.RData.gzip")
 metaFeatures =metaFeatures
-load("/home/kplaney/ovarian_analysis/curatedOvarianData_kmeansConsensus_nstart1_2000Features_2015-04-30.RData.gzip")
+load("/home/kplaney/ovarian_analysis//curatedOvarianData_kmeansConsensus_nstart1_2000Features_2015-04-30.RData.gzip")
 clusterCoINcIDE_output =  kmeansConsensus
 load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
 esets = esets
