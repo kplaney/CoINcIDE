@@ -12,10 +12,14 @@ CoINcIDE_getAdjMatrices <- function(dataMatrixList,clustSampleIndexList,clustFea
 edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
 sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.2,numSims=500,includeRefClustInNull=TRUE,
-
 outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
-checkNA=FALSE){
+checkNA=FALSE,centroidMethod=c("mean","median")){
   
+    if(length(centroidMethod)>1){
+      
+      centroidMethod<-c("mean")
+      
+    }
     
   if(edgeMethod=="distCor"){
     
@@ -141,27 +145,36 @@ checkNA=FALSE){
     pvalueMatrix2 <- pvalueMatrix
     
   }
+ 
   cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
   
     if(sigMethod=="centroid"){
       #COME BACK: also add median option?
       if(!is.na((summary(pr_DB)[2]$distance[edgeMethod])) && summary(pr_DB)[2]$distance[edgeMethod]){
         #these functions are written later in the script
+        
         centroidFunction <-   computeClusterPairAssignFract_matrixStatsDist
+ 
         
         #this means it's in matrix stats, but is a correlation method
       }else if(!is.na((summary(pr_DB)[2]$distance[edgeMethod])) && !summary(pr_DB)[2]$distance[edgeMethod]){
         
+   
+          
         centroidFunction <-   computeClusterPairAssignFract_matrixStatsSimil
-        
+
         
       }else if(edgeMethod=="distCor"){
         
         centroidFunction <- computeClusterPairAssignFract_dcor
         
+        
       }else{
+
         
        centroidFunction <-  computeClusterPairAssignFract_cor
+       
+
       }
         
     }
@@ -190,7 +203,8 @@ checkNA=FALSE){
                                                          clustFeatureIndexList= clustFeatureIndexList,numSims=numSims,
                                                     trueSimilMatrix=trueSimilData$similValueMatrix,numParallelCores=numParallelCores,edgeMethod,includeRefClustInNull=includeRefClustInNull,
                                                     clustIndexMatrix,minTrueSimilThresh=minTrueSimilThresh,
-                                                    maxTrueSimilThresh=maxTrueSimilThresh,centroidFunction=centroidFunction)
+                                                    maxTrueSimilThresh=maxTrueSimilThresh,centroidFunction=centroidFunction,
+                                                    centroidMethod=centroidMethod)
       
     }
 
@@ -617,7 +631,7 @@ computeNullSimilVector_centroid <-   function(refClustRowIndex,clustSimilMatrixL
                                               clustSampleIndexList,clustFeatureIndexList,numSims=100,
                                           trueSimilMatrix,numParallelCores=1,edgeMethod,includeRefClustInNull=TRUE,
                                           clustIndexMatrix,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-                                          centroidFunction){  
+                                          centroidFunction,centroidMethod=c("mean","median")){  
   
   registerDoParallel(cores=numParallelCores)
   
@@ -651,7 +665,17 @@ computeNullSimilVector_centroid <-   function(refClustRowIndex,clustSimilMatrixL
       
       nullClustMatrix <- refDataMatrix[featureIndices1,nullClustIndices,drop=FALSE]
       #will have # features in rows.
-      centroidMatrix <- cbind(rowMeans(refClustMatrix),rowMeans(nullClustMatrix))
+      
+      if(centroidMethod=="mean"){
+        
+        centroidMatrix <- cbind(rowMeans(refClustMatrix),rowMeans(nullClustMatrix))
+        
+        #otherwise: just median. to speed up, don't have else if, as this is an internal function.
+      }else{
+        
+        centroidMatrix <- cbind(rowMedians(refClustMatrix),rowMedians(nullClustMatrix))
+        
+      }
       #compare simil against each cluster
       foreach(c=1:nrow(clustIndexMatrix), .combine='c') %dopar%{
         # for(c in 1:nrow(clustIndexMatrix))  {

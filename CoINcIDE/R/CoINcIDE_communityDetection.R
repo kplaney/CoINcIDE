@@ -132,7 +132,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
 filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",length(thresholdVector)),saveDir="/home/kplaney/",fileTag="",saveEdgeFile=TRUE){
   
   #creates directory if there isn't one
-  dir.create(saveDir);
+  dir.create(saveDir,showWarnings = FALSE);
 
   numEdges <- 0;
   #create a "master" adjacency matrix.
