@@ -3,26 +3,32 @@
 
 #EDGE case: what if there's a really small outlier? like 2 samples and the rest belong to one cluster? 
 #THen the number of clusters will be correctly deemed 1, but it would be nice to know that we should throw out those outliers...
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_communityDetection.R")
-library("proxy")
 
-  }else if(clustMethod=="km"){
-    #k-means clusters rows.
-    datasetClust <- t(dataset)
-    clustF <- function(x,k){
-  
-      #it turns out that R will recognize the upper-level function input value in this function.
-      #transpose BEFORE feed in here; I found it to return odd results if
-      #I feed in t(x) in the kmeans function that is feed into clusGap
-      output <- kmeans(x, centers=k,iter.max=iter.max,nstart=nstart,algorithm="Hartigan-Wong")$cluster
-      return(output)
-      
-    }
-    
-  }
-  
 
+# 
+#   }else if(clustMethod=="km"){
+#     #k-means clusters rows.
+#     datasetClust <- t(dataset)
+#     clustF <- function(x,k){
+#   
+#       #it turns out that R will recognize the upper-level function input value in this function.
+#       #transpose BEFORE feed in here; I found it to return odd results if
+#       #I feed in t(x) in the kmeans function that is feed into clusGap
+#       output <- kmeans(x, centers=k,iter.max=iter.max,nstart=nstart,algorithm="Hartigan-Wong")$cluster
+#       return(output)
+#       
+#     }
+#     
+#   }
+#   
+
+
+
+#sourceDir <- "/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/"
+#setwd(sourceDir)
+#source("CoINcIDE_computeEdges.R")
+#source("CoINcIDE_communityDetection.R")
+#library("proxy")
 CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                             edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                                                          "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
@@ -31,15 +37,22 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                             outputFile="./CoINcIDE_messages.txt",clustSizeThresh=0, clustSizeFractThresh=0,
   hclustDistMethod=c("pearson","spearman","euclidean", "binary", "maximum", "canberra", "minkowski"),
   hclustAlgorithm=c("average","complete","ward.D", "ward.D2", "single", "mcquitty","median","centroid"), 
-  clustMethod=c("km","hc"), saveDir="/home/kplaney/ovarian_analysis/", indEdgePvalueThresh=.1,corUse="everything"
+  clustMethod=c("km","hc"), saveDir="/home/kplaney/ovarian_analysis/", indEdgePvalueThresh=.1,corUse="everything",
   meanEdgePairPvalueThresh=.05, commMethod=c("edgeBetween"),bestKSelect=c("max","min"),numIter=20,maxNumClusters=15,
-  iter.max=30,nstart=10,numSubDatasets=2,computeDistMatrixOnce=TRUE,distMatrix=NULL,centroidMethod=c("mean","median"),consensusLinkage="average"
+  iter.max=30,nstart=10,numSubDatasets=2,computeDistMatrixOnce=TRUE,distMatrix=NULL,
+  centroidMethod=c("mean","median"),consensusLinkage="average",kMax=10
   
   ){
   
   if(length(centroidMethod)>1){
     
     centroidMethod <- "mean"
+    
+  }
+  
+  if(length(bestKSelect)>1){
+    
+    bestKSelect <- "max"
     
   }
   
@@ -549,3 +562,151 @@ distMatrixWhole <-  foreach(p=1:ncol(dataset),.combine='rbind') %dopar%{
   return(distMatrixWhole)
   
   }
+
+
+
+
+##can run this in a separate function
+icl <- calcICL(consensusClustOutput,plot='pngBMP')
+
+consensusByK <- split(icl[["clusterConsensus"]][,"clusterConsensus"],f=icl[["clusterConsensus"]][,"k"])
+#if one cluster's consensus is NA: will return NA. but want this.
+#we don't want to pick a K that results in an NaN consensus value; 
+#this probably means should stick with a lower k.
+#don't remove NAs here.
+meanConsensusClusterByK <- lapply(consensusByK,FUN=function(consensusUnit){mean(consensusUnit)})
+minConsensusClusterByK <- lapply(consensusByK,FUN=function(consensusUnit){min(consensusUnit)})
+
+#is there at least one clustering that passes our minimum meanClust threshold?
+
+#consensusFract calculation
+#are they all NAs?
+
+
+selectK_consensusFrac <- list()
+selectK_minConsensusClust <- list()
+selectK_meanConsensusClust <- list()
+selectK_PAC <- list()
+selectK_PACR <- list()
+
+if(length(meanConsensusClusterByK)> 0 && length(minConsensusClusterByK)> 0 && !(all(unlist(meanConsensusClusterByK)=="NaN")) && any(unlist(meanConsensusClusterByK)>=minMeanClustConsensus,na.rm=TRUE) && any(unlist(minConsensusClusterByK)>=minClustConsensus,na.rm=TRUE)){
+  
+  meanBetweenConsensusClusterByK <- list()
+  consensusFrac <- list()
+  consensusMetric <- list()
+  PAC <- list()
+  
+  
+  for(i in 2:K.max){
+    
+    N <- nrow(consensusClustOutput[[i]]$consensusMatrix)
+    #technically could just take mean - is a symmetric matrix. diag=FALSE bc is a sample compared against itself (should always be 1.)
+    upperTri <- consensusClustOutput[[i]]$consensusMatrix[upper.tri(consensusClustOutput[[i]]$consensusMatrix,diag=FALSE)]
+    #http://www.nature.com/srep/2014/140827/srep06207/full/srep06207.html
+    #basically looking at the numbers between 0 and 1
+    #paper uses .9, ,.1 indices for gene expression.
+    
+    PAC[[i]] <- length(upperTri[which(upperTri<=.9)])/(N*(N-1)/2) - length(upperTri[which(upperTri<=.1)])/(N*(N-1)/2) 
+    #return NaN if there are NaN values.
+    
+    #calculate between sum of squares
+    sampleAssignments <- consensusClustOutput[[i]]$consensusClass
+    
+    tmp <- consensusClustOutput[[i]]$consensusMatrix
+    for(c in 1:i){
+      #zero out samples that are in the same cluster.
+      tmp[which(sampleAssignments==c),which(sampleAssignments==c)] <- 0
+      
+    }
+    #technically could just take mean - is a symmetric matrix. diag=FALSE bc it is zero here.
+    upperTri <- tmp[upper.tri(tmp,diag=FALSE)]
+    #return NaN if there are NaN values.
+    #the # of upperTri that is zero will always be the same; samples can only belong to one cluster.
+    meanBetweenConsensusClusterByK[[i]] <- mean(upperTri)
+    #meanConsensusClusterByK: indices start at 1, even though that's for k=2
+    #the meanBetween is almost always pretty low, but it's not monotonic - i.e. a larger K is not automatically favored.
+    #not sure this logic works for hclust; in this case, the meanBetweenConsensusClusterByK appears
+    consensusFrac[[i]] <- meanConsensusClusterByK[[(i-1)]]/meanBetweenConsensusClusterByK[[i]]
+    
+  }
+  
+  #add NA in index 1, otherwise when unlist, will remove first index and mess up which.max/min
+  consensusFrac[[1]] <- NA
+  PAC[[1]] <- NA
+  ##consensusFrac calculations
+  #which.max(): Missing and NaN values are discarded.
+  selectK_consensusFrac$bestK <- which.max(unlist(consensusFrac))
+  selectK_minConsensusClust$bestK <- which.max(unlist(minConsensusClusterByK))+1
+  selectK_meanConsensusClust$bestK <- which.max(unlist(meanConsensusClusterByK))+1
+  
+  #round PAC - so difference at hundreth level rounded and then pick highest K at the tenth decimal level
+  
+  PAC_noNAs <- unlist(PAC)[which(!is.na(PAC))]
+  
+  if(length(PAC_noNAs)>0 && any(PAC_noNAs<maxPAC)){
+    
+    #this will make .00x 0 (e.g. .002 becomes zero.)
+    #anything with zero in tenth, hundreth place counted as zero.
+    PACR <- round(unlist(PAC),digits=2)
+    possibleKs <- which(PACR==min(PACR,na.rm=TRUE))
+    maxPossibleK <- possibleKs[length(possibleKs)]
+    selectK_PACR$bestK  <-  maxPossibleK
+    #highly unlikely two unrounded values will match, but still keep this:
+    possibleKs <- which(unlist(PAC)==min(unlist(PAC),na.rm=TRUE))
+    maxPossibleK <- possibleKs[length(possibleKs)]
+    selectK_PAC$bestK <- maxPossibleK
+    
+  }else{
+    
+    selectK_PAC$bestK <- 1
+    selectK_PACR$bestK <- 1
+    PACR <- NA
+    
+  }
+  
+  if(length(selectK_consensusFrac$bestK)==0){
+    #all NAs returned; set K=1
+    selectK_consensusFrac$bestK <- 1
+    
+  }
+  
+  if(length(selectK_minConsensusClust$bestK)==0){
+    #all NAs returned; set K=1
+    selectK_minConsensusClust$bestK <- 1
+    
+  }
+  
+  if(length(selectK_meanConsensusClust$bestK)==0){
+    #all  NAs returned; set K=1
+    selectK_meanConsensusClust$bestK <- 1
+    
+  }
+  
+  if(length(selectK_PAC$bestK)==0){
+    #all NAs returned; set K=1
+    selectK_PAC$bestK <- 1
+    
+  }
+  
+  
+  if(length(selectK_PACR$bestK)==0){
+    #all NAs returned; set K=1
+    selectK_PACR$bestK <- 1
+    PACR <- NA
+    
+  }
+  
+  
+}else{
+  #no clusterings passed the minMeanConsensus threshold
+  selectK_consensusFrac$bestK <- 1
+  consensusFrac <- NA
+  meanBetweenConsensusClusterByK <- NA
+  PAC <- NA
+  PACR <- NA
+  selectK_meanConsensusClust$bestK <- 1
+  selectK_minConsensusClust$bestK  <- 1
+  selectK_PAC$bestK <- 1
+  selectK_PACR$bestK <- 1
+  
+}
