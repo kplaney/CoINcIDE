@@ -727,7 +727,8 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
 
 ##return a membership matrix
 
-returnSampleMemberMatrix <- function(clustSampleIndexList,dataMatrixList,communityInfo){
+returnSampleMemberMatrix <- function(clustSampleIndexList,dataMatrixList,communityInfo,
+                                     noClustNA=FALSE){
   
 sampleNames <- c()
 for(d in 1:length(clustSampleIndexList)){
@@ -792,12 +793,15 @@ fullMemberMatrix <- matrix(data=0,ncol=numTotalSamples,nrow=numTotalSamples,dimn
 #if for some reason sample not included in this run (i.e. we were resampling only a % of full datasets), set these samples to zero.
 #also set to NA if the cluster was thresholded out or the community was too small based on user-defined thresholds and removed
 
+if(noClustNA){
 if(length(which(is.na(sampleClustCommKey[,"community"])))>0){
   #there can be no shared membership across any samples for these samples that were not included in the final communities.
   fullMemberMatrix[which(is.na(sampleClustCommKey[,"community"])), ] <- NA
   fullMemberMatrix[,which(is.na(sampleClustCommKey[,"community"])) ] <- NA
 
 }
+
+}#else: just set to zero if was never in a community. these are already set as zero in the original matrix
 
 commNums <- unique(sampleClustCommKey[,"community"])
 for(i in 1:length(commNums)){

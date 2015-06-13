@@ -15,9 +15,11 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                     clustMethod=c("km","hc"), saveDir="/home/kplaney/ovarian_analysis/", indEdgePvalueThresh=.1,corUse="everything",
                                     meanEdgePairPvalueThresh=.05, commMethod=c("edgeBetween"),bestKSelect=c("max","min"),numIter=20,maxNumClusters=15,
                                     iter.max=30,nstart=10,numSubDatasets=2,computeDistMatrixOnce=TRUE,distMatrix=NULL,
-                                    centroidMethod=c("mean","median"),consensusLinkage="average",kMax=10
+                                    centroidMethod=c("mean","median"),consensusLinkage="average"
                                     
 ){
+  
+  consensusData <- list()
   
   if(length(centroidMethod)>1){
     
@@ -31,6 +33,8 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
     
   }
   
+
+    
   message("This function assumes you are clustering the columns of your data matrix.")
   dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
   
@@ -39,6 +43,8 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
     stop("\nIn clusterMatrixKmeansGap function: no clustFeatures were found in the data matrix inputted.")
     
   }
+  
+
   
   warning("Assumes samples are in the columns.")
   #must have unique row names!
@@ -56,6 +62,8 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
     kMax <- maxNumClusters
     
   }
+  
+ 
   
   if(is.null(distMatrix)){
     
@@ -77,6 +85,17 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
       
     }
    
+  }else{
+    
+    #also: this matrix must be symmetric, not just a lower triangle.
+    #subsetting like this would mix up which (upper or lower) had NAs for all rows.
+    #diag=0 avoids NaN issues.
+    
+    distMatrix[upper.tri(distMatrix)] <- 0
+    distMatrix <- distMatrix + t(distMatrix)
+    
+    diag(distMatrix) <- 0
+    
   } #else: do nothing. distMatrix already computed
   
   clustF <- function(distMatrixTmp,k){
@@ -105,7 +124,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
   
   for(i in 1:numIter){
     
-    
+    consensusData[[i]] <- list()
     ##mCount is possible number of times that two sample occur in same random sample, independent of k
     ##mCount stores number of times a sample pair was sampled together.  
     #will count up over each numIter rep.
@@ -120,16 +139,55 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
     
     
     #clusterAssignments <- clustF(datasetClust,k);
-    
-    clustSampleIndexList <- list()
-    clustFeatureIndexList <- list()
+
     dataMatrixList <- list()
     
     rnd_indices <- sample(c(1:ncol(dataset)),size=ncol(dataset),replace=FALSE);
     #randomly assign samples to different sub datasets
     names(rnd_indices) <- rep.int(c(1:numSubDatasets), times=ceiling(ncol(dataset)/numSubDatasets))[1:ncol(dataset)]
     
+    #parallelize this step?
+    #run on numSubDatasets
+    distMatrixClust <- list()
+    for(r in 1:numSubDatasets){
+      
+      d_indices <- rnd_indices[which(names(rnd_indices)==r)]
+      dataMatrixList[[r]] <- dataset[ ,d_indices]
+      
+      if(computeDistMatrixOnce || !is.null(distMatrix)){
+        
+         #also: this matrix is already symmetric. if was only lower or upper,
+        #subsetting like this would mix up which (upper or lower) had NAs for all rows.
+        distMatrixClust[[r]] <- as.dist(distMatrix[d_indices,d_indices])
+        
+        
+      }else{
+        #if k-means: this is where you'd compute it too.
+        
+        if(distMethod==("pearson") || distMethod=="spearman"){
+          
+          datasetClust <- dataMatrixList[[r]]
+          distMatrixClust[[r]] <- as.dist((1-cor(datasetClust,use=corUse,method=hclustDistMethod)))
+          
+          
+        }else{
+          
+          #dist (but not cor) computes across the rows, not columns.
+          #dist (but not cor) computes across the rows, not columns.
+          datasetClust <- dataMatrixList[[r]]
+          distMatrixClust[[r]] <- dist(datasetClust,method=hclustDistMethod,by_rows=FALSE)
+          
+        }
+        
+      }
+      
+    }
+    
     for(k in 2:kMax){
+      
+      consensusData[[i]][[k]] <- list()
+      clustSampleIndexList <- list()
+      clustFeatureIndexList <- list()
       
       if (i==1){
         
@@ -142,39 +200,11 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
       #FIRST: main clustering. need to "arrange" patients in clusters to make sure get a reasonably balanced number of patients.
       #clusterAssignments <- clusterMembershipFunction(dataMatrix,k);
       
-      #parallelize this step?
-      #run on numSubDatasets
       for(r in 1:numSubDatasets){
-        
-        d_indices <- rnd_indices[which(names(rnd_indices)==r)]
-        dataMatrixList[[r]] <- dataset[ ,d_indices]
-        
-        if(computeDistMatrixOnce || !is.null(distMatrix)){
-          
-          distMatrixClust <- as.dist(distMatrix[d_indices,d_indices])
-          
-        }else{
-          #if k-means: this is where you'd compute it too.
-          
-          if(distMethod==("pearson") || distMethod=="spearman"){
-            
-            datasetClust <- dataMatrixList[[r]]
-            distMatrixClust <- as.dist((1-cor(datasetClust,use=corUse,method=hclustDistMethod)))
-            
-            
-          }else{
-            
-            #dist (but not cor) computes across the rows, not columns.
-            #dist (but not cor) computes across the rows, not columns.
-            datasetClust <- t(dataMatrixList[[r]])
-            distMatrixClust <- dist(datasetClust,method=hclustDistMethod)
-            
-          }
-          
-        }
-        
+  
         #now cluster.
-        clusterAssign <- clustF(distMatrixClust,k)
+       # diag(distMatrixClust) <- 0
+        clusterAssign <- clustF(distMatrixClust[[r]],k)
         #now populate the clustSampleIndices
         clustSampleIndexList[[r]] <- list()
         clustFeatureIndexList[[r]] <- list()
@@ -219,8 +249,10 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
         
         if(length(numComm[[k]][i])>0){
           
+          #if not in a community: just set to zero.
           aggregateData <- returnSampleMemberMatrix(clustSampleIndexList=clustSampleIndexList,
-                                                    dataMatrixList=dataMatrixList,communityInfo=communityInfo)
+                                                    dataMatrixList=dataMatrixList,communityInfo=communityInfo,
+                                                    noClustNA=FALSE)
           
           
           
@@ -230,10 +262,21 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
           ##add to tally      	
           #first argument: actual cluster assignments
           #third argument: numeric column indices of these samples.
-          ml[[k]] <- connectivityMatrix(aggregateData$sampleClustCommKey$community[patientNonNAindices],
-                                        ml[[k]],
-                                        na.omit(match(aggregateData$sampleClustCommKey$sampleName[patientNonNAindices],
-                                                      colnames(dataset))))
+          #run into issues for harvard data, so just saved instead below.
+          
+          #for consensus calculations: if NA, just set to zero.
+          connectivityM <- aggregateData$fullMemberMatrix
+          #for consensus calculations: don't add NAs.
+          ml[[k]] <- sum(ml[[k]],connectivityM,na.rm=TRUE)
+            
+          #  ml[[k]] <-    connectivityMatrix(aggregateData$sampleClustCommKey$community[patientNonNAindices],
+           #                             ml[[k]],
+            #                            na.omit(match(aggregateData$sampleClustCommKey$sampleName[patientNonNAindices],
+             #colnames(dataset))))
+          
+          consensusData[[i]][[k]]$patientAssignment <- aggregateData$sampleClustCommKey$community[patientNonNAindices]
+          consensusData[[i]][[k]]$patientIndex <-  na.omit(match(aggregateData$sampleClustCommKey$sampleName[patientNonNAindices],
+                                                                 colnames(dataset)))
           
           
         }
@@ -264,9 +307,12 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
   res = vector(mode="list",kMax)
   for (k in 2:kMax){
     ##fill in other half of matrix for tally and count.
-    tmp = triangle(ml[[k]],mode=3)
+    #Katie: my membership matrix is already symmetric.
+    #tmp = triangle(ml[[k]],mode=3)
+    #mcount still from original code:
+    #this takes a while to run...come back and figure this out!
     tmpCount = triangle(mCount,mode=3)
-    #hmm....COME BACK: does this make sense??
+    # number of times each patient-patient pair put in a cluster/# iterations.
     res[[k]] = tmp / tmpCount
     res[[k]][which(tmpCount==0)] = 0
   }
@@ -345,3 +391,52 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
   
   #EOF
 }
+
+#doesn't work well for sizes like Harvard's matrix, but I've already computed the membership matrix.
+connectivityMatrix <- function( clusterAssignments, m, sampleKey){
+  ##input: named vector of cluster assignments, matrix to add connectivities
+  ##output: connectivity matrix
+  names( clusterAssignments ) <- sampleKey 
+  cls <- lapply( unique( clusterAssignments ), function(i) as.numeric( names( clusterAssignments[ clusterAssignments %in% i ] ) ) )  #list samples by clusterId
+  
+  for ( i in 1:length( cls ) ) {
+    nelts <- 1:ncol( m )
+    cl <- as.numeric( nelts %in% cls[[i]] ) ## produces a binary vector
+    updt <- outer( cl, cl ) #product of arrays with * function; with above indicator (1/0) statement updates all cells to indicate the sample pair was observed int the same cluster;
+    m <- m + updt
+  }
+  
+
+  return(m)
+}
+
+triangle = function(m,mode=1){
+  #mode=1 for CDF, vector of lower triangle.
+  #mode==3 for full matrix.
+  #mode==2 for calcICL; nonredundant half matrix coun
+  #mode!=1 for summary 
+  n=dim(m)[1]
+  nm = matrix(0,ncol=n,nrow=n)
+  fm = m
+  
+  
+  nm[upper.tri(nm)] = m[upper.tri(m)] #only upper half
+  
+  fm = t(nm)+nm
+  diag(fm) = diag(m)
+  
+  nm=fm
+  nm[upper.tri(nm)] = NA
+  diag(nm) = NA
+  vm = m[lower.tri(nm)]
+  
+  if(mode==1){
+    return(vm) #vector   	
+  }else if(mode==3){
+    return(fm) #return full matrix
+  }else if(mode == 2){
+    return(nm) #returns lower triangle and no diagonal. no double counts.
+  }
+  
+}
+
