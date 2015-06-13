@@ -243,7 +243,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   #only take samples with the groupingTerm you're looking at.
   sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
   #remove samples with NA values.
-  groupings <- sampleClustCommPhenoData[, groupingTerm]
+  groupings <- as.factor(sampleClustCommPhenoData[, groupingTerm])
  
  cat(paste("\n",length(groupings), " patients included across all final meta-clusters.\n",collapse="_"),
      append=TRUE,file=outputFile)
@@ -386,7 +386,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
           #above: font size needs to be smaller for subtypes
         png(filename=paste0(saveDir,"/",experimentName,"_",fisherTestVariables[f],"_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
-        plot( plotG)
+        plot(plotG)
         
         dev.off()
         
@@ -583,6 +583,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
     cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
 
+    
+    dataMatrix$community <- as.factor(dataMatrix$community)
 
     linearModels[["RFS_logitAlone"]] <- tryCatch(glm(RFS~community,data=dataMatrix,family=binomial(link="logit")),
                                                  error = function(e) {
