@@ -3,19 +3,19 @@
 ######ovarian 200
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/metaFeatures_200.RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatures_200.RData.gzip")
 metaFeatures =metaFeatures
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_200Features_2015-04-28.RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/curatedOvarianData_kmeansConsensus_nstart1_200Features_2015-04-28.RData.gzip")
 clusterCoINcIDE_output =  kmeansConsensus
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/esets_proc_TCGAcombat.RData.gzip")
 esets = esets
 #dataMatrixList
-load("/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/adjMatrices_200F_pearson_meanMatrix_2015-04-29RData.gzip")
+load("/home/kplaney/ovarian_analysis_withTop20Genes/adjMatrices_200F_pearson_meanMatrix_2015-04-29RData.gzip")
 CoINcIDE_output = ov_200F_pearson_meanMatrix
 experimentName <- "ovarian_200_features"
 eset_featureDataFieldName="gene"
 networkColors = "Set2"
-saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes_withTop20Genes/"
+saveDir <- "/home/kplaney/ovarian_analysis_withTop20Genes/"
 outcomesVarBinary="vital_status"
 outcomesVarCont = "days_to_death"
 ovarian <- TRUE
@@ -31,7 +31,7 @@ ov_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,C
                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                         survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                         CutoffPointYears=5, eset_uniquePatientID="unique_patient_ID", fisherTestVariables = fisherTestVariables,fisherTestVariableLegendNames=fisherTestVariableLegendNames,
-                                        fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                        fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE)
 
   
 save(ov_200Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov200Out.RData.gzip"),compress="gzip")
@@ -256,7 +256,8 @@ ov_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,
                                           commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                           survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                           CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                          fisherTestVariableTitleNames =fisherTestVariableTitleNames ,fisherTestVariableLegendNames=fisherTestVariableLegendNames)
+                                          fisherTestVariableTitleNames =fisherTestVariableTitleNames ,
+                                          fisherTestVariableLegendNames=fisherTestVariableLegendNames,GSEAanalysis=FALSE)
 
 save(ov_2000Out,file=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/ov2000Out.RData.gzip"),compress="gzip")
 
