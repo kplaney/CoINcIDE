@@ -241,8 +241,9 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   groupingTerm="community"
   
   #only take samples with the groupingTerm you're looking at.
-  sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
   #remove samples with NA values.
+  sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
+  #need this as a factor later!
   groupings <- as.factor(sampleClustCommPhenoData[, groupingTerm])
   
   cat(paste("\n",length(groupings), " patients included across all final meta-clusters.\n",collapse="_"),
@@ -586,6 +587,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       
       dataMatrix$community <- as.factor(dataMatrix$community)
       
+      dataMatrix$RFS <- as.factor(dataMatrix$RFS)
       linearModels[["RFS_logitAlone"]] <- tryCatch(glm(RFS~community,data=dataMatrix,family=binomial(link="logit")),
                                                    error = function(e) {
                                                      return(NA)
@@ -624,6 +626,10 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
       dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
       dataMatrix <- data.frame(dataMatrix)
+      
+      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
+      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
+      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       
       linearModelsSumm [["RFS_withRx_numPatients"]] <- nrow(dataMatrix)
@@ -726,6 +732,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$RFS))), ]
       dataMatrix <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
       dataMatrix <- data.frame(dataMatrix)
+      
+      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
       cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       
@@ -761,6 +769,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       
       dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
       dataMatrix$community <- as.factor(dataMatrix$community)
+      dataMatrix$DFS <- as.factor(dataMatrix$DFS)
       cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       
@@ -789,6 +798,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
       dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
       dataMatrix <- data.frame(dataMatrix)
+      
+      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
+      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
+      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
+
       cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       
@@ -888,6 +902,9 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
       dataMatrix <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
       dataMatrix <- data.frame(dataMatrix)
+      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
+      dataMatrix$community <- as.factor(dataMatrix$community)
+      dataMatrix$DFS <- as.factor(dataMatrix$DFS)
       cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       
@@ -931,6 +948,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       
       #strongly predicts pCR.
+      dataMatrix$pCR <- as.factor(dataMatrix$pCR)
       linearModels[["pCR_logitAlone"]] <- glm(pCR~community,data=dataMatrix,family=binomial(link="logit"))
       
       predictor <- predict(linearModels[["pCR_logitAlone"]],type="response")
@@ -957,6 +975,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
       dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
       dataMatrix <- data.frame(dataMatrix)
+      
+      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
+      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
+      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
+      
       cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       
@@ -1062,6 +1085,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
       dataMatrix <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
       dataMatrix <- data.frame(dataMatrix)
+      dataMatrix$community <- as.factor(dataMatrix$community)
+      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
       cat(paste("\nStudies used: ",paste(unique(dataMatrix$studyNum),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       cat(paste("\nMeta-clusters used: ",paste(unique(dataMatrix$community),collapse=","),"\n",collapse="_"),append=TRUE,file=survFile)
       

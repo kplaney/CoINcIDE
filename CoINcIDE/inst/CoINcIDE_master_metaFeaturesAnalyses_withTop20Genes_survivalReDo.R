@@ -57,10 +57,10 @@ breast_pam50FullCentroidsOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFea
                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
-save(breast_pam50FullCentroidsOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50FullCentroid_features_2015-05-07//breast_pam50FullCentroidsOut.RData.gzip",compress="gzip")
+#save(breast_pam50FullCentroidsOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50FullCentroid_features_2015-05-07//breast_pam50FullCentroidsOut.RData.gzip",compress="gzip")
 
 ###all other metrics (mean matrix, spearman, etc. returned exactly the same meta-cluster.)
 
@@ -110,9 +110,9 @@ breast_pam50FullOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,ese
                                                    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                    survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                    CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                   ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                   ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
-save(breast_pam50FullOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Full_features_2015-05-08//breast_pam50FullOut.RData.gzip",compress="gzip")
+#save(breast_pam50FullOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Full_features_2015-05-08//breast_pam50FullOut.RData.gzip",compress="gzip")
 
 
 ####pam50 short kmeans
@@ -159,9 +159,9 @@ breast_pam50ShortOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,es
                                                     commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                     survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                     CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                    ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                    ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
-save(breast_pam50ShortOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Short_features_",Sys.Date(),"/breast_pam50ShortOut.RData.gzip",compress="gzip")
+#save(breast_pam50ShortOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Short_features_",Sys.Date(),"/breast_pam50ShortOut.RData.gzip",compress="gzip")
 
 
 ###200
@@ -213,7 +213,7 @@ breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=ese
 
 
 
-save(breast_200Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_200_features_",Sys.Date(),"/breast_200_features_analysis_withTop20GenesOut.RData.gzip",compress="gzip")
+#save(breast_200Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_200_features_",Sys.Date(),"/breast_200_features_analysis_withTop20GenesOut.RData.gzip",compress="gzip")
 
 ####500
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
@@ -259,11 +259,11 @@ breast_500Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=ese
                                              eset_featureDataFieldName=eset_featureDataFieldName,
                                              survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                              CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_500Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_500_features_",Sys.Date(),"/breast_500_features_analysisOut.RData.gzip",compress="gzip")
+#save(breast_500Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_500_features_",Sys.Date(),"/breast_500_features_analysisOut.RData.gzip",compress="gzip")
 
 
 ####1000
@@ -311,11 +311,11 @@ breast_1000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=es
                                               eset_featureDataFieldName=eset_featureDataFieldName,
                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_1000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_1000_features_",Sys.Date(),"/breast_1000_features_analysisOut.RData.gzip",compress="gzip")
+#save(breast_1000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_1000_features_",Sys.Date(),"/breast_1000_features_analysisOut.RData.gzip",compress="gzip")
 
 ###2000
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
@@ -363,11 +363,11 @@ breast_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=es
                                               eset_featureDataFieldName=eset_featureDataFieldName,
                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_2000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_2000_features_",Sys.Date(),"/breast_2000_features_analysisOut.RData.gzip",compress="gzip")
+#save(breast_2000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_2000_features_",Sys.Date(),"/breast_2000_features_analysisOut.RData.gzip",compress="gzip")
 
 
 
@@ -419,9 +419,9 @@ breast_spearman_pam50FullOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFea
                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
-save(breast_spearman_pam50FullOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_spearman_pam50Full_features_2015-05-08//breast_spearman_pam50FullOut.RData.gzip",compress="gzip")
+#save(breast_spearman_pam50FullOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_spearman_pam50Full_features_2015-05-08//breast_spearman_pam50FullOut.RData.gzip",compress="gzip")
 
 
 ####pam50 short kmeans
@@ -468,9 +468,9 @@ breast_spearman_pam50ShortOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFe
                                                              commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                              survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                              CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
-save(breast_spearman_pam50ShortOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Short_spearman_",Sys.Date()),"/breast_spearman_pam50ShortOut.RData.gzip",compress="gzip")
+#save(breast_spearman_pam50ShortOut,file="/home/kplaney/breast_analysis_withTop20Genes/breast_pam50Short_spearman_",Sys.Date()),"/breast_spearman_pam50ShortOut.RData.gzip",compress="gzip")
 
 
 ###200
@@ -517,11 +517,11 @@ breast_spearman_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,
                                                       eset_featureDataFieldName=eset_featureDataFieldName,
                                                       survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                       CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_spearman_200Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_200_spearman_",Sys.Date(),"/breast_200_features_analysisOut.RData.gzip",compress="gzip")
+#save(breast_spearman_200Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_200_spearman_",Sys.Date(),"/breast_200_features_analysisOut.RData.gzip",compress="gzip")
 
 ####500
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
@@ -567,11 +567,11 @@ breast_spearman_500Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,
                                                       eset_featureDataFieldName=eset_featureDataFieldName,
                                                       survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                       CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_spearman_500Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_500_spearman_",Sys.Date(),"/breast_500_features_analysisOut.RData.gzip",compress="gzip")
+#save(breast_spearman_500Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_500_spearman_",Sys.Date(),"/breast_500_features_analysisOut.RData.gzip",compress="gzip")
 
 
 ####1000
@@ -619,11 +619,11 @@ breast_spearman_1000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures
                                                        eset_featureDataFieldName=eset_featureDataFieldName,
                                                        survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                        CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_spearman_1000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_1000_spearman_",Sys.Date(),"/breast_1000_features_analysisOut.RData.gzip",compress="gzip")
+#save(breast_spearman_1000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_1000_spearman_",Sys.Date(),"/breast_1000_features_analysisOut.RData.gzip",compress="gzip")
 
 ###2000
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
@@ -671,11 +671,11 @@ breast_spearman_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures
                                                        eset_featureDataFieldName=eset_featureDataFieldName,
                                                        survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                        CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_spearman_2000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_2000_spearman_",Sys.Date(),"/breast_2000_features_analysisOut.RData.gzip",compress="gzip")
+#save(breast_spearman_2000Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_2000_spearman_",Sys.Date(),"/breast_2000_features_analysisOut.RData.gzip",compress="gzip")
 
 ####pam50 with centroid:
 
@@ -726,10 +726,10 @@ breast_centroid_pam50FullOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFea
                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                            ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
-save(breast_centroid_pam50FullOut,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
-                                              "/",experimentName,"Out.RData.gzip"),compress="gzip")
+#save(breast_centroid_pam50FullOut,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
+                                             #,"Out.RData.gzip"),compress="gzip")
 
 
 ####pam50 short kmeans
@@ -778,10 +778,10 @@ breast_centroid_pam50ShortOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFe
                                                              commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                              survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                              CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
-save(breast_centroid_pam50ShortOut,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
-                                               "/",experimentName,"Out.RData.gzip"),compress="gzip")
+#save(breast_centroid_pam50ShortOut,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
+                                              #,"Out.RData.gzip"),compress="gzip")
 
 ####more centroid
 ###200
@@ -830,12 +830,12 @@ breast_centroid_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,
                                                       eset_featureDataFieldName=eset_featureDataFieldName,
                                                       survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                       CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_centroid_200Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
-                                        "/",experimentName,"Out.RData.gzip"),compress="gzip")
+#save(breast_centroid_200Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
+                                       #,"Out.RData.gzip"),compress="gzip")
 ####500
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
@@ -882,12 +882,12 @@ breast_centroid_500Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,
                                                       eset_featureDataFieldName=eset_featureDataFieldName,
                                                       survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                       CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                      ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_centroid_500Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
-                                        "/",experimentName,"Out.RData.gzip"),compress="gzip")
+#save(breast_centroid_500Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
+                                       #,"Out.RData.gzip"),compress="gzip")
 
 ####1000
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
@@ -936,12 +936,12 @@ breast_centroid_1000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures
                                                        eset_featureDataFieldName=eset_featureDataFieldName,
                                                        survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                        CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_centroid_1000Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
-                                         "/",experimentName,"Out.RData.gzip"),compress="gzip")
+#save(breast_centroid_1000Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
+                                        #,"Out.RData.gzip"),compress="gzip")
 ###2000
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/inst/CoINcIDE_metaFeatures_analysis_wrapper.R")
 #grab data matrix list, clust features list
@@ -990,10 +990,10 @@ breast_centroid_2000Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures
                                                        eset_featureDataFieldName=eset_featureDataFieldName,
                                                        survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                        CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames)
+                                                       ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,GSEAanalysis=FALSE,clinVarPlots=FALSE)
 
 
 
-save(breast_centroid_2000Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
-                                         "/",experimentName,"Out.RData.gzip"),compress="gzip")
+#save(breast_centroid_2000Out,file=paste0("/home/kplaney/breast_analysis_withTop20Genes/",experimentName,"_",Sys.Date(),
+                                        #,"Out.RData.gzip"),compress="gzip")
 
