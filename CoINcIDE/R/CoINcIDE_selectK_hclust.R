@@ -19,6 +19,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                     
 ){
   
+  adjMatrixList <- list()
   consensusData <- list()
   
   if(length(centroidMethod)>1){
@@ -234,6 +235,13 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                       clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="selectNumTmp"
       )
       
+      #save last one
+      if(i==numIter){
+
+        adjMatrixList[[k]] <- adjMatrix
+        
+      }
+      
       if(nrow(edgeOutput$filterEdgeOutput$edgeMatrix)>0){
         
         #if 1 community: should be dropped. means clusters got too noisy to form strong edges.
@@ -265,9 +273,19 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
           #run into issues for harvard data, so just saved instead below.
           
           #for consensus calculations: if NA, just set to zero.
+      
           connectivityM <- aggregateData$fullMemberMatrix
+          
+          if(all(colnames(connectivityM)==colnames(ml[[k]]))){
           #for consensus calculations: don't add NAs.
-          ml[[k]] <- sum(ml[[k]],connectivityM,na.rm=TRUE)
+          ml[[k]] <- ml[[k]] + connectivityM
+          
+          }else{
+            
+            connectivityM <- connectivityM[match(colnames(ml[[k]]),colnames(connectivityM)),match(colnames(ml[[k]]),colnames(connectivityM))]
+            #for consensus calculations: don't add NAs.
+            ml[[k]] <- ml[[k]] + connectivityM 
+          }
             
           #  ml[[k]] <-    connectivityMatrix(aggregateData$sampleClustCommKey$community[patientNonNAindices],
            #                             ml[[k]],
@@ -385,7 +403,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
 
   
   #now: compute a clustering with k clusters on our consensus matrix derived from all matrices in membershipMatrixList[[k]]
-  output <- list(bestK=bestK,numComm=numComm,medianComm=medianComm,consensusClustOutput=res,consensusClustAssignments=consensusClustAssignments);
+  output <- list(adjMatrixList=adjMatrixList,bestK=bestK,numComm=numComm,medianComm=medianComm,consensusClustOutput=res,consensusClustAssignments=consensusClustAssignments);
   
   return(output);
   
