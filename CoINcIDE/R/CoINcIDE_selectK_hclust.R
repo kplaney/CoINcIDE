@@ -70,7 +70,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
     
     if(computeDistMatrixOnce){
       
-      if(distMethod==("pearson") || distMethod=="spearman"){
+      if(hclustDistMethod==("pearson") || hclustDistMethod=="spearman"){
         
         datasetClust <- dataset
         distMatrix <- as.matrix(as.dist((1-cor(datasetClust,use=corUse,method=hclustDistMethod))))
@@ -165,7 +165,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
       }else{
         #if k-means: this is where you'd compute it too.
         
-        if(distMethod==("pearson") || distMethod=="spearman"){
+        if(hclustDistMethod==("pearson") || hclustDistMethod=="spearman"){
           
           datasetClust <- dataMatrixList[[r]]
           distMatrixClust[[r]] <- as.dist((1-cor(datasetClust,use=corUse,method=hclustDistMethod)))
