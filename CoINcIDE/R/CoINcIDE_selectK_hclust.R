@@ -236,7 +236,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
       )
       
       #save last one
-      if(i==numIter){
+      if(i==1){
 
         adjMatrixList[[k]] <- adjMatrix
         
@@ -331,7 +331,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
     #this takes a while to run...come back and figure this out!
     tmpCount = triangle(mCount,mode=3)
     # number of times each patient-patient pair put in a cluster/# iterations.
-    res[[k]] = tmp / tmpCount
+    res[[k]] = ml[[k]] / tmpCount
     res[[k]][which(tmpCount==0)] = 0
   }
   
