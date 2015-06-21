@@ -540,3 +540,25 @@ createNullCentroidMatrixList <- function(centroidMatrix,numIter=100){
 }
  return(nullCentroidMatrixLst)
 }
+
+createNulDataMatrixList <- function(dataMatrixList,numIter=100){
+
+  nullDataMatrixList <- list()
+  
+  for(d in 1:length(dataMatrixList)){
+  
+    SVD <- svd(dataMatrixList[[d]])
+    nullMatrixPrime <- dataMatrixList[[d]]%*%SVD$v
+   
+    #just permute once - if want to run again, just re-run this whole function.
+    tmp <- permuteCol(nullMatrixPrime )
+    nullDataMatrixList[[d]] <-  tmp%*%t(SVD$v)
+    rownames(nullDataMatrixList[[d]]) <- rownames(dataMatrixList[[d]])
+    colnames(nullDataMatrixList[[d]]) <- colnames(dataMatrixList[[d]])
+    
+  }
+
+ return(nullDataMatrixList)
+
+}
+
