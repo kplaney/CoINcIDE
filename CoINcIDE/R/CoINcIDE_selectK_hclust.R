@@ -5,7 +5,7 @@
 #source("CoINcIDE_computeEdges.R")
 #source("CoINcIDE_communityDetection.R")
 library("proxy")
-CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
+CoINcIDE_selectK_hclust <- function(dataMatrix=NULL,clustFeatures,
                                     edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                                                  "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
                                     sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.1,numSims=100,includeRefClustInNull=TRUE,
@@ -15,9 +15,21 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                     clustMethod=c("km","hc"), saveDir="/home/kplaney/ovarian_analysis/", indEdgePvalueThresh=.1,corUse="everything",
                                     meanEdgePairPvalueThresh=.05, commMethod=c("edgeBetween"),bestKSelect=c("max","min"),numIter=20,maxNumClusters=15,
                                     iter.max=30,nstart=10,numSubDatasets=2,computeDistMatrixOnce=TRUE,distMatrix=NULL,
-                                    centroidMethod=c("mean","median"),consensusLinkage="average"
+                                    centroidMethod=c("mean","median"),consensusLinkage="average",distMatrixFile=NULL,dataMatrixFile=NULL
                                     
 ){
+  
+  if(is.null(dataMatrixFile) && is.null(dataMatrix)){
+    
+    stop("Must provide full path to R object dataMatrixFile, with object named dataMatrix, or input a dataMatrix")
+  }
+  
+    if(is.null(distMatrixFile) && is.null(distMatrix)){
+      
+     stop("Must provide full path to R object distMatrixFile, with object name distMatrix, or provide distMatrix variable as input.")
+     
+      
+    }
   
   adjMatrixList <- list()
   consensusData <- list()
@@ -37,34 +49,93 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
 
     
   message("This function assumes you are clustering the columns of your data matrix.")
-  dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
-  
-  if(nrow(dataset)==0){
-    
-    stop("\nIn clusterMatrixKmeansGap function: no clustFeatures were found in the data matrix inputted.")
+
+    kMax <- maxNumClusters
+
+   
+  clustF <- function(distMatrixTmp,k){
+    #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
+    clustObject <- hclust(distMatrixTmp, method=hclustAlgorithm);
+    #clustGap needs a list output
+    output <- cutree(clustObject,k=k)
+    return(output)
     
   }
   
-
   
-  warning("Assumes samples are in the columns.")
-  #must have unique row names!
+  numComm <- list();
+  #membershipMatrixList <- list()
+  ml <- list()
+  #ml is the consensus matrix for each K run.
+  
+  if(!is.null(dataMatrixFile)){
+    
+  load(dataMatrixFile)
+  dataMatrix <- t(output$varFreqVar_byPid_table)
+    
+    rm(list="output")
+  
+  }
+    #must have unique row names!
   if(any(duplicated(colnames(dataMatrix)))){   
     colnames(dataMatrix) <- paste0(colnames(dataMatrix),"_",c(1:ncol(dataMatrix)));
   }
   
-  if(ncol(dataset)<maxNumClusters){
-    #hclust usually returns NA gap test if kMax = ncol(dataset)
-    #will also mest up maxSE calculations
-    kMax <- ncol(dataset)-1
+  numPatients <- ncol(dataMatrix)
+  patientNames <- colnames(dataMatrix)
+  mConsist <- matrix(c(0),ncol=ncol(dataMatrix),nrow=ncol(dataMatrix))
+  mCount <- mConsist
+  #remove for memory
+  rm("dataMatrix")
+  
+  for(d in 1:kMax){
     
-  }else{
-    
-    kMax <- maxNumClusters
+    numComm[[d]] <- array(data=NA,dim=numIter);
     
   }
   
+  for(i in 1:numIter){
+    
+    if(!is.null(dataMatrixFile)){
+    load(dataMatrixFile)
+    
+    dataMatrix <- t(output$varFreqVar_byPid_table)
+    
+    rm(list="output")
+    
+    }
+    
  
+      dataset <- dataMatrix[rownames(dataMatrix) %in% clustFeatures, , drop=FALSE]
+
+  
+  if(nrow(dataset)==0){
+    
+    stop("\nNo clustFeatures were found in the data matrix inputted.")
+    
+  }
+  
+    #must have unique row names!
+  if(any(duplicated(colnames(dataMatrix)))){   
+    colnames(dataMatrix) <- paste0(colnames(dataMatrix),"_",c(1:ncol(dataMatrix)));
+  }
+  
+  
+  
+  if(!is.null(distMatrixFile)){
+     #must be named distMatrix
+     load(distMatrixFile)
+     #KATIE: hard-coded for now
+     distMatrix <- distMatrixWhole
+     rm("distMatrixWhole")
+     
+   }
+ 
+ # if(length(ls(pattern="distMatrix"))!=1){
+    
+  #  stop("Your distMatrix Robject must be a matrix named distMatrix")
+  
+  #}
   
   if(is.null(distMatrix)){
     
@@ -98,32 +169,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
     diag(distMatrix) <- 0
     
   } #else: do nothing. distMatrix already computed
-  
-  clustF <- function(distMatrixTmp,k){
-    #it turns out that R will recognize the upper-level function input value in this function (algorith, corUse, etc.)
-    clustObject <- hclust(distMatrixTmp, method=hclustAlgorithm);
-    #clustGap needs a list output
-    output <- cutree(clustObject,k=k)
-    return(output)
-    
-  }
-  
-  
-  numComm <- list();
-  #membershipMatrixList <- list()
-  ml <- list()
-  #ml is the consensus matrix for each K run.
-  
-  mConsist <- matrix(c(0),ncol=ncol(dataset),nrow=ncol(dataset))
-  mCount <- mConsist
-  
-  for(d in 1:kMax){
-    
-    numComm[[d]] <- array(data=NA,dim=numIter);
-    
-  }
-  
-  for(i in 1:numIter){
+
     
     consensusData[[i]] <- list()
     ##mCount is possible number of times that two sample occur in same random sample, independent of k
@@ -183,8 +229,20 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
       }
       
     }
-    
+    #remove distance matrix to make space
+  rm(list="distMatrix")
+  rm(list="dataMatrix")
+  rm(list="datasetClust")
+  rm(list="dataset")
+  
     for(k in 2:kMax){
+              
+      
+  if(numPatients >= maxNumClusters){
+   #break out of this loop - more clusters than patients!
+    break;
+    
+  }
       
       consensusData[[i]][[k]] <- list()
       clustSampleIndexList <- list()
@@ -213,12 +271,13 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
         for(c in 1:k){
           
           clustSampleIndexList[[r]][[c]] <- which(clusterAssign==c)
-          clustFeatureIndexList[[r]][[c]] <- c(1:nrow(dataset))
+          clustFeatureIndexList[[r]][[c]] <- c(1:nrow(dataMatrixList[[r]]))
           
         }
         #end of loop R
       }
       
+  rm(list="distMatrixClust")
       #run analysis for this iteration for this k.
       #features will always match up here - they're from the same dataset! (well unless you're clustering genes and not patients...)
       adjMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
@@ -228,6 +287,13 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                            checkNA=FALSE,centroidMethod=centroidMethod)
       
       
+            #save last one
+      if(i==numIter){
+
+        adjMatrixList[[k]] <- list(simil=adjMatrix$computeTrueSimilOutput$simil,pvalue=adjMatrix$pvalueMatrix)
+        
+      }
+      
       edgeOutput <-  assignFinalEdges(computeTrueSimilOutput= adjMatrix$computeTrueSimilOutput,
                                       pvalueMatrix= adjMatrix$pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
                                       meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,fractFeatIntersectThresh=0,numFeatIntersectThresh=0,
@@ -235,12 +301,7 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
                                       clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="selectNumTmp"
       )
       
-      #save last one
-      if(i==1){
 
-        adjMatrixList[[k]] <- adjMatrix
-        
-      }
       
       if(nrow(edgeOutput$filterEdgeOutput$edgeMatrix)>0){
         
@@ -294,11 +355,17 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
           
           consensusData[[i]][[k]]$patientAssignment <- aggregateData$sampleClustCommKey$community[patientNonNAindices]
           consensusData[[i]][[k]]$patientIndex <-  na.omit(match(aggregateData$sampleClustCommKey$sampleName[patientNonNAindices],
-                                                                 colnames(dataset)))
+                                                                 patientNames))
           
           
+          rm(list="aggregateData")
+          rm(list="connectivityM")
+          rm(list="communityInfo")
+
+        
         }
         
+
         #no final communities found 
       }else{
         
@@ -314,9 +381,16 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
         
       }
       message( numComm[[k]][i] ," final communities")
-      
+    
+        rm(list="adjMatrix")
+        rm(list="edgeOutput")
+        rm(list="clustFeatureIndexList")
+        rm(list="clustSampleIndexList")
+  
     }#end of loop k
     
+  rm(list="dataMatrixList")
+
     #end of loop i
   }
   
@@ -391,12 +465,12 @@ CoINcIDE_selectK_hclust <- function(dataMatrix,clustFeatures,
   if(length(bestK)==0 && medianComm[2]==1){
     
     bestK <- 1
-    consensusClustAssignments <- rep.int(1, times=ncol(dataMatrix))
+    consensusClustAssignments <- rep.int(1, times=numPatients)
     
   }else{
     #not even 1 cluster!
     bestK <- NA
-    consensusClustAssignments <- rep.int(NA, times=ncol(dataMatrix))
+    consensusClustAssignments <- rep.int(NA, times=numPatients)
     
   }
   
