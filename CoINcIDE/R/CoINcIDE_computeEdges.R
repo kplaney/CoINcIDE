@@ -474,16 +474,47 @@ computeClusterPairAssignFract_matrixStatsSimil <- function(compareMatrix,centroi
 
       for (i in 1:nrow(sampleCentroidSimil)) {
           #want minimum distance.
-          Class[i] <- which.min(sampleCentroidDist[i,])
+          Class[i] <- which.max(sampleCentroidSimil[i,])
          
         }
   
-        fract <- table(Class[i])/ncol(compareMatrix)
-    
-  return(fract)
-  return(fract)
+         fract <- table(Class[i])/ncol(compareMatrix)
+        #if zero samples assigned to a cluster: won't be in here.
+        bestMatch <- names(fract)[which.max(fract)]
+        bestFract <- fract[which.max(fract)]
+  
+        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract)
   
 }
+
+##############
+computeClusterPairAssignFract_cor <- function(compareMatrix,centroidMatrix,
+                                    edgeMethod="pearson"){
+  
+  #features <- intersect(rownames(compareMatrix),rownames(centroidMatrix))
+  #refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
+  #compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
+
+
+    Class <- rep(NA, ncol(compareMatrix))
+    sampleCentroidSimil <- cor(compareMatrix,centroidMatrix,method=edgeMethod)
+
+      for (i in 1:nrow(sampleCentroidSimil)) {
+          #want minimum distance.
+          Class[i] <- which.max(sampleCentroidSimil[i,])
+         
+        }
+        fract <- table(Class[i])/ncol(compareMatrix)
+        #if zero samples assigned to a cluster: won't be in here.
+        bestMatch <- names(fract)[which.max(fract)]
+        bestFract <- fract[which.max(fract)]
+  
+        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract)
+    
+  return(results)
+
+}
+
 
 permuteCol <- function(x) {
   dd <- dim(x)
@@ -508,59 +539,4 @@ createNullCentroidMatrixList <- function(centroidMatrix,numIter=100){
     
 }
  return(nullCentroidMatrixLst)
-}
-##############
-computeClusterPairAssignFract_cor <- function(compareMatrix,centroidMatrix,
-                                    edgeMethod="pearson"){
-  
-  #features <- intersect(rownames(compareMatrix),rownames(centroidMatrix))
-  #refClust <- refClust[rownames(refClust) %in% features, , drop=FALSE]
-  #compareClust <- compareClust[rownames(compareClust) %in% features, , drop=FALSE]
-
-
-        
-    clusterPairSimil <- cor(compareMatrix,centroidMatrix,method=edgeMethod)
-              
-    fract <- length(which(clusterPairSimil[,2]>=clusterPairSimil[,1]))/nrow(clusterPairSimil)
-    
-  return(fract)
-
-}
-########
-# 
-#nullSimilVector: for that clusterA-nullClust pair, with cluster A as reference,
-#all similarities across all nullClusts.
-computeEdgePvalue <- function(thresh,threshDir = c("greater","less"),nullSimilVector){
-  
-  if(is.na(thresh)){
-    
-    stop("\nthresh variable must be non-NA.")
-    
-  }
-  
-  if(any(is.na(nullSimilVector))){
-    
-    stop("\nSome of your p-values have NAs - check this out before continuing. 
-         This can occur if your data has extremely low variance and you are using correlation metrics.")
-    
-  }
-  
-  #distance or cor matrix?
-  if(threshDir=="less"){
-    
-    #do count NAs in full length?
-    pvalue <- length(which(nullSimilVector <= thresh))/length(nullSimilVector)
-    
-  }else if(threshDir=="greater"){
-    #want greater than for similarity. rest of metrics are simil metrics.
-    pvalue <- length(which(nullSimilVector >= thresh))/length(nullSimilVector)  
-    
-  }else{
-    
-    stop("\nMust provide a value of \'less\' or \'greater\' for threshDir input.")
-    
-  }
-  
-  return(pvalue)
-  
 }
