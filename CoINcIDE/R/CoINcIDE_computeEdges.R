@@ -549,9 +549,11 @@ createNullCentroidMatrixList <- function(centroidMatrix,numIter=100){
     tmpCentroids <- permuteCol(centroidMatrixPrime)
     nullCentroidMatrixList[[i]] <-  tmpCentroids%*%t(SVD$v)
     rownames(nullCentroidMatrixList[[i]]) <- rownames(centroidMatrix)
+    colnames(nullCentroidMatrixList[[i]]) <- c(1:ncol(centroidMatrix))
     
 }
  return(nullCentroidMatrixList)
+
 }
 
 createNulDataMatrixList <- function(dataMatrixList,numIter=100){
