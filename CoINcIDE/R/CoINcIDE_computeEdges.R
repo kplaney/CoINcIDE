@@ -165,7 +165,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 
         for(d in 1:length(clustFeatureIndexList[[n]])){
           
-          centroidMatrixOrig[,d] <- rowMeans(dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]], clustSampleIndexList[[n]][[d]] ])
+          centroidMatrixOrig[,d] <- rowMeans(dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]], clustSampleIndexList[[n]][[d]] ,drop=FALSE])
         
         }
         #otherwise: just median. 
@@ -174,7 +174,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
         
         for(d in 1:length(clustFeatureIndexList[[n]])){
           
-          centroidMatrixOrig[,d] <- rowMedians(dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]], clustSampleIndexList[[n]][[d]] ])
+          centroidMatrixOrig[,d] <- rowMedians(dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]], clustSampleIndexList[[n]][[d]] ,drop=FALSE])
         
         }
   
@@ -570,9 +570,11 @@ createNullCentroidMatrixList <- function(centroidMatrix,numIter=100){
   for (i in 1:numIter) {
     
     tmpCentroids <- permuteCol(centroidMatrixPrime)
-    nullCentroidMatrixList[[i]] <-  tmpCentroids%*%t(SVD$v)
+    #needs to be a matrix
+    nullCentroidMatrixList[[i]] <-  as.matrix(tmpCentroids%*%t(SVD$v))
     rownames(nullCentroidMatrixList[[i]]) <- rownames(centroidMatrix)
     colnames(nullCentroidMatrixList[[i]]) <- c(1:ncol(centroidMatrix))
+    
     
 }
  return(nullCentroidMatrixList)
