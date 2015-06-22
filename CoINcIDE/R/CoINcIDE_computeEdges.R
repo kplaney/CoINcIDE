@@ -178,6 +178,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   
     }
   
+  rownames( centroidMatrixOrig) <- rownames(dataMatrixList[[n]])[clustFeatureIndexList[[n]][[1]]]
     nullCentroidList <- createNullCentroidMatrixList(centroidMatrixOrig,numIter=numSims)
         
       #can foreach work here? perhaps if I don't combine.
@@ -190,9 +191,9 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 #ADD thresholds here.
         #  if(threshStats$..)
          sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
-        features <- intersect(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][ clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[1]] ],
+        features <- intersect(rownames(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]])[ clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[1]] ],
                                     #just pick first feature index for now.
-                                    dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]] ])
+                                    rownames(dataMatrixList[[n]])[ clustFeatureIndexList[[n]][[1]] ])
         centroidMatrix <- centroidMatrixOrig[features, ]
         
         compareClust <- dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][features,sampleIndices,drop=FALSE]  
@@ -461,9 +462,9 @@ computeClusterPairAssignFract_matrixStatsDist <- function(compareMatrix,centroid
          
         }
   
-        fract <- table(Class[i])/ncol(compareMatrix)
+        fract <- table(Class)/ncol(compareMatrix)
         #if zero samples assigned to a cluster: won't be in here.
-        bestMatch <- names(fract)[which.max(fract)]
+        bestMatch <- as.numeric(names(fract)[which.max(fract)])
         bestFract <- fract[which.max(fract)]
   
         #for ALL samples in compareMatrix:  take mean of distance with best centroid.
@@ -486,9 +487,9 @@ computeClusterPairAssignFract_matrixStatsSimil <- function(compareMatrix,centroi
          
         }
   
-         fract <- table(Class[i])/ncol(compareMatrix)
+         fract <- table(Class)/ncol(compareMatrix)
         #if zero samples assigned to a cluster: won't be in here.
-        bestMatch <- names(fract)[which.max(fract)]
+        bestMatch <- as.numeric(names(fract)[which.max(fract)])
         bestFract <- fract[which.max(fract)]
     
         meanMetric <- mean(sampleCentroidSimil[,bestMatch])
@@ -514,9 +515,9 @@ computeClusterPairAssignFract_cor <- function(compareMatrix,centroidMatrix,
           Class[i] <- which.max(sampleCentroidSimil[i,])
          
         }
-        fract <- table(Class[i])/ncol(compareMatrix)
+        fract <- table(Class)/ncol(compareMatrix)
         #if zero samples assigned to a cluster: won't be in here.
-        bestMatch <- names(fract)[which.max(fract)]
+        bestMatch <- as.numeric(names(fract)[which.max(fract)])
         bestFract <- fract[which.max(fract)]
   
         
