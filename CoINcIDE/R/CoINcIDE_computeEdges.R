@@ -54,10 +54,6 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   }
 
 
-  if(sigMethod != "meanMatrix" && sigMethod != "centroid"){
-    
-    stop("\nPlease pick \'meanMatrix\' or \'centroid\' for sigMethod variable.")
-  }
   
   if(length(clustSampleIndexList) != length(clustFeatureIndexList) || length(clustSampleIndexList) !=
        length(dataMatrixList) || length(clustFeatureIndexList) !=  length(dataMatrixList)){
@@ -70,7 +66,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   #exist in the fullDataMatrix?
   date <- Sys.time();
   inputVariablesDF <- data.frame(date,edgeMethod,numParallelCores,minTrueSimilThresh,maxTrueSimilThresh,
-  sigMethod,numSims,includeRefClustInNull,fractFeatIntersectThresh,
+  numSims,fractFeatIntersectThresh,
   numFeatIntersectThresh,clustSizeThresh, clustSizeFractThresh);
   
   #capture.output prints the data correctly.
@@ -113,28 +109,20 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   
   #compute baseline similiarites, feature/sample stats for clusters.
   cat("\nComputing cluster-cluster true similarities (or distances).\n",append=TRUE,file=outputFile)
-  message("Computing cluster-cluster true similarities (or distances).")
-  trueSimilData <- computeTrueSimil(clustIndexMatrix=clustIndexMatrix,edgeMethod=edgeMethod,
-                                    dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,
-                                  clustFeatureIndexList=clustFeatureIndexList,fractFeatIntersectThresh=fractFeatIntersectThresh,
-                                  numFeatIntersectThresh=numFeatIntersectThresh ,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
-  
+  #message("Computing cluster-cluster true similarities (or distances).")
+  threshStats <- computeThreshParam(clustIndexMatrix,
+                                    dataMatrixList,clustSampleIndexList,clustFeatureIndexList)
 
-
-  message(paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))/2," edges above minimum similarity threshold of ",minTrueSimilThresh))
-  cat("\n",paste0(length(which(trueSimilData$similValueMatrix>=minTrueSimilThresh))/2," edges above minimum similarity threshold of ",minTrueSimilThresh),append=TRUE,file=outputFile)
-  
+  #COME BACK: compute size thresholds, fractFeatIntersect, etc.
   cat("\nComputing similarity matrices for null/permutation calculations\n",append=TRUE,file=outputFile)
   message("Computing similarity matrices for null/permutation calculations")
 
   
   pvalueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
-
+  meanMetricMatrix <-  matrix(data=NA,nrow=numClust,ncol=numClust)
  
   cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
-  
 
-      #COME BACK: also add median option?
       if(!is.na((summary(pr_DB)[2]$distance[edgeMethod])) && summary(pr_DB)[2]$distance[edgeMethod]){
         #these functions are written later in the script
         
@@ -168,27 +156,29 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
         #COME BACK: do foreach loop here.
   for(n in 1:nrow(dataMatrixList)){
     
-    #for each dataset: make centroid set and null centroid sets
-          centroidMatrixOrig <- matrix(data=NA,ncol=length(clustFeatureIndexList[[n]]),nrow=length(clustFeatureIndexList[[1]]))
+  #for each dataset: make centroid set and null centroid sets
+  centroidMatrixOrig <- matrix(data=NA,ncol=length(clustFeatureIndexList[[n]]),nrow=length(clustFeatureIndexList[[n]][[1]]))
           
   if(centroidMethod=="mean"){
 
         for(d in 1:length(clustFeatureIndexList[[n]])){
           
-        centroidMatrixOrig[,d] <- rowMeans(dataMatrixList[[n]][ clustFeatureIndexList[[1]], clustSampleIndexList[[n]][[d]] ])
+          centroidMatrixOrig[,d] <- rowMeans(dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]], clustSampleIndexList[[n]][[d]] ])
         
         }
         #otherwise: just median. 
       }else{
 
-                for(d in 1:length(clustFeatureIndexList[[n]])){
+        
+        for(d in 1:length(clustFeatureIndexList[[n]])){
           
-        centroidMatrixOrig[,d] <- rowMedians(dataMatrixList[[n]][ clustFeatureIndexList[[1]], clustSampleIndexList[[n]][[d]] ])
+          centroidMatrixOrig[,d] <- rowMedians(dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]], clustSampleIndexList[[n]][[d]] ])
         
         }
   
-  }
-    nullCentroidList <- createNullCentroidMatrixList(centroidMatrix,numIter=numIter)
+    }
+  
+    nullCentroidList <- createNullCentroidMatrixList(centroidMatrixOrig,numIter=numSims)
         
       #can foreach work here? perhaps if I don't combine.
       # pvalueMatrix[, c] <- foreach(i=1:numSims) %dopar% {
@@ -197,11 +187,12 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
          if(as.numeric(clustIndexMatrix[c,2]) != n){
                     
           message("Running tests for cluster number: ",n," from dataset ",as.numeric(clustIndexMatrix[c,2]))
-           ###ALSO: make sure passes feature thresh, etc.
+#ADD thresholds here.
+        #  if(threshStats$..)
          sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
-        features <- intersect(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][ clustFeatureIndexList[[1]] ],
+        features <- intersect(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][ clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[1]] ],
                                     #just pick first feature index for now.
-                                    dataMatrixList[[n]][ clustFeatureIndexList[[1]] ])
+                                    dataMatrixList[[n]][ clustFeatureIndexList[[n]][[1]] ])
         centroidMatrix <- centroidMatrixOrig[features, ]
         
         compareClust <- dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][features,sampleIndices,drop=FALSE]  
@@ -212,20 +203,44 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 
          
          trueFractNNmatrix[globalClustIndex,r] <- fractNNresults$bestFract
-         #NOW: run through null centroid list.
+         meanMetricMatrix[globalClustIndex,r] <- fractNNresults$meanMetric
          
+        #NOW: run through null centroid list.
+         
+        if(!is.na((summary(pr_DB)[2]$distance[edgeMethod])) && summary(pr_DB)[2]$distance[edgeMethod]){
+          
          nullTests <- lapply(nullCentroidList,FUN=function(nullCentroidMatrix,compareClust,edgeMethod,thresh){
            
            passedThresh <- FALSE
            tmp <- centroidFunction(compareMatrix=compareClust,centroidMatrix=centroidMatrix,edgeMethod=edgeMethod)
            
-           if(tmp$bestFract>=thresh){
+           #is it a good "fit" and actually similar in terms of magnitude?
+           if( (tmp$bestFract>=thresh) && (tmp$meanMetric <= fractNNresults$meanMetric)) {
              
              passedThresh <- TRUE
            }    
            
          },compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalClustIndex,r])
+
         
+        
+        #similarity, not distance
+        }else{
+          
+            nullTests <- lapply(nullCentroidList,FUN=function(nullCentroidMatrix,compareClust,edgeMethod,thresh){
+           
+           passedThresh <- FALSE
+           tmp <- centroidFunction(compareMatrix=compareClust,centroidMatrix=centroidMatrix,edgeMethod=edgeMethod)
+           
+           #is it a good "fit" and actually similar in terms of magnitude?
+           if( (tmp$bestFract>=thresh) && (tmp$meanMetric >= fractNNresults$meanMetric)) {
+             
+             passedThresh <- TRUE
+           }    
+           
+        } ,compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalClustIndex,r])
+
+     }
         pvalueMatrix[globalClustIndex,c] <- length(which(unlist(nullTests)))/length(nullCentroidList)
     
   #done computing metrics for this cluster.
@@ -240,7 +255,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
    
    output <- list(computeTrueSimilOutput=trueSimilData,pvalueMatrix=pvalueMatrix,
                   clustIndexMatrix=clustIndexMatrix,inputVariablesDF=inputVariablesDF,
-                  trueFractNNmatrix=trueFractNNmatrix)
+                  trueFractNNmatrix=trueFractNNmatrix,threshStats=threshStats)
    
  }
  return(output)
@@ -249,9 +264,8 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 
 
 ######
-computeTrueSimil <- function(clustIndexMatrix,
-                                    edgeMethod="correlation",
-                                    dataMatrixList,clustSampleIndexList,clustFeatureIndexList,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0){
+computeThreshParam <- function(clustIndexMatrix,
+                                    dataMatrixList,clustSampleIndexList,clustFeatureIndexList){
   
     numClust <- nrow(clustIndexMatrix)
     similValueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
@@ -297,16 +311,7 @@ computeTrueSimil <- function(clustIndexMatrix,
           numFeatIntersectMatrix[c,r] <- numFeatIntersectMatrix[r,c]
           fractFeatIntersectMatrix[r,c] <- numFeatIntersectMatrix[r,c]/length(union(rownames(refClust),rownames(compareClust)))
           fractFeatIntersectMatrix[c,r] <-    fractFeatIntersectMatrix[r,c]  
-       
-
-          if(fractFeatIntersectMatrix[r,c] >= fractFeatIntersectThresh && numFeatIntersectMatrix[r,c] >= numFeatIntersectThresh && clustSizeMatrix[r] >= clustSizeThresh && clustSizeFractMatrix[r] >= clustSizeFractThresh
-              && clustSizeMatrix[c] >= clustSizeThresh && clustSizeFractMatrix[c] >= clustSizeFractThresh){
-  
-            similValueMatrix[r,c] <- computeClusterPairSimil_mean(refClust,compareClust,edgeMethod=edgeMethod)
-            similValueMatrix[c,r] <-   similValueMatrix[r,c]  
-      
-          }
-      
+          
         }
 
       }
@@ -316,7 +321,7 @@ computeTrueSimil <- function(clustIndexMatrix,
   }
 
 
-  output <- list(similValueMatrix=similValueMatrix,numFeatIntersectMatrix=numFeatIntersectMatrix,fractFeatIntersectMatrix=fractFeatIntersectMatrix,
+  output <- list(numFeatIntersectMatrix=numFeatIntersectMatrix,fractFeatIntersectMatrix=fractFeatIntersectMatrix,
                  clustSizeMatrix=clustSizeMatrix,clustSizeFractMatrix=clustSizeFractMatrix)
   
   return(output)
@@ -461,7 +466,10 @@ computeClusterPairAssignFract_matrixStatsDist <- function(compareMatrix,centroid
         bestMatch <- names(fract)[which.max(fract)]
         bestFract <- fract[which.max(fract)]
   
-        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract)
+        #for ALL samples in compareMatrix:  take mean of distance with best centroid.
+        meanMetric <- mean(sampleCentroidDist[,bestMatch])
+  
+        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract,meanMetric=meanMetric)
     
   return(results)
   
@@ -482,8 +490,10 @@ computeClusterPairAssignFract_matrixStatsSimil <- function(compareMatrix,centroi
         #if zero samples assigned to a cluster: won't be in here.
         bestMatch <- names(fract)[which.max(fract)]
         bestFract <- fract[which.max(fract)]
+    
+        meanMetric <- mean(sampleCentroidSimil[,bestMatch])
   
-        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract)
+        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract,meanMetric=meanMetric)
   
 }
 
@@ -509,7 +519,10 @@ computeClusterPairAssignFract_cor <- function(compareMatrix,centroidMatrix,
         bestMatch <- names(fract)[which.max(fract)]
         bestFract <- fract[which.max(fract)]
   
-        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract)
+        
+        meanMetric <- mean(sampleCentroidSimil[,bestMatch])
+  
+        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract,meanMetric=meanMetric)
     
   return(results)
 
@@ -538,7 +551,7 @@ createNullCentroidMatrixList <- function(centroidMatrix,numIter=100){
     rownames(nullCentroidMatrixList[[i]]) <- rownames(centroidMatrix)
     
 }
- return(nullCentroidMatrixLst)
+ return(nullCentroidMatrixList)
 }
 
 createNulDataMatrixList <- function(dataMatrixList,numIter=100){
