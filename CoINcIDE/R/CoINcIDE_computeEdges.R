@@ -154,7 +154,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   trueFractNNmatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
  
         #COME BACK: do foreach loop here.
-  for(n in 1:nrow(dataMatrixList)){
+  for(n in 1:length(dataMatrixList)){
     
   #for each dataset: make centroid set and null centroid sets
   centroidMatrixOrig <- matrix(data=NA,ncol=length(clustFeatureIndexList[[n]]),nrow=length(clustFeatureIndexList[[n]][[1]]))
@@ -198,22 +198,29 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
         
         compareClust <- dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][features,sampleIndices,drop=FALSE]  
    
+         #get results between true matrix
          fractNNresults <- centroidFunction(compareMatrix=compareClust,centroidMatrix=centroidMatrix,edgeMethod=edgeMethod)
          bestMatchIndex <- fractNNresults$bestMatch
-         globalClustIndex <- intersect(which(clustIndexMatrix[,2,]==n),which(clustIndexMatrix[, ,3]==bestMatchIndex))
-
+         globalRefClustIndex <- intersect(which(clustIndexMatrix[,2]==n),which(clustIndexMatrix[,3]==bestMatchIndex))
+        
+        if(length(globalRefClustIndex) !=1){
+           
+           stop("Error in global cluster indexing.")
          
-         trueFractNNmatrix[globalClustIndex,r] <- fractNNresults$bestFract
-         meanMetricMatrix[globalClustIndex,r] <- fractNNresults$meanMetric
+        }
+         
+         trueFractNNmatrix[globalRefClustIndex,c] <- fractNNresults$bestFract
+         meanMetricMatrix[globalRefClustIndex,c] <- fractNNresults$meanMetric
          
         #NOW: run through null centroid list.
          
+        #is it a distance metric?
         if(!is.na((summary(pr_DB)[2]$distance[edgeMethod])) && summary(pr_DB)[2]$distance[edgeMethod]){
           
          nullTests <- lapply(nullCentroidList,FUN=function(nullCentroidMatrix,compareClust,edgeMethod,thresh){
            
            passedThresh <- FALSE
-           tmp <- centroidFunction(compareMatrix=compareClust,centroidMatrix=centroidMatrix,edgeMethod=edgeMethod)
+           tmp <- centroidFunction(compareMatrix=compareClust,centroidMatrix=nullCentroidMatrix,edgeMethod=edgeMethod)
            
            #is it a good "fit" and actually similar in terms of magnitude?
            if( (tmp$bestFract>=thresh) && (tmp$meanMetric <= fractNNresults$meanMetric)) {
@@ -221,7 +228,9 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
              passedThresh <- TRUE
            }    
            
-         },compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalClustIndex,r])
+               return(passedThresh)
+           
+         },compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalClustIndex,c])
 
         
         
@@ -231,18 +240,20 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
             nullTests <- lapply(nullCentroidList,FUN=function(nullCentroidMatrix,compareClust,edgeMethod,thresh){
            
            passedThresh <- FALSE
-           tmp <- centroidFunction(compareMatrix=compareClust,centroidMatrix=centroidMatrix,edgeMethod=edgeMethod)
+           tmp <- centroidFunction(compareMatrix=compareClust,centroidMatrix=nullCentroidMatrix,edgeMethod=edgeMethod)
            
            #is it a good "fit" and actually similar in terms of magnitude?
            if( (tmp$bestFract>=thresh) && (tmp$meanMetric >= fractNNresults$meanMetric)) {
              
              passedThresh <- TRUE
-           }    
+           } 
            
-        } ,compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalClustIndex,r])
+           return(passedThresh)
+           
+        } ,compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalRefClustIndex,c])
 
      }
-        pvalueMatrix[globalClustIndex,c] <- length(which(unlist(nullTests)))/length(nullCentroidList)
+        pvalueMatrix[globalRefClustIndex,c] <- length(which(unlist(nullTests)))/length(nullCentroidList)
     
   #done computing metrics for this cluster.
   }#else{
@@ -250,6 +261,8 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   #  pvalueMatrix[globalClustIndex,c] <- NA
   #}
 
+}
+#end of loopin through all datasets
 }
 
 #make mean edge p-value? or do this in summary functions?
@@ -557,7 +570,7 @@ createNullCentroidMatrixList <- function(centroidMatrix,numIter=100){
 
 }
 
-createNulDataMatrixList <- function(dataMatrixList,numIter=100){
+createNulDataMatrixList <- function(dataMatrixList){
 
   nullDataMatrixList <- list()
   
