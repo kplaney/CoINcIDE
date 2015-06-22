@@ -261,8 +261,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   #  pvalueMatrix[globalClustIndex,c] <- NA
   #}
 
-}
-#end of loopin through all datasets
+#end of looping through all datasets
 }
 
 #make mean edge p-value? or do this in summary functions?
