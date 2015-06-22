@@ -278,7 +278,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 
 #make mean edge p-value? or do this in summary functions?
    
-   output <- list(computeTrueSimilOutput=trueSimilData,pvalueMatrix=pvalueMatrix,
+   output <- list(pvalueMatrix=pvalueMatrix,
                   clustIndexMatrix=clustIndexMatrix,inputVariablesDF=inputVariablesDF,
                   trueFractNNmatrix=trueFractNNmatrix,threshStats=threshStats)
  return(output)
