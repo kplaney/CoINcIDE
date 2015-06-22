@@ -156,6 +156,8 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
         #COME BACK: do foreach loop here.
   for(n in 1:length(dataMatrixList)){
     
+    message("On dataset (loop) ",n)
+    
   #for each dataset: make centroid set and null centroid sets
   centroidMatrixOrig <- matrix(data=NA,ncol=length(clustFeatureIndexList[[n]]),nrow=length(clustFeatureIndexList[[n]][[1]]))
           
