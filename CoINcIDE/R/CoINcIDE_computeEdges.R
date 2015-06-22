@@ -179,7 +179,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
     }
   
   rownames( centroidMatrixOrig) <- rownames(dataMatrixList[[n]])[clustFeatureIndexList[[n]][[1]]]
-    nullCentroidList <- createNullCentroidMatrixList(centroidMatrixOrig,numIter=numSims)
+    nullCentroidListOrig <- createNullCentroidMatrixList(centroidMatrixOrig,numIter=numSims)
         
       #can foreach work here? perhaps if I don't combine.
       # pvalueMatrix[, c] <- foreach(i=1:numSims) %dopar% {
@@ -187,15 +187,22 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 
          if(as.numeric(clustIndexMatrix[c,2]) != n){
                     
-          message("Running tests for cluster number: ",n," from dataset ",as.numeric(clustIndexMatrix[c,2]))
+          message("Running tests for cluster number: ",c," or cluster ", as.numeric(clustIndexMatrix[c,3])," from dataset ",as.numeric(clustIndexMatrix[c,2]))
 #ADD thresholds here.
         #  if(threshStats$..)
          sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
         features <- intersect(rownames(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]])[ clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[1]] ],
                                     #just pick first feature index for now.
+                              
                                     rownames(dataMatrixList[[n]])[ clustFeatureIndexList[[n]][[1]] ])
-        centroidMatrix <- centroidMatrixOrig[features, ]
-        
+        centroidMatrix <- centroidMatrixOrig[features, ,drop=FALSE]
+        nullCentroidList <- lapply(nullCentroidListOrig,FUN=function(nullCentroidSet,featureSet){
+          
+          result <- nullCentroidSet[features, , drop=FALSE]
+          return(result)
+          
+        },featureSet=features)
+
         compareClust <- dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]][features,sampleIndices,drop=FALSE]  
    
          #get results between true matrix
@@ -264,13 +271,14 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 #end of looping through all datasets
 }
 
+   
+ }
+
 #make mean edge p-value? or do this in summary functions?
    
    output <- list(computeTrueSimilOutput=trueSimilData,pvalueMatrix=pvalueMatrix,
                   clustIndexMatrix=clustIndexMatrix,inputVariablesDF=inputVariablesDF,
                   trueFractNNmatrix=trueFractNNmatrix,threshStats=threshStats)
-   
- }
  return(output)
 #EOF
 }
