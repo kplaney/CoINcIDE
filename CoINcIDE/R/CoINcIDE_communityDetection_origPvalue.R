@@ -8,15 +8,14 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
                              minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
                              fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
                              clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges",
-                             restrictEdges=FALSE,clustIndexMatrix,minFractNN =.7
+                             restrictEdges=FALSE,clustIndexMatrix
                              
 ){
   
   clustSizeIndexRemove <- c()
   count <- 0
   meanEdgePvalueMatrix <- matrix(data=NA,ncol=ncol(pvalueMatrix),nrow=nrow(pvalueMatrix))
-  meanFractNNmatrix <- matrix(data=NA,ncol=ncol(pvalueMatrix),nrow=nrow(pvalueMatrix))
-  meanMeanMetricMatrix <- matrix(data=NA,ncol=ncol(pvalueMatrix),nrow=nrow(pvalueMatrix))
+  
   for(r in 1:nrow(computeTrueSimilOutput$clustSizeMatrix)){
     
     if(computeTrueSimilOutput$clustSizeFractMatrix[r]==1){
@@ -45,6 +44,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
       #have we already computed the mean here?
       if(is.na(meanEdgePvalueMatrix[r,c])){
         
+        if(!is.na(computeTrueSimilOutput$similValueMatrix[r,c]) && computeTrueSimilOutput$similValueMatrix[r,c]>= minTrueSimilThresh){
         #other choice: could combine via fisher's p-value, stouffer's (Z-transform) or brown's method.
         #for independent p-values: some claim Stouffer's is preferred over fisher's method: http://onlinelibrary.wiley.com/doi/10.1111/j.1420-9101.2005.00917.x/full
         #Brown's method, not stouffer or fisher, are correct for dependent p-values (which is the case here.)
@@ -54,11 +54,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
         meanEdgePvalueMatrix[r,c] <- mean(c(pvalueMatrix[r,c],pvalueMatrix[c,r]))
         meanEdgePvalueMatrix[c,r] <- meanEdgePvalueMatrix[r,c]
         
-        meanFractNNmatrix[r,c] <- mean(c(computeTrueSimilOutput$trueFractNNmatrix[r,c], computeTrueSimilOutput$trueFractNNmatrix[c,r]))
-        meanFractNNmatrix[c,r] <- meanFractNNmatrix[r,c]
-        meanMeanMetricMatrix[r,c] <- mean(c(computeTrueSimilOutput$meanMetricMatrix[r,c], computeTrueSimilOutput$meanMetricMatrix[c,r]))
-        meanMeanMetricMatrix[c,r] <- meanMeanMetricMatrix[r,c]
-        
+        }
         
       }
       
@@ -107,16 +103,16 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   }
     
   
-  adjMatricesList <- list(meanMeanMetricMatrix,meanMeanMetricMatrix,
+  adjMatricesList <- list(computeTrueSimilOutput$similValueMatrix,computeTrueSimilOutput$similValueMatrix,
                           pvalueMatrix,meanEdgePvalueMatrix,computeTrueSimilOutput$fractFeatIntersectMatrix,
-                          computeTrueSimilOutput$numFeatIntersectMatrix ,meanFractNNmatrix)
+                          computeTrueSimilOutput$numFeatIntersectMatrix)
   
-  names(adjMatricesList) <- c("simil","simil","meanPvalue","meanPvalue","fractFeatIntersect","numFeatIntersect","minFractNN")
+  names(adjMatricesList) <- c("simil","simil","meanPvalue","meanPvalue","fractFeatIntersect","numFeatIntersect")
   
   thresholdVector <- c(minTrueSimilThresh,maxTrueSimilThresh,indEdgePvalueThresh,meanEdgePairPvalueThresh,
-                       fractFeatIntersectThresh,numFeatIntersectThresh,minFractNN)
+                       fractFeatIntersectThresh,numFeatIntersectThresh)
   
-  threshDir <- c(">=","<=","<=","<=",">=",">=",">=")
+  threshDir <- c(">=","<=","<=","<=",">=",">=")
   
   filterEdgeOutput <- filterEdges(adjMatricesList,thresholdVector,threshDir=threshDir,saveDir=saveDir,fileTag=fileTag,saveEdgeFile=TRUE)
   
