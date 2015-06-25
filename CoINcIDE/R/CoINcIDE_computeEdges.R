@@ -243,7 +243,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 
         
         
-        #similarity, not distance
+        #similarity, not distance so second boolean is now >=
         }else{
           
             nullTests <- lapply(nullCentroidList,FUN=function(nullCentroidMatrix,compareClust,edgeMethod,thresh){
@@ -255,6 +255,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
            if( (tmp$bestFract>=thresh) && (tmp$meanMetric >= fractNNresults$meanMetric)) {
              
              passedThresh <- TRUE
+             
            } 
            
            return(passedThresh)
@@ -276,11 +277,12 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
    
  }
 
-#make mean edge p-value? or do this in summary functions?
-   
-   output <- list(pvalueMatrix=pvalueMatrix,meanMetricMatrix=meanMetricMatrix,
+  threshStats$meanMetricMatrix <- meanMetricMatrix
+  threshStats$trueFractNNmatrix <- breast200F_pearson_meanMatrix$trueFractNNmatrix
+  
+  output <- list(pvalueMatrix=pvalueMatrix,meanMetricMatrix=meanMetricMatrix,
                   clustIndexMatrix=clustIndexMatrix,inputVariablesDF=inputVariablesDF,
-                  trueFractNNmatrix=trueFractNNmatrix,threshStats=threshStats)
+                  trueFractNNmatrix=trueFractNNmatrix,computeTrueSimilOutput=threshStats)
  return(output)
 #EOF
 }

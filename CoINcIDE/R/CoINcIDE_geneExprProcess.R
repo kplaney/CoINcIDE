@@ -168,7 +168,7 @@ createExpressionSetList <- function(exprMatrixList,masterPhenoData,patientKey="G
   
 }
   
-processExpressionSetList <- function(exprSetList,outputFileDirectory="./",
+processExprSetList <- function(exprSetList,outputFileDirectory="./",
                                      numTopVarGenes,minVarPercentile,maxVarPercentile=1,minVar,
                                      featureDataFieldName="gene_symbol",uniquePDataID="unique_patient_ID"){
   

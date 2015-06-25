@@ -11,9 +11,7 @@ dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene_symbo
 
 names(dataMatrixList) <- names(esets)
 
-##ALSO: merge matrices first to help decide which studies to keep overall
-
-#also merge this one
+##this code was already run in GenomeBiology_breastCluster_script.R to help with selection of final datasets.
 output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('none'));
 save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_no_norm.RData.gzip",compress="gzip")
 

@@ -215,6 +215,16 @@ breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=ese
                                              GSEAanalysis=FALSE,clinVarPlots=TRUE)
 
 
+breast_200Out <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                             meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                             clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,
+                                             eset_featureDataFieldName=eset_featureDataFieldName,
+                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                             GSEAanalysis=FALSE,clinVarPlots=TRUE)
+
 
 #save(breast_200Out,file="/home/kplaney/breast_analysis_withTop20Genes/breast_200_features_",Sys.Date(),"/breast_200_features_analysis_withTop20GenesOut.RData.gzip",compress="gzip")
 
