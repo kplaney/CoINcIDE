@@ -8,10 +8,12 @@ library("matrixStats")
 #Rclusterpp does not return the distance matrix.
 #library("Rclusterpp")
 
+#TO DO: add more filters later so can speed up analyses when clusters don't have any features that intersect, etc.?
+#i.e. user has already run FDR function, decided on some of these features.
 CoINcIDE_getAdjMatrices <- function(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
 edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-sigMethod=c("meanMatrix","centroid"),maxNullFractSize=.2,numSims=500,includeRefClustInNull=TRUE,
+numSims=500,
 outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
 checkNA=FALSE,centroidMethod=c("mean","median")){
   
@@ -120,6 +122,7 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   
   pvalueMatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
   meanMetricMatrix <-  matrix(data=NA,nrow=numClust,ncol=numClust)
+  
  
   cat("\nComputing p-values for each cluster-cluster similarity using null cluster distributions.\n",append=TRUE,file=outputFile)
 

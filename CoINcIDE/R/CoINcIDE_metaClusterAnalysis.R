@@ -1229,6 +1229,100 @@ mapGeneIDs <- function(geneticFeatures,bioMartSource="ensembl",bioMartDataset="h
   
 }
 
+create_nullFDR_results <- function(dataMatrixList,numIter=5,numParallelCores=1,
+                                   clustSampleIndexList,clustFeatureIndexList,
+edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+                      "Manhattan","Minkowski","Mahalanobis"),
+numSims=500,
+outputFile="./CoINcIDE_messages.txt",
+checkNA=FALSE,centroidMethod=c("mean","median")){
+  
+  CoINcIDE_NullOutputList <- list()
+  #use R parallel here??
+  for(i in 1:numIter){
+    
+    nullMatrixList <- createNulDataMatrixList(dataMatrixList)
+    CoINcIDE_NullOutputList[[i]] <- getAdjMatrices(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
+    edgeMethod=edgeMethod,,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,numSims=numSims,
+    outputFile=outputFile,checkNA=FALSE,centroidMethod=centroidMethod,fractFeatIntersectThresh=0,numFeatIntersectThresh=0,clustSizeThresh=0, clustSizeFractThresh=0)
+    
+  }
+  
+  return(CoINcIDE_NullOutputList)
+  
+}
+#do in loop nullMatrixList <- createNulDataMatrixList(dataMatrixList)
+global_FDR <- function(CoINcIDE_outputList,
+edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+                      "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
+sigMethod=c("meanMatrix","centroid"),numSims=500,
+outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+checkNA=FALSE,centroidMethod=c("mean","median"), 
+    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, 
+saveDir = "/home/kplaney/ovarian_analysis/",experimentName = "nullTest",networkColors = "Set3",
+    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4,clustIndexMatrix,minFractNN =.7,findCommWithWeights=FALSE
+   
+    
+){
+  
+  
+  numFalseEdges_beforeGN <- list()
+  numFalseEdges_afterGN <- list()
+  
+  for(i in 1:length(CoINcIDE_outputList)){
+    
+  CoINcIDE_output <- CoINcIDE_outputList[[i]]
+   computeTrueSimilOutput = CoINcIDE_output$computeTrueSimilOutput
+  pvalueMatrix = CoINcIDE_output$pvalueMatrix
+  clustIndexMatrix = CoINcIDE_output$clustIndexMatrix
+
+  finalEdgeInfo <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,pvalueMatrix=pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
+                                    meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
+                                    minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                    fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
+                                    clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",
+                                    restrictEdges=FALSE,clustIndexMatrix,minFractNN =.7
+  )
+   
+  #NOW count # false edges
+  numFalseEdges_beforeGN[[i]] <- nrow(finalEdgeInfo$filterEdgeOutput$edgeMatrix)
+  
+  commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,
+                              clustIndexMatrix=CoINcIDE_output$clustIndexMatrix,fileTag=experimentName,
+                              saveDir=saveDir,minNumUniqueStudiesPerCommunity=minNumUniqueStudiesPerCommunity,experimentName=experimentName,
+                              commMethod=commMethod,
+                              makePlots=TRUE,saveGraphData=TRUE,plotToScreen=FALSE,findCommWithWeights=findCommWithWeights)
+  
+  
+  
+  numFalseEdges_afterGN[[i]] <- nrow(commInfo$edgeDF)
+
+  
+  }
+  
+  numFalseEdges_beforeGN <- mean(unlist(numFalseEdges_beforeGN))
+  numFalseEdges_afterGN <- mean(unlist(numFalseEdges_afterGN))
+  #must NOT count edges that are in the same dataset...how do this?
+
+  #just use last clustIndexMatrixList - # datasets will always be the same.
+  uniqueDatasets <- unique(clustIndexMatrixList[,2])
+  #each cluster can be assigned to one edge in each study
+  #and won't be compared to its own dataset (hence the -1)
+  #and then do this for all datasets
+  totalPossibleEdges_beforeGN <- length(uniqueDatasets-1)*length(uniqueDatasets)
+  #afterwards:  only have 50% of the edges because we collapsed all of them
+  totalPossibleEdges_afterGN <- totalPossibleEdges_beforeGN/2
+  
+  FDR_beforeGN <- numFalseEdges_beforeGN/totalPossibleEdges_beforeGN
+  FDR_afterGN <- numFalseEdges_afterGN/totalPossibleEdges_afterGN
+  
+  FDR_results <- list(FDR_beforeGN=FDR_beforeGN,FDR_afterGN=FDR_afterGN,numFalseEdges_beforeGN=numFalseEdges_beforeGN,
+                      numFalseEdges_afterGN=numFalseEdges_afterGN,totalPossibleEdges_beforeGN =totalPossibleEdges_beforeGN,
+                      totalPossibleEdges_afterGN=totalPossibleEdges_afterGN)
+  
+  return(FDR_results)
+  
+}
 # #for example: can create TCGA membership, overlay with ours.
 # visualizeTwoMetaclustMemberships <- function(memberMatrix1,memberMatrix2,returnSampleMemberMatrix()$fullMemberMatrix){
 #   
