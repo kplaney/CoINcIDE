@@ -1,8 +1,8 @@
 
 
-saveDirGlobal <- "/home/kplaney/breast_analysis"
-saveDirMetaWithTop20Genes <- "/home/kplaney/breast_analysis/metaRankWithTop20Genes"
-saveDirMetaNoTop20Genes <-  "/home/kplaney/breast_analysis/metaRankNoTop20Genes"
+saveDirGlobal <- "/home/ywrfc09/breast_analysis"
+saveDirMetaWithTop20Genes <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes"
+saveDirMetaNoTop20Genes <-  "/home/ywrfc09/breast_analysis/metaRankNoTop20Genes"
 ###esets
 library("curatedBreastData")
 #LOAD data

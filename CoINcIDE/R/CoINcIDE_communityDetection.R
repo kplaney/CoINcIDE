@@ -644,7 +644,6 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
       
     }
     
-  }
   #no edges
   }else{
     
@@ -874,7 +873,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
   }
   
-  
+  }
   
   }
   
