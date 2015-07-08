@@ -1,0 +1,15 @@
+exportPattern("^[[:alpha:]]+")
+export(addClinicalVarToNodeAttributes, advancedNetworkPlots,assignCentroidSubtype,
+       assignFinalEdges, batchNormalization, CDF_CoINcIDE,
+       clustMatrixListWrapper,computeAdjMatrices,computeMetaclustEffectSizes,
+       ConsensusClusterPlus_CoINcIDE,createExpressionSetList,
+       createNullDataMatrixList,createPhenoMasterTableFromMatrixList,createS4exprSet,
+       exprSetListToMatrixList,findCommunities,createTissueSimDatasets, exprSetListToMatrixList, findCommunities,
+       global_FDR, GSEA, merge_datasetList, processExpressionSet, processExprSetList, returnSampleMemberMatrix,
+       selectFeaturesMetaVariance, selectFeaturesMetaVariance_wrapper, selectMetaclustSigGenes, simulateClusterData,
+       summarizePosESMetaclustGenes)
+import(Biobase, BiocStyle)
+import(RColorBrewer, cluster, fdrtool, gplots, grid, igraph,
+  limma, matrixStats, plyr, proxy, rmeta, s4vd, sva)
+importFrom(ggplot2, ggplot, geom_histogram, geom_bar, facet_grid, aes,labs)
+importFrom(impute, impute.knn)

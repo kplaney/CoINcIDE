@@ -1,0 +1,1001 @@
+
+#CHANGE: /home/kplaney/breast_analysis to /home/kplaney/breast_analysis_withTop20Genes/
+
+
+#200 features, pearson:
+saveDir <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
+globalSaveDir <-  "/home/ywrfc09/breast_analysis"
+load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip"))
+load(paste0(saveDir,"/metaFeatures_200.RData.gzip"))
+source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load data matrix list
+load(paste0(globalSaveDir,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+
+clusterCoINcIDE_output =  kmeansConsensus
+
+edgeMethod <- "pearson"
+centroidMethod <- "mean"
+outputFile <- "~/CoINcIDE_messages.txt"
+numSims <- 500
+source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_computeEdges.R")
+breast_278genes_pearson_meanCentroid <-CoINcIDE_getAdjMatrices(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
+                                                                            edgeMethod=edgeMethod,centroidMethod=centroidMethod,
+                                                                            numSims=500,
+                                                                            outputFile=outputFile)
+
+
+
+
+save(breast_278genes_pearson_meanCentroid,file=paste0(saveDir,"breast_278genes_pearson_meanCentroid.RData.gzip"),compress="gzip")
+
+
+source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+
+load(paste0(saveDir,"breast_278genes_pearson_meanCentroid.RData.gzip"))
+CoINcIDE_output <- breast_278genes_pearson_meanCentroid
+
+saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
+
+
+load(paste0(globalSaveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
+esets=esets_minVar001_17_studies
+
+saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
+
+
+experimentName <- "breast_278genes_pearson_meanCentroid"
+eset_featureDataFieldName="gene_symbol"
+networkColors = "Set3"
+outcomesVarBinary=NA
+#not enough continuous variables for breast data
+outcomesVarCont = NA
+ovarian <- FALSE
+eset_uniquePatientID="dbUniquePatientID"
+fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                         "tumor_stage_preTrt" ,
+                         "preTrt_lymph_node_status" , 
+                         "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                         "anti_HER2","anti_estrogen")
+
+fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                   "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                   "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                   "anti-ER\ntreat")
+
+
+fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                  "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                  "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                  "anti-ER treatment")
+
+source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+
+
+breast_278genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                                                    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                    clustSizeThresh = 0,saveDir =saveDirNew,experimentName = experimentName,networkColors = networkColors,
+                                                                    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                                                    survivalAnalysis=FALSE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                                                    CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                                                    ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                                    GSEAanalysis=FALSE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                    findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=TRUE)
+#intersect: p-value, fract, meanMetric
+
+
+#####now do  spearman
+edgeMethod <- "spearman"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_200.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast200F_spearman_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                       edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                       sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                       outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                       numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                       clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+save(breast200F_spearman_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_200F_spearman_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+###now: pearson, but with centroid method
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=150
+clustSizeThresh=5
+clustSizeFractThresh=.05
+#more cores: centroid methods run slower!
+numParallelCores=4
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "centroid"
+
+#200 features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_200.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load data matrix list
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast200F_pearson_centroid <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                         edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                         sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                         outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                         numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                         clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast200F_pearson_centroid ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_200F_pearson_centroid_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+########500:
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=425
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 500features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem9500Features_2015-05-04.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_500.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast500F_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                      edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                      sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                      outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                      numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                      clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast500F_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_500F_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+##############
+#now do  spearman
+edgeMethod <- "spearman"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem9500Features_2015-05-04.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_500.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast500F_spearman_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                       edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                       sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                       outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                       numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                       clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+save(breast500F_spearman_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_500F_spearman_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+###now pearson, but with centroid:
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=425
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=4
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "centroid"
+
+# 500features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem9500Features_2015-05-04.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_500.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast500F_pearson_centroid <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                         edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                         sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                         outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                         numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                         clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+#had a bug in paste:
+save(breast500F_pearson_centroid,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_500F_pearson_centroid_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+########1000
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=800
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 500features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem91000Features_2015-05-05.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_1000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast1000F_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                       edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                       sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                       outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                       numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                       clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast1000F_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_1000F_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+
+###1000 spearman:
+
+edgeMethod <- "spearman"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem91000Features_2015-05-05.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_1000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast1000F_spearman_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                          edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                          sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                          outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                          numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                          clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast1000F_spearman_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_1000F_spearman_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+
+###now pearson, but with centroid:
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=800
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=4
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "centroid"
+
+# 500features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem91000Features_2015-05-05.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_1000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast1000F_pearson_centroid <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                          edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                          sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                          outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                          numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                          clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast1000F_pearson_centroid ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_1000F_pearson_centroid_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+####2000:
+fractFeatIntersectThresh=.85
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=1700
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 2000features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-05.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_2000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load("/home/kplaney/breast_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast2000F_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                       edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                       sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                       outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                       numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                       clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+#had a bug in paste:
+save(breast2000F_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_2000F_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+###spearman 2000
+
+fractFeatIntersectThresh=.85
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=1700
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 2000features, pearson:
+edgeMethod <- "spearman"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-05.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_2000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load("/home/kplaney/breast_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast2000F_spearman_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                          edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                          sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                          outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                          numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                          clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast2000F_spearman_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_2000F_spearman_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+###now with pearson, but centroid
+fractFeatIntersectThresh=.85
+numFeatIntersectThresh=1700
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=4
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "centroid"
+
+# 2000features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-05.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_2000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load("/home/kplaney/breast_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
+clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast2000F_pearson_centroid <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                          edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                          sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                          outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                          numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                          clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast2000F_pearson_centroid,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_2000F_pearson_meanMatrix_centroid_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+#########
+####gap test results as opposed to k-means consensus.
+##gap test with k-means
+
+###200 features
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=150
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+#200 features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis/curatedbreastData_kmeansGap_nstart25_200_features_2015-05-18.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_200.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load data matrix list
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansGap$clustSampleIndexList
+clustFeatureIndexList <- kmeansGap$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast200F_kmeansGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                   edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                   sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                   outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                   numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                                   clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast200F_kmeansGap_pearson_meanMatrix,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_breast200F_kmeansGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+###500 features
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=425
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 500features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis/curatedbreastData_kmeansGap_nstart25_500_features_2015-05-18.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_500.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansGap$clustSampleIndexList
+clustFeatureIndexList <- kmeansGap$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast500F_kmeansGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                   edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                   sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                   outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                   numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                                   clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast500F_kmeansGap_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_breast500F_kmeansGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+#TO DO: 1000,2000 have not finished running yet.
+#1000
+
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=800
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+
+edgeMethod <- "pearson"
+#TO DO: this hasn't finished running yet:
+load("/home/kplaney/breast_analysis//curatedbreastData_kmeansGap_nstart25_1000_features_2015-05-18.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_1000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  kmeansGap$clustSampleIndexList
+clustFeatureIndexList <- kmeansGap$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast1000F_kmeansGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                    edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                    sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                    outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                    numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                                    clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast1000F_kmeansGap_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_breast1000F_kmeansGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+###2000
+fractFeatIntersectThresh=.85
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=1700
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 2000features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis/curatedbreastData_kmeansGap_nstart25_2000_features_")
+load("/home/kplaney/breast_analysis/metaFeatures_2000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load("/home/kplaney/breast_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+clustSampleIndexList <-  hclustOut$clustSampleIndexList
+clustFeatureIndexList <- hclustOut$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast2000F_kmeansGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                                    edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                                    sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                                    outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                                    numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                                    clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast2000F_kmeansGap_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_2000F_kmeansGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+##########
+##gap test using hierarchical clustering:
+###200 features
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=150
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+#200 features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis/curatedbreastData_hclust_200Features_2015-05-15.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_200.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load data matrix list
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+
+dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+
+}
+
+clustSampleIndexList <-  hclustOut$clustSampleIndexList
+clustFeatureIndexList <- hclustOut$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast200F_hclustGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast200F_hclustGap_pearson_meanMatrix,file=
+paste0("/home/kplaney/breast_analysis/adjMatrices_breast200F_hclustGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+###500 features
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=425
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 500features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis/curatedbreastData_hclust_500Features_2015-05-15.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_500.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  hclustOut$clustSampleIndexList
+clustFeatureIndexList <- hclustOut$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast500F_hclustGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                         edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                         sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                         outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                         numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                         clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast500F_hclustGap_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_breast500F_hclustGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+#
+#10000
+
+fractFeatIntersectThresh=.8
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=800
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis/curatedbreastData_hclust_1000Features_2015-05-15.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_1000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+
+clustSampleIndexList <-  hclustOut$clustSampleIndexList
+clustFeatureIndexList <- hclustOut$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast1000F_hclustGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                          edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                          sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                          outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                          numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                          clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast1000F_hclustGap_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_breast1000F_hclustGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+###2000
+fractFeatIntersectThresh=.85
+#we know these all share at least 35 genes.
+numFeatIntersectThresh=1700
+clustSizeThresh=5
+clustSizeFractThresh=.05
+numParallelCores=3
+#this is "softer" than breast cancer.
+maxNullFractSize=.2
+maxTrueSimilThresh=Inf
+minTrueSimilThresh=.3
+includeRefClustInNull=TRUE
+numSims=500
+checkNA=FALSE
+outputFile="/home/kplaney/breast_analysis//CoINcIDE_messages.txt"
+sigMethod <- "meanMatrix"
+
+# 2000features, pearson:
+edgeMethod <- "pearson"
+load("/home/kplaney/breast_analysis/curatedbreastData_hclust_2000Features_2015-05-16.RData.gzip")
+load("/home/kplaney/breast_analysis/metaFeatures_2000.RData.gzip")
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+#load("/home/kplaney/breast_analysis/esets_proc_TCGAcombat.RData.gzip")
+
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
+
+#remove datasets with too many missing top gene features
+if(length(metaFeatures$datasetListIndicesToRemove)>0){
+  
+  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
+  
+}
+clustSampleIndexList <-  hclustOut$clustSampleIndexList
+clustFeatureIndexList <- hclustOut$clustFeatureIndexList
+
+source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
+
+
+breast2000F_hclustGap_pearson_meanMatrix <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                                          edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
+                                                          sigMethod=sigMethod,numSims=numSims,includeRefClustInNull=includeRefClustInNull,
+                                                          outputFile=outputFile,fractFeatIntersectThresh=fractFeatIntersectThresh,
+                                                          numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, 
+                                                          clustSizeFractThresh=clustSizeFractThresh,checkNA=FALSE)
+
+
+
+save(breast2000F_hclustGap_pearson_meanMatrix ,file=
+       paste0("/home/kplaney/breast_analysis/adjMatrices_2000F_hclustGap_pearson_meanMatrix_",Sys.Date(),".RData.gzip"),compress="gzip")
+
+
+
