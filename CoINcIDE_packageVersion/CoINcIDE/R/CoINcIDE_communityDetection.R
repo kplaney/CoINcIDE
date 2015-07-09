@@ -8,7 +8,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
                              minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
                              fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
                              clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges",
-                             clustIndexMatrix,minFractNN =.7
+                             clustIndexMatrix,minFractNN =.7,minNumEdgesForCluster=2
                              
 ){
   
@@ -95,14 +95,46 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   
   filterEdgeOutput <- filterEdges(adjMatricesList,thresholdVector,threshDir=threshDir,saveDir=saveDir,fileTag=fileTag,saveEdgeFile=TRUE)
   
+  #now filter one step further: nodes that have below minimum number of edges
   clustFurtherRemoved <- setdiff(filterEdgeOutput$clustRemoved,clustSizeIndexRemove)
   
   allClustRemoved <- filterEdgeOutput$clustRemoved
   
   message("A total of ",length(allClustRemoved), " clusters removed because they have no edges that pass the thresholds.")
+
+  totalNumEdges <- c()
+    
+  clustNames <- unique(as.vector(filterEdgeOutput$edgeMatrix))
+    for(m in 1:length(clustNames)){
+
+      clustNum <-  clustNames[m]
+      #take all edges
+      edgeMatrixIndices <- union(which(filterEdgeOutput$edgeMatrix[,1]==clustNum), which(filterEdgeOutput$edgeMatrix[,2]==clustNum))
+      totalNumEdges[m] <- length(edgeMatrixIndices)
+      
+    }
+  
+  rownames(totalNumEdges) <- clustNames
+  
+  #unweighted - care about how many other clusters this cluster was connected to.
+  removeClusters <- rownames(which(totalNumEdges<=minNumEdgesForCluster))
+  
+  message("A total of ",length(removeClusters), " clusters removed because they have too few edges.")
+  
+  for(r in 1:length(removeClusters)){
+    
+    removeRowIndices <- union(which(filterEdgeOutput$edgeMatrix[,1]==removeClusters[r]), which(filterEdgeOutput$edgeMatrix[,2]==removeClusters[r]))
+    
+    filterEdgeOutput$edgeMatrix <- filterEdgeOutput$edgeMatrix[-removeRowIndices, ]
+    filterEdgeOutput$edgeWeightMatrix <- filterEdgeOutput$edgeWeightMatrix[-removeRowIndices, ]
+    
+  }
+  
   message("A total of ",length(union(unique(filterEdgeOutput$edgeMatrix[,2]),unique(filterEdgeOutput$edgeMatrix[,1]))), " clusters have edges that pass the thresholds.")
+  
   output <- list(meanEdgePvalueMatrix=meanEdgePvalueMatrix,clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput,
-                 allClustRemoved=allClustRemoved,adjMatricesList=adjMatricesList,meanFractNNmatrix=meanFractNNmatrix,meanMeanMetricMatrix=meanMeanMetricMatrix)
+                 allClustRemoved=allClustRemoved,adjMatricesList=adjMatricesList,meanFractNNmatrix=meanFractNNmatrix,meanMeanMetricMatrix=meanMeanMetricMatrix,
+                 totalNumEdgesForCluster=totalNumEdges,minNumEdgesRemove=removeClusters)
   return(output)
   
 }
@@ -564,30 +596,32 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
   numEdgesInComm <- c()
   totalNumEdges <- c()
-#   
-#   for(m in 1:nrow(membership)){
-#     
-#     commNum <- membership[m,"community"]
-#     clustNum <-  membership[m,"clust"]
-#     edgeMatrixIndices <- intersect(which(edgeMatrix[,1]==clustNum), which(edgeMatrix[,2]==clustNum))
-#     edgeMatrixShort <- edgeMatrix[edgeMatrixIndices, ]
-#     edgeMatrixVector <- as.vector(edgeMatrixShort)
-#     #remove nodes that are itself
-#     edgeMatrixVector <- edgeMatrixVector[which(edgeMatrixVector==clustNum)]
-#     
-#     if(length(edgeMatrixVector) != length(unique(edgeMatrixVector))){
-#     
-#       stop("You're getting duplicated edges.")
-#       
-#     }
-#     
-#     totalNumEdges[m] <- length(unique(edgeMatrixVector))
-#     membershipShort <- membership[na.omit(match(edgeMatrixVector,membership[,"clust"])), ]
-#     numEdgesInComm[m] <- length(which(membershipShort[,"community"]==commNum))
-#     
-#   }
-#   
-#   membership <- data.frame(membership, cbind(totalNumEdges,numEdgesInComm))
+  
+  for(m in 1:nrow(membership)){
+    
+    commNum <- membership[m,"community"]
+    clustNum <-  membership[m,"clust"]
+    edgeMatrixIndices <- union(which(edgeMatrix[,1]==clustNum), which(edgeMatrix[,2]==clustNum))
+    edgeMatrixShort <- edgeMatrix[edgeMatrixIndices, ]
+    edgeMatrixVector <- as.vector(edgeMatrixShort)
+    #remove nodes that are itself
+    edgeMatrixVector <- edgeMatrixVector[-which(edgeMatrixVector==clustNum)]
+    
+    if(length(edgeMatrixVector) != length(unique(edgeMatrixVector))){
+    
+      stop("You're getting duplicated edges.")
+      
+    }
+    
+    totalNumEdges[m] <- length(unique(edgeMatrixVector))
+    membershipShort <- membership[na.omit(match(edgeMatrixVector,membership[,"clust"])), ]
+    numEdgesInComm[m] <- length(which(membershipShort[,"community"]==commNum))
+    
+  }
+  
+  fractEdgesInOut <- numEdgesInComm/totalNumEdgesInComm
+  
+  membership <- data.frame(membership, cbind(totalNumEdges,numEdgesInComm,fractEdgesInOut))
 
   for(c in 1:numCommunitiesOrig){
     
