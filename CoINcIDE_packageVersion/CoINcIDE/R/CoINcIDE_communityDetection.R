@@ -9,8 +9,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
                              fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,
                              clustSizeThresh=0, clustSizeFractThresh=0,saveDir="./",fileTag="CoINcIDE_edges",
                              clustIndexMatrix,minFractNN =.7,minNumEdgesForCluster=2
-                             
-){
+                             ){
   
   clustSizeIndexRemove <- c()
   count <- 0
@@ -102,39 +101,54 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   
   message("A total of ",length(allClustRemoved), " clusters removed because they have no edges that pass the thresholds.")
 
-  totalNumEdges <- c()
+  allRemovedClusters <- c()
+  
+  while(nrow(filterEdgeOutput$edgeMatrix)>0){
+    #keep looping: if remove a certain cluster, may leave another cluster with few edges.
+    totalNumEdges <- c()
+      
+    clustNames <- unique(as.vector(filterEdgeOutput$edgeMatrix))
     
-  clustNames <- unique(as.vector(filterEdgeOutput$edgeMatrix))
-    for(m in 1:length(clustNames)){
-
-      clustNum <-  clustNames[m]
-      #take all edges
-      edgeMatrixIndices <- union(which(filterEdgeOutput$edgeMatrix[,1]==clustNum), which(filterEdgeOutput$edgeMatrix[,2]==clustNum))
-      totalNumEdges[m] <- length(edgeMatrixIndices)
+      for(m in 1:length(clustNames)){
+  
+        clustNum <-  clustNames[m]
+        #take all edges
+        edgeMatrixIndices <- union(which(filterEdgeOutput$edgeMatrix[,1]==clustNum), which(filterEdgeOutput$edgeMatrix[,2]==clustNum))
+        totalNumEdges[m] <- length(edgeMatrixIndices)
+        
+      }
+    
+    rownames(totalNumEdges) <- clustNames
+    
+    #unweighted - care about how many other clusters this cluster was connected to.
+    removeClusters <- rownames(which(totalNumEdges<=minNumEdgesForCluster))
+    
+    if(length(removeClusters)==0){
+      #no more clusters to remove
+      break;
       
     }
-  
-  rownames(totalNumEdges) <- clustNames
-  
-  #unweighted - care about how many other clusters this cluster was connected to.
-  removeClusters <- rownames(which(totalNumEdges<=minNumEdgesForCluster))
-  
-  message("A total of ",length(removeClusters), " clusters removed because they have too few edges.")
-  
-  for(r in 1:length(removeClusters)){
     
-    removeRowIndices <- union(which(filterEdgeOutput$edgeMatrix[,1]==removeClusters[r]), which(filterEdgeOutput$edgeMatrix[,2]==removeClusters[r]))
-    
-    filterEdgeOutput$edgeMatrix <- filterEdgeOutput$edgeMatrix[-removeRowIndices, ]
-    filterEdgeOutput$edgeWeightMatrix <- filterEdgeOutput$edgeWeightMatrix[-removeRowIndices, ]
+    allRemovedClusters <- append(allRemovedClusters,removeClusters)
+  
+    for(r in 1:length(removeClusters)){
+      
+      removeRowIndices <- union(which(filterEdgeOutput$edgeMatrix[,1]==removeClusters[r]), which(filterEdgeOutput$edgeMatrix[,2]==removeClusters[r]))
+      
+      filterEdgeOutput$edgeMatrix <- filterEdgeOutput$edgeMatrix[-removeRowIndices, ]
+      filterEdgeOutput$edgeWeightMatrix <- filterEdgeOutput$edgeWeightMatrix[-removeRowIndices, ]
+      
+    }
     
   }
+  
+  message("A total of ",length(allRemovedClusters), " clusters removed because they have too few edges.")
   
   message("A total of ",length(union(unique(filterEdgeOutput$edgeMatrix[,2]),unique(filterEdgeOutput$edgeMatrix[,1]))), " clusters have edges that pass the thresholds.")
   
   output <- list(meanEdgePvalueMatrix=meanEdgePvalueMatrix,clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput,
                  allClustRemoved=allClustRemoved,adjMatricesList=adjMatricesList,meanFractNNmatrix=meanFractNNmatrix,meanMeanMetricMatrix=meanMeanMetricMatrix,
-                 totalNumEdgesForCluster=totalNumEdges,minNumEdgesRemove=removeClusters)
+                 totalNumEdgesForCluster=totalNumEdges,minNumEdgesRemove=allRemovedClusters)
   return(output)
   
 }
@@ -296,7 +310,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
                             saveDir="./",minNumUniqueStudiesPerCommunity=3,experimentName="sparseBC",
                             commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel"),
                             makePlots=TRUE,plotToScreen=FALSE,saveGraphData=TRUE,nodeFontSize=.7,nodePlotSize=10,
-                            findCommWithWeights=FALSE, plotSimilEdgeWeight = TRUE,minMedianNumEdgesPerNodeInCommunity=3){
+                            findCommWithWeights=FALSE, plotSimilEdgeWeight = TRUE,fractEdgesInVsOutComm=.75){
   
   if(findCommWithWeights || plotSimilEdgeWeight){
     
@@ -589,11 +603,9 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   #this is baseline...but those studies may not be all unique
   #commKeepTemp <- which(numMembersInComm>=minNumNodesPerCommunity);
   
-  #now see if this actually meets the unique threshold
+  #now see if this actually meets the thresholds
   commKeep <- c();
   k <- 0;
-  
-  
   numEdgesInComm <- c()
   totalNumEdges <- c()
   
@@ -616,23 +628,25 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     totalNumEdges[m] <- length(unique(edgeMatrixVector))
     membershipShort <- membership[na.omit(match(edgeMatrixVector,membership[,"clust"])), ]
     numEdgesInComm[m] <- length(which(membershipShort[,"community"]==commNum))
-    
+
   }
   
   fractEdgesInOut <- numEdgesInComm/totalNumEdgesInComm
-  
-  membership <- data.frame(membership, cbind(totalNumEdges,numEdgesInComm,fractEdgesInOut))
+  numEdgesNotInComm <- totalNumEdges - numEdgesInComm
+  membership <- data.frame(membership, cbind(totalNumEdges,numEdgesInComm,fractEdgesInOut,numEdgesNotInComm))
 
   for(c in 1:numCommunitiesOrig){
     
+    #these will be double-counted as both nodes for each edge will be in the community
+    numTotalEdgesInCommunity <- sum(membership[which(membership[,"community"]==unique(membership[,"community"])),"numEdgesInComm"])/2
+    #these will not be double-counted.
+    numTotalEdgesNotInCommunity <- sum(membership[which(membership[,"community"]==unique(membership[,"community"])),"numEdgesNotInComm"])
+    
     if( (length(unique(membership[which(membership[,"community"]==unique(membership[,"community"])[c]), "studyNum"]))>=minNumUniqueStudiesPerCommunity) 
-        #&&
-        
-        #(median(membership[which(membership[,"community"]==unique(membership[,"community"])),"numEdgesInComm"]) >= minMedianNumEdgesPerNodeInCommunity)
-         
-        ){
-      k <- 1 + k;
-      commKeep[k] <- unique(membership[,"community"])[c];
+        && ((numTotalEdgesInCommunity/numTotalEdgesNotInCommunity) >= fractEdgesInVsOutComm) ){
+      
+        k <- 1 + k;
+        commKeep[k] <- unique(membership[,"community"])[c];
       
     }
     
