@@ -101,8 +101,10 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
   
   message("A total of ",length(allClustRemoved), " clusters removed because they have no edges that pass the thresholds.")
 
-  allRemovedClusters <- c()
+  allRemovedMinEdgeClusters <- c()
   
+  if(minNumEdgesForCluster >1){
+    
   while(nrow(filterEdgeOutput$edgeMatrix)>0){
     #keep looping: if remove a certain cluster, may leave another cluster with few edges.
     totalNumEdges <- c()
@@ -129,7 +131,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
       
     }
     
-    allRemovedClusters <- append(allRemovedClusters,removeClusters)
+    allRemovedMinEdgeClusters <- append(allRemovedMinEdgeClusters,removeClusters)
   
     for(r in 1:length(removeClusters)){
       
@@ -142,13 +144,22 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
     
   }
   
-  message("A total of ",length(allRemovedClusters), " clusters removed because they have too few edges.")
+  }
+  message("A total of ",length(allRemovedMinEdgeClusters), " clusters removed because they have too few edges.")
+  
+  allClustersRemoved <- append(allClustRemoves,allRemovedMinEdgeClusters)
+  
+  if(length(allClustersRemoved) != length(unique(allClustersRemoved))){
+    
+    stop("Error: double-counting edges (or recounting) clusters after they are removed.")
+    
+  }
   
   message("A total of ",length(union(unique(filterEdgeOutput$edgeMatrix[,2]),unique(filterEdgeOutput$edgeMatrix[,1]))), " clusters have edges that pass the thresholds.")
   
   output <- list(meanEdgePvalueMatrix=meanEdgePvalueMatrix,clustSizeIndexRemove=clustSizeIndexRemove,clustFurtherRemoved=clustFurtherRemoved,filterEdgeOutput=filterEdgeOutput,
-                 allClustRemoved=allClustRemoved,adjMatricesList=adjMatricesList,meanFractNNmatrix=meanFractNNmatrix,meanMeanMetricMatrix=meanMeanMetricMatrix,
-                 totalNumEdgesForCluster=totalNumEdges,minNumEdgesRemove=allRemovedClusters)
+                 clustRemovedBeforeMinNumEdges=allClustRemoved,adjMatricesList=adjMatricesList,meanFractNNmatrix=meanFractNNmatrix,meanMeanMetricMatrix=meanMeanMetricMatrix,
+                 totalNumEdgesForCluster=totalNumEdges,minNumEdgesRemove=allRemovedMinEdgeClusters)
   return(output)
   
 }
