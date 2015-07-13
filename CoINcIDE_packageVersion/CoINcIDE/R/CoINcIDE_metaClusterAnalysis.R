@@ -1247,7 +1247,7 @@ centroidMethod=c("mean","median")){
     
     message("Running CoINcIDE on a null list of data matrices for iteration ",i)
     nullMatrixList <- createNullDataMatrixList(dataMatrixList)
-    CoINcIDE_NullOutputList[[i]] <- CoINcIDE_getAdjMatrices(dataMatrixList=nullMatrixList,clustSampleIndexList=clustSampleIndexList,
+    CoINcIDE_NullOutputList[[i]] <- computeAdjMatrices(dataMatrixList=nullMatrixList,clustSampleIndexList=clustSampleIndexList,
                                                             clustFeatureIndexList=clustFeatureIndexList,
     edgeMethod=edgeMethod,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,numSims=numSims,
     outputFile=outputFile,checkNA=FALSE,centroidMethod=centroidMethod,fractFeatIntersectThresh=0,numFeatIntersectThresh=0,clustSizeThresh=0, clustSizeFractThresh=0)
@@ -1262,7 +1262,7 @@ centroidMethod=c("mean","median")){
   
   nullOutput <- list(CoINcIDE_NullOutputList=CoINcIDE_NullOutputList,meanMatrixQuantiles=meanMatrixQuantiles,
                      indPvalueQuantiles=indPvalueQuantiles,indFractNNQuantiles=indFractNNQuantiles)
-  return( nullOutput)
+  return(nullOutput)
   
 }
 #do in loop nullMatrixList <- createNulDataMatrixList(dataMatrixList)

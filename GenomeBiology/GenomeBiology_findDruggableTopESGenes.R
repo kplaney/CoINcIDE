@@ -2,92 +2,20 @@
 #load("/home/data/genomeReferences/annotationHuman/druggableGenomeList_updatedGeneSymbols.RData.gzip");
 load("~/druggableGenomeList_updatedGeneSymbols.RData.gzip");
 #breast 200
-ES_topGenes <- read.table("/home/kplaney/breast_analysis_withTop20Genes/breast_200_features_2015-05-08/breast_200_features_summaryGenes_ESpos_thresh_0.5_2015-05-08.txt")
+ES_topGenes <- read.table("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/breast_278genes_pear_meanCent_2015-07-09/breast_278genes_pear_meanCent_summaryGenes_ESpos_thresh_0.5_2015-07-09.txt")
 
-#Cool!! 50 genes.
+#Cool!! over 50 genes.
 drugGenes <- druggableGenes[na.omit(match(rownames(ES_topGenes),druggableGenes))]
 
-#look at ES above 1 only?
+#look at ES above 1 only? no - might as well keep above .5 data.
 thresh <- .5
 
 ES_final <- ES_topGenes[drugGenes, ]
 removeIndices <- c()
+#first 1/2 of rows are effect size.
 for(e in 1:nrow(ES_final)){
   
-  if(all(ES_final[e,] < thresh,na.rm=TRUE)){
-    #remove this gene
-    removeIndices <- c(removeIndices,e)
-    
-  }
-  
-}
-if(length(ES_final)>0){
-  
-  ES_final <- ES_final[-removeIndices, ]
-  
-}
-#save this table.
-write.table(ES_final, "/home/kplaney/breast200_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
-#breast 2000
-ES_topGenes <- read.table("/home/kplaney/breast_analysis_withTop20Genes/breast_2000_features_2015-05-18/breast_2000_features_summaryGenes_ESpos_thresh_0.5_2015-05-18.txt")
-
-#Cool!! 251 genes.
-drugGenes <- druggableGenes[na.omit(match(rownames(ES_topGenes),druggableGenes))]
-ES_final <- ES_topGenes[drugGenes, ]
-removeIndices <- c()
-for(e in 1:nrow(ES_final)){
-  
-  if(all(ES_final[e,] < thresh,na.rm=TRUE)){
-    #remove this gene
-    removeIndices <- c(removeIndices,e)
-    
-  }
-  
-}
-if(length(ES_final)>0){
-  
-  ES_final <- ES_final[-removeIndices, ]
-  
-}
-
-write.table(ES_final, "/home/kplaney/breast2000_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
-##then look at ovarian:
-#200
-ES_topGenes <- read.table("/home/kplaney/ovarian_analysis_withTop20Genes/ovarian_200_features_2015-05-05/ovarian_200_features_summaryGenes_ESpos_thresh_0.5_2015-05-05.txt")
-#Cool!! 40 genes.
-drugGenes <- druggableGenes[na.omit(match(rownames(ES_topGenes),druggableGenes))]
-
-ES_final <- ES_topGenes[drugGenes, ]
-removeIndices <- c()
-for(e in 1:nrow(ES_final)){
-  
-  if(all(ES_final[e,] < thresh,na.rm=TRUE)){
-    #remove this gene
-    removeIndices <- c(removeIndices,e)
-    
-  }
-  
-}
-if(length(ES_final)>0){
-  
-  ES_final <- ES_final[-removeIndices, ]
-  
-}
-
-write.table(ES_final, "/home/kplaney/ovarian200_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
-##500
-#200
-ES_topGenes <- read.table("/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/ovarian_500_featuresWithGSEA_2015-06-30//ovarian_500_featuresWithGSEA_summaryGenes_ESpos_thresh_0.5_2015-06-30.txt")
-
-drugGenes <- druggableGenes[na.omit(match(rownames(ES_topGenes),druggableGenes))]
-
-ES_final <- ES_topGenes[drugGenes, ]
-removeIndices <- c()
-
-metaClusterCol <- grep("X",colnames(ES_final))
-for(e in 1:nrow(ES_final)){
-  
-  if(all(ES_final[metaClusterCol,] < thresh,na.rm=TRUE)){
+  if(all(ES_final[e,c(1:(ncol(ES_final)/2))] < thresh,na.rm=TRUE)){
     #remove this gene
     removeIndices <- c(removeIndices,e)
     
@@ -98,34 +26,87 @@ if(length(removeIndices)>0){
   
   ES_final <- ES_final[-removeIndices, ]
   
-}else{
-  
-  message("No indices to remove.")
 }
+#save this table.
+write.table(ES_final, "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/breast278_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
 
-write.table(ES_final, "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/ovarian_500_featuresWithGSEA_2015-06-30/ovarian500_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
+#breast 2000
+ES_topGenes <- read.table("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/breast_2052genes_pear_meanCent_2015-07-09/breast_2052genes_pear_meanCent_summaryGenes_ESpos_thresh_0.5_2015-07-09.txt")
 
-
-##2000
-ES_topGenes <- read.table("/home/kplaney/ovarian_analysis_withTop20Genes/ovarian_2000_features_2015-05-08/ovarian_2000_features_summaryGenes_ESpos_thresh_0.5_2015-05-08.txt")
-#Cool!! 350 genes.
+#Cool!! 251 genes.
 drugGenes <- druggableGenes[na.omit(match(rownames(ES_topGenes),druggableGenes))]
+#look at ES above 1 only? no - might as well keep above .5 data.
+thresh <- .5
 
 ES_final <- ES_topGenes[drugGenes, ]
 removeIndices <- c()
+#first 1/2 of rows are effect size.
 for(e in 1:nrow(ES_final)){
   
-  if(all(ES_final[e,] < thresh,na.rm=TRUE)){
+  if(all(ES_final[e,c(1:(ncol(ES_final)/2))] < thresh,na.rm=TRUE)){
     #remove this gene
     removeIndices <- c(removeIndices,e)
     
   }
   
 }
-if(length(ES_final)>0){
+if(length(removeIndices)>0){
   
   ES_final <- ES_final[-removeIndices, ]
   
 }
 
-write.table(ES_final, "/home/kplaney/ovarian2000_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
+write.table(ES_final, "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/breast2052_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
+
+
+##then look at ovarian:
+#200
+ES_topGenes <- read.table("/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/240F_pear_meanCent_2015-07-09/240F_pear_meanCent_summaryGenes_ESpos_thresh_0.5_2015-07-09.txt")
+#Cool!! 40 genes.
+drugGenes <- druggableGenes[na.omit(match(rownames(ES_topGenes),druggableGenes))]
+
+
+ES_final <- ES_topGenes[drugGenes, ]
+removeIndices <- c()
+#first 1/2 of rows are effect size.
+for(e in 1:nrow(ES_final)){
+  
+  if(all(ES_final[e,c(1:(ncol(ES_final)/2))] < thresh,na.rm=TRUE)){
+    #remove this gene
+    removeIndices <- c(removeIndices,e)
+    
+  }
+  
+}
+if(length(removeIndices)>0){
+  
+  ES_final <- ES_final[-removeIndices, ]
+  
+}
+
+write.table(ES_final, "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/ovarian240_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)
+
+##2000
+ES_topGenes <- read.table("/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/2014F_pear_meanCent_2015-07-09/2014F_pear_meanCent_summaryGenes_ESpos_thresh_0.5_2015-07-09.txt")
+#Cool!! 350 genes.
+drugGenes <- druggableGenes[na.omit(match(rownames(ES_topGenes),druggableGenes))]
+
+
+ES_final <- ES_topGenes[drugGenes, ]
+removeIndices <- c()
+#first 1/2 of rows are effect size.
+for(e in 1:nrow(ES_final)){
+  
+  if(all(ES_final[e,c(1:(ncol(ES_final)/2))] < thresh,na.rm=TRUE)){
+    #remove this gene
+    removeIndices <- c(removeIndices,e)
+    
+  }
+  
+}
+if(length(removeIndices)>0){
+  
+  ES_final <- ES_final[-removeIndices, ]
+  
+}
+write.table(ES_final, "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/ovarian2014_druggable.txt",col.names=FALSE,quote=FALSE,row.names=TRUE)

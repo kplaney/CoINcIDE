@@ -4,7 +4,7 @@ source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_communityDetection.R")
 
 ##test out FDR.
-highQualityDataset <- createLungSimDatasets(numSimDatasets=10,
+highQualityDataset <- createTissueClusterSimDatasets(numSimDatasets=10,
                                    eigenValueMin = -.001,simType=c("highQualityClust"),
                                    numPerClust = c(50,50,50,50),
                                    stddevNoise=0,numRows=200)
@@ -27,7 +27,7 @@ real_adjMatrices <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustS
 
 
 
-highQuality <- runLungSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
+highQuality <- runTissueClusterSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
                           eigenValueMin = -.001,simType=c("highQualityClust"),
                           noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                           numWrapperSims=100,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -36,7 +36,7 @@ highQuality <- runLungSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=
                           indEdgePvalueThresh=.1,meanEdgePairPvalueThresh=.05,restrictEdges=FALSE
 )
   
-mixQuality <- runLungSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
+mixQuality <- runTissueClusterSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
                              eigenValueMin = -.001,simType=c("mixedClustQualityClust"),
                              noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                              numWrapperSims=100,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -45,7 +45,7 @@ mixQuality <- runLungSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=1
                              indEdgePvalueThresh=.1,meanEdgePairPvalueThresh=.05,restrictEdges=FALSE
 )
 
-unevenQuality <- runLungSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
+unevenSize <- runTissueClusterSimROC(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
                              eigenValueMin = -.001,simType=c("unevenSizeClust"),
                              noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                              numWrapperSims=100,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,

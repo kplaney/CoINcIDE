@@ -3,65 +3,56 @@
 
 
 ######
-#wrapper functions to write:
 #NOTE: to make random mixtures of samples: just randomly remove 1-3 # of clusters from each data matrix list.
 #NOTE: to adjust cluster sizes: just make all clusters that have max cluster size, say 100.
 #then subset random # (say 0-100) for each dataset, updating sampleIndex and featureIndex list, for each random dataset
-
+#rows are numbers of features, such as genes, that you are NOT clustering one.
 createTissueSimDatasets <-  function(numSimDatasets=10,
                                    eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
                                    numPerClust = c(50,50,50,50),
-                                   stddevNoise=0,numRows=200){
+                                   stddevNoise=0,numRows=200,minRandSize=1,maxRandSize=100){
   
   clustSampleIndexList <- list()
   clustFeatureIndexList <- list()
   clustFeaturesList <- list()
-  
+  numPerClustList <- list()
   for(d in 1:numSimDatasets){
     
     clustSampleIndexList[[d]] <- list()
     clustFeatureIndexList[[d]] <- list()
 
     
-    if(d!=numSimDatasets){
+    if( simType != "unevenSizeClust"){
 
-      
+      numPerClustNonRand[[d]] <- list()
       count <- 1
       for(c in 1:length(numPerClust)){
-            
-        clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClust[c]-1))
+        numPerClustList[[d]][[c]] <-   numPerClust[c]
+        clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClustList[[d]][[c]]-1))
         clustFeatureIndexList[[d]][[c]] <- c(1:numRows)
-        count <- count+numPerClust[c]
+        count <- count+numPerClustList[[d]][[c]]
         
       }
       
     }else{
-      
-      if( simType != "unevenSizeClust"){
+
         
         count <- 1
+        numPerClustList[[d]] <- list()
         for(c in 1:length(numPerClust)){
-          
-          clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClust[c]-1))
+          numPerClustList[[d]][[c]] <- sample(c(minRandSize:maxRandSize),size=1)
+          clustSampleIndexList[[d]][[c]] <- c(count:(count+numPerClustList[[d]][[c]] -1))
           clustFeatureIndexList[[d]][[c]] <- c(1:numRows)
-          count <- count+numPerClust[c]
+          count <- count+numPerClustList[[d]][[c]]
           
         }
         
-      }else{
-        #only two groups for last cluster, and their proportions are hard-coded (100 and 10.)
-        clustSampleIndexList[[d]][[1]] <- c(1:100)
-        clustFeatureIndexList[[d]][[1]] <- c(1:numRows)
-        clustSampleIndexList[[d]][[2]] <- c(101:110)
-        clustFeatureIndexList[[d]][[2]] <- c(1:numRows)
-        
-      }
 
     }
   }
   
-  lungData <- createLungMatrixList()
-  lungSimData <- simulateClusterData(numSimDatasets=numSimDatasets, stddevNoise= stddevNoise,method="eigen",eigenValueMin=eigenValueMin,clustMatrixList=lungData$clustMatrixList,numRows=numRows,numPerClust=numPerClust)
+  tissueData <- createLungMatrixList()
+  tissueSimData <- simulateClusterData(numSimDatasets=numSimDatasets, stddevNoise= stddevNoise,method="eigen",eigenValueMin=eigenValueMin,clustMatrixList=tissueData$clustMatrixList,numRows=numRows,numPerClustList=numPerClustList)
   
   dataMatrixList <- list()
   clustMatrixList <- list()
@@ -79,20 +70,20 @@ createTissueSimDatasets <-  function(numSimDatasets=10,
     
   }
   
-  if(simType=="highQualityClust"){
+  if(simType=="highQualityClust" || simType=="unevenSizeClust"){
     
     
     #construct your data matrices.
     for(s in 1:numSimDatasets){
       
-      dataMatrixList[[s]] <- data.matrix(lungSimData$simMatrixList[[s]])
+      dataMatrixList[[s]] <- data.matrix(tissueSimData$simMatrixList[[s]])
       clustMatrixList[[s]] <- list()
       clustFeaturesList[[s]] <- rownames(dataMatrixList[[s]])
     
       #COME BACK: simplify?
-      for(e in 1:length(lungSimData$simClustList[[s]])){
+      for(e in 1:length(tissueSimData$simClustList[[s]])){
         
-        clustMatrixList[[s]][[e]] <- lungSimData$simClustList[[s]][[e]]
+        clustMatrixList[[s]][[e]] <- tissueSimData$simClustList[[s]][[e]]
         
       }
       
@@ -103,14 +94,14 @@ createTissueSimDatasets <-  function(numSimDatasets=10,
     
     for(s in 1:numSimDatasets){
 
-      dataMatrixList[[s]] <- data.matrix(lungSimData$simMatrixList[[s]])
+      dataMatrixList[[s]] <- data.matrix(tissueSimData$simMatrixList[[s]])
       clustMatrixList[[s]] <- list()
       
-      clustMatrixList[[s]][[1]] <- lungSimData$simClustList[[s]][[1]]
+      clustMatrixList[[s]][[1]] <- tissueSimData$simClustList[[s]][[1]]
       #mix up the two middle clusters.
-      clustMatrixList[[s]][[2]] <- lungSimData$simMatrixList[[s]][ ,sample.int(ncol(lungSimData$simMatrixList[[s]]),size=numPerClust[2],replace=TRUE)]
-      clustMatrixList[[s]][[3]] <- lungSimData$simMatrixList[[s]][ ,sample.int(ncol(lungSimData$simMatrixList[[s]]),size=numPerClust[3],replace=TRUE)]
-      clustMatrixList[[s]][[4]] <- lungSimData$simClustList[[s]][[2]]
+      clustMatrixList[[s]][[2]] <- tissueSimData$simMatrixList[[s]][ ,sample.int(ncol(tissueSimData$simMatrixList[[s]]),size=numPerClust[2],replace=TRUE)]
+      clustMatrixList[[s]][[3]] <- tissueSimData$simMatrixList[[s]][ ,sample.int(ncol(tissueSimData$simMatrixList[[s]]),size=numPerClust[3],replace=TRUE)]
+      clustMatrixList[[s]][[4]] <- tissueSimData$simClustList[[s]][[2]]
       #replace data matrix list too
       dataMatrixList[[s]][ , c((numPerClust[1]+1):(numPerClust[1]+numPerClust[2]))] <- clustMatrixList[[s]][[2]]
       dataMatrixList[[s]][ , c((numPerClust[1]+numPerClust[2]+1):(numPerClust[1]+numPerClust[2]+numPerClust[3]))] <- clustMatrixList[[s]][[3]]
@@ -118,35 +109,35 @@ createTissueSimDatasets <-  function(numSimDatasets=10,
       
     }
     
-  }else if(simType=="unevenSizeClust"){
-    
-    for(s in 1:numSimDatasets){
-      
-      if(s==numSimDatasets){
-        #must transpose for my clust robust methods..
-        clustMatrixList[[s]] <- list()
-        #only resample from first cluster - make a large one.
-        clustMatrixList[[s]][[1]] <- lungSimData$simClustList[[s]][[1]][ ,sample.int(numPerClust[1],size=100,replace=TRUE)]
-        #make a small cluster
-        clustMatrixList[[s]][[2]] <- lungSimData$simClustList[[s]][[2]][ ,sample.int(numPerClust[2],size=10,replace=TRUE)]
-        #replace data matrix list too
-        dataMatrixList[[s]] <- data.matrix(cbind(clustMatrixList[[s]][[1]],clustMatrixList[[s]][[2]]))
-        
-        #just make the rest normal clusters.
-      }else{
-        
-        dataMatrixList[[s]] <- data.matrix(lungSimData$simMatrixList[[s]])
-        clustMatrixList[[s]] <- list()
-        
-        for(e in 1:length(lungSimData$simClustList[[s]])){
-          
-          clustMatrixList[[s]][[e]] <- lungSimData$simClustList[[s]][[e]]
-          
-        }
-        
-      }   
-      
-    }
+#   }else if(simType=="unevenSizeClust"){
+#     
+#     for(s in 1:numSimDatasets){
+#       
+#       if(s==numSimDatasets){
+#         #must transpose for my clust robust methods..
+#         clustMatrixList[[s]] <- list()
+#         #only resample from first cluster - make a large one.
+#         clustMatrixList[[s]][[1]] <- tissueSimData$simClustList[[s]][[1]][ ,sample.int(numPerClustRand[[s]][[c]],size=100,replace=TRUE)]
+#         #make a small cluster
+#         clustMatrixList[[s]][[2]] <- tissueSimData$simClustList[[s]][[2]][ ,sample.int(numPerClust[2],size=10,replace=TRUE)]
+#         #replace data matrix list too
+#         dataMatrixList[[s]] <- data.matrix(cbind(clustMatrixList[[s]][[1]],clustMatrixList[[s]][[2]]))
+#         
+#         #just make the rest normal clusters.
+#       }else{
+#         
+#         dataMatrixList[[s]] <- data.matrix(tissueSimData$simMatrixList[[s]])
+#         clustMatrixList[[s]] <- list()
+#         
+#         for(e in 1:length(tissueSimData$simClustList[[s]])){
+#           
+#           clustMatrixList[[s]][[e]] <- tissueSimData$simClustList[[s]][[e]]
+#           
+#         }
+#         
+#       }   
+#       
+#     }
     
   }else{
     
@@ -161,10 +152,10 @@ createTissueSimDatasets <-  function(numSimDatasets=10,
   
 }
 
-##grab real lung data to base our simulations off of.
+##grab real tissue data to base our simulations off of.
 createLungMatrixList <- function(){
   #ref from s4vd library:
-  #Bhattacharjee, A., Richards, W. G., Staunton, J., Li, C., Monti, S., Vasa, P., Ladd, C.,<br> Beheshti, J., Bueno, R., Gillette, M., Loda, M., Weber, G., Mark, E. J., Lander,<br> E. S., Wong, W., Johnson, B. E., Golub, T. R., Sugarbaker, D. J., and Meyerson,<br> M. (2001). Classification of human lung carcinomas by mRNA expression profiling<br> reveals distinct adenocarcinoma subclasses. Proceedings of the National Academy<br> of Sciences of the United States of America. 
+  #Bhattacharjee, A., Richards, W. G., Staunton, J., Li, C., Monti, S., Vasa, P., Ladd, C.,<br> Beheshti, J., Bueno, R., Gillette, M., Loda, M., Weber, G., Mark, E. J., Lander,<br> E. S., Wong, W., Johnson, B. E., Golub, T. R., Sugarbaker, D. J., and Meyerson,<br> M. (2001). Classification of human tissue carcinomas by mRNA expression profiling<br> reveals distinct adenocarcinoma subclasses. Proceedings of the National Academy<br> of Sciences of the United States of America. 
 
   data(lung200)
   #before use these in simulations, make correlations within and between each subtype.
@@ -185,7 +176,7 @@ createLungMatrixList <- function(){
   
 }
 ########
-calcCorMeanMatrix <- function(clustMatrixList,fileSaveName="/home/kplaney/ISMB/lung_sims/lungCorMatrix.txt"){
+calcCorMeanMatrix <- function(clustMatrixList,fileSaveName="/home/kplaney/ISMB/tissue_sims/tissueCorMatrix.txt"){
   
   warning("Assumes your clustMatrixList is in this order: Carcinoid,Colon,Normal,SmallCell\n")
   
@@ -324,68 +315,81 @@ createSimGeneData <- function(sampleExpr,numRows,method=c("eigen","chol"),eigenV
 #numRows=200
 #numPerClust <- c(50,50,50,50)
 
-simulateClusterData <- function(numSimDatasets=1,clustMatrixList,numRows,numPerClust,stddevNoise=0,method=c("eigen","chol"),eigenValueMin=-.001){
+simulateClusterData <- function(numSimDatasets=1,clustMatrixList,numRows,numPerClustList,stddevNoise=0,method=c("eigen","chol"),eigenValueMin=-.001){
   
   if(length(numPerClust)!=length(clustMatrixList)){
     
     stop("\nnumPerClust and clustMatrixList must have same length.\n")
     
   }
-  simMatrix <- matrix(data=NA,nrow=numRows,ncol=sum(numPerClust))
-  tempExprMatrix <- matrix(data=NA,nrow=numRows,ncol=sum(numPerClust))
-  simClustList <- list()
-  count <- 1
-  cNames <- c()
-  for(m in 1:length(clustMatrixList)){
+
+  simMatrixList <- list()
+  cNames <- list()
+  for(s in 1:numSimDatasets){
     
-    #the number of patients we have to "create"
-    simPatientNum <- numPerClust[m]-ncol(clustMatrixList[[m]])
-    exprMatrix <- matrix(data=NA,ncol=numPerClust[m],nrow=nrow(clustMatrixList[[m]]))
-    
-    exprMatrix[ ,c(1:ncol(clustMatrixList[[m]]))] <- clustMatrixList[[m]]
-    
-    
-    for(e in 1:simPatientNum){
+    numSamples <- sum(unlist(numPerClustList[[s]]))
+    tempExprMatrix <- matrix(data=NA,nrow=numRows,ncol=numSamples)
+    simClustList <- list()
+    count <- 1
+    cNamesTmp <- c()
+    #clustMatrixList: the original real tissue cluster data list. so only 1 dataset, not numSims datasets, in here.
+    for(m in 1:length(clustMatrixList)){
       
-      for(r in 1:nrow(clustMatrixList[[m]])){
+      #the number of patients we have to "create"
+      simPatientNum <- numPerClustList[[s]][[m]]-ncol(clustMatrixList[[m]])
+      exprMatrix <- matrix(data=NA,ncol=numPerClustList[[s]][[m]],nrow=nrow(clustMatrixList[[m]]))
+      
+      #NOTE: this will just repeat samples a lot if
+      #simulated cluster sizes are much larger than true ones - not create truly distinct ones.
+      #But for simulations, we want fairly clear baseline signals.
+      exprMatrix[ ,c(1:numPerClustList[[s]][[m]])] <- clustMatrixList[[m]][, sample(c(1:ncol(clustMatrixList[[m]])),
+        size=numPerClustList[[s]][[m]],replace=TRUE)]
+      
+      #if had more simulated patients than did in real dataset (ncol(clustMatrixList[[m]])):
+  #     for(e in 1:simPatientNum){
+  #       
+  #       for(r in 1:nrow(clustMatrixList[[m]])){
+  #         
+  #         #pick a random patient index for each gene to create simulated patients.
+  #         exprMatrix[r ,(ncol(clustMatrixList[[m]])+e)] <- clustMatrixList[[m]][r,sample.int(ncol(clustMatrixList[[m]]),size=1)]
+  #         
+  #       }
+  #       
+  #     }
+      
+      tempExprMatrix[ , c(count:(count+(numPerClustList[[s]][[m]]-1)))] <- exprMatrix
+      cNamesTmp <- append(cNamesTmp,paste0(rep.int(colnames(clustMatrixList[[m]])[1],times=numPerClustList[[s]][[m]]),"_",c(1:numPerClustList[[s]][[m]])))
+      count <- count + numPerClustList[[s]][[m]]
+      
+      #end of loop m.
+    }
+  
+      cNames[[s]] <- cNamesTmp
+      simMatrixList[[s]] <- createSimGeneData(numSims=1,sampleExpr=tempExprMatrix,stddevNoise=stddevNoise,numRows=numRows,method=method,eigenValueMin=eigenValueMin)$simDataList[[1]]
+    
+      #end of loop s
+  }
+  
+    for(s in 1:length(simMatrixList)){
+      
+      colnames(simMatrixList[[s]]) <- cNames[[s]]
+      #create fake gene names
+      rownames(simMatrixList[[s]]) <- paste0("gene_",c(1:nrow(simMatrixList[[s]])))
+      
+      
+      count <- 1
+      simClustList[[s]] <- list()
+      
+      for(d in 1:length(clustMatrixList)){
         
-        #pick a random patient index for each gene?
-        exprMatrix[r ,(ncol(clustMatrixList[[m]])+e)] <- clustMatrixList[[m]][r,sample.int(ncol(clustMatrixList[[m]]),size=1)]
+        simClustList[[s]][[d]] <- simMatrixList[[s]][, c(count:(count+(numPerClustList[[s]][[d]]-1)))]
+        count <- count + numPerClustList[[s]][[d]]
+        names(simClustList[[s]])[d] <- names(clustMatrixList)[d]
+        
         
       }
       
-    }
-    
-    tempExprMatrix[ , c(count:(count+(numPerClust[m]-1)))] <- exprMatrix
-    cNames <- append(cNames,paste0(rep.int(colnames(clustMatrixList[[m]])[1],times=numPerClust[m]),"_",c(1:numPerClust[m])))
-    count <- count + numPerClust[m]
-    
-    #end of loop m.
-  }
-  
-  
-  simMatrixList <- createSimGeneData(numSims=numSimDatasets,sampleExpr=tempExprMatrix,stddevNoise=stddevNoise,numRows=numRows,method=method,eigenValueMin=eigenValueMin)$simDataList
-  
-  for(s in 1:length(simMatrixList)){
-    
-    colnames(simMatrixList[[s]]) <- cNames
-    #create fake gene names
-    rownames(simMatrixList[[s]]) <- paste0("gene_",c(1:nrow(simMatrixList[[s]])))
-    
-    
-    count <- 1
-    simClustList[[s]] <- list()
-    
-    for(d in 1:length(clustMatrixList)){
-      
-      simClustList[[s]][[d]] <- simMatrixList[[s]][, c(count:(count+(numPerClust[m]-1)))]
-      count <- count + numPerClust[m]
-      names(simClustList[[s]])[d] <- names(clustMatrixList)[d]
-      
-      
-    }
-    
-    #end of loop s.
+      #end of loop s.
   }
   output <- list(simMatrixList=simMatrixList,simClustList=simClustList)
   
@@ -539,13 +543,14 @@ compute_edge_ROC_metrics <- function(trueEdges,predEdges,numTotalClusters){
   
 }
 
-runLungSimROC <- function(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
+runTissueClusterSimROC <- function(saveDir = "/home/kplaney/tissueSims/",numSimDatasets=10,
                        eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
                        noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                        numWrapperSims=100,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
-                       clustSizeThresh=5,clustSizeFractThresh=.05,numParallelCores=8,minTrueSimilThresh=.3,
-                       maxTrueSimilThresh=Inf,includeRefClustInNull=TRUE, edgeMethod=c("pearson"),
-                       indEdgePvalueThresh=.3,meanEdgePairPvalueThresh=.2,restrictEdges=FALSE
+                       clustSizeThresh=0,clustSizeFractThresh=0,numParallelCores=8,minTrueSimilThresh=.4,
+                       maxTrueSimilThresh=Inf,edgeMethod=c("pearson"),
+                       indEdgePvalueThresh=.05,meanEdgePairPvalueThresh=.1,outputfile=paste0(saveDir,"/simsMessages.txt",
+                                                                                             minFractNN=.8)
 ){
   
   
@@ -560,46 +565,15 @@ runLungSimROC <- function(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
   ROC <- list();
   
   #fabricate your true edge list
-  
-  if(simType=="unevenSizeClust"){
-    #2 less clusters.
-    numTotalClusters <- 4*numSimDatasets-2;
-    trueEdgeMatrix <- createTrueEdges(numRowClust=2,numColClust=1,numSimDatasets=numSimDatasets);
-    
-    
-  }else{
-    
+
     trueEdgeMatrix <- createTrueEdges(numRowClust=4,numColClust=1,numSimDatasets=numSimDatasets);
     
     numTotalClusters <- 4*numSimDatasets;
 
-  }
   #STEP: fabricate your true edge list
   trueEdgeMatrix <- createTrueEdges(numRowClust=4,numColClust=1,numSimDatasets=numSimDatasets);
   
-  if(simType=="unevenSizeClust"){
-    #remove any edges that containi last 2 nodes -they aren't in our simulation.
-    removeNode1 <- 4*numSimDatasets;
-    removeNode2 <- 4*numSimDatasets-1;
-    rowRemove1_1 <- which(trueEdgeMatrix[,1]==removeNode1);
-    if(length(rowRemove1_1 >1)){
-      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove1_1, ,drop=FALSE];
-    }
-    rowRemove1_2 <- which(trueEdgeMatrix[,2]==removeNode1);
-    if(length(rowRemove1_2 >1)){
-      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove1_2, ,drop=FALSE];
-    }
-    rowRemove2_1 <- which(trueEdgeMatrix[,1]==removeNode2);
-    if(length(rowRemove2_1 >1)){
-      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove2_1, ,drop=FALSE];
-    }
-    rowRemove2_2 <- which(trueEdgeMatrix[,2]==removeNode2);
-    if(length(rowRemove2_2 >1)){
-      trueEdgeMatrix <- trueEdgeMatrix [-rowRemove2_2, ,drop=FALSE];
-    }
-    
-  }
-  
+
   numWrapperSimsOrig <- numWrapperSims;
   #just run n=1, i.e. zero data, once. do by hand.
   for(n in 1:length(noiseVector)){
@@ -620,30 +594,27 @@ runLungSimROC <- function(saveDir = "/home/kplaney/lungSims/",numSimDatasets=10,
     for(t in c(1:numWrapperSims)){
       
       #don't save these: just recalc each time. this will save the last iteration.
-      lungSimData <- createLungSimDatasets(numSimDatasets=numSimDatasets,
+      tissueSimData <- createLungSimDatasets(numSimDatasets=numSimDatasets,
                                            eigenValueMin =eigenValueMin,simType=simType,
                                            numPerClust = numPerClust,
                                            stddevNoise=noiseVector[n],numRows=200);
       
-      dataMatrixList <- lungSimData$dataMatrixList
-      clustSampleIndexList <- lungSimData$clustSampleIndexList
-      clustFeatureIndexList <- lungSimData$clustFeatureIndexList
-      #hard code in mean matrix:
-      adjMatrixOut <- CoINcIDE_getAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
-                                              edgeMethod=edgeMethod,numParallelCores=numParallelCores,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
-                                              sigMethod="meanMatrix",numSims=numSims,includeRefClustInNull=includeRefClustInNull,                                             
-                                              outputFile=paste0(saveDir,"/CoINcIDE_hclustConsensus_messages.txt"),fractFeatIntersectThresh=fractFeatIntersectThresh,
-                                              numFeatIntersectThresh=numFeatIntersectThresh,clustSizeThresh=clustSizeThresh, clustSizeFractThresh=clustSizeFractThresh)
+      dataMatrixList <- tissueSimData$dataMatrixList
+      clustSampleIndexList <- tissueSimData$clustSampleIndexList
+      clustFeatureIndexList <- tissueSimData$clustFeatureIndexList
+      #TO DO: change this code.
+      adjMatrixOut <- computeAdjMatrices(dataMatrixList=dataMatrixList,clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
+                                         edgeMethod=edgeMethod,centroidMethod=centroidMethod,
+                                         numSims=numSims,
+                                         outputFile=outputFile)
       
       
-      predEdges <- assignFinalEdges(computeTrueSimilOutput= adjMatrixOut$computeTrueSimilOutput,
-                                    pvalueMatrix= adjMatrixOut$pvalueMatrix,
-                                    indEdgePvalueThresh=indEdgePvalueThresh,
+      predEdges <- assignFinalEdges(computeTrueSimilOutput=computeTrueSimilOutput,pvalueMatrix=pvalueMatrix,indEdgePvalueThresh=indEdgePvalueThresh,
                                     meanEdgePairPvalueThresh=meanEdgePairPvalueThresh,
                                     minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
                                     fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
-                                    clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,
-                                    saveDir=saveDir,fileTag="lungSimulations",restrictEdges=restrictEdges
+                                    clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="simil_edges_",
+                                    minFractNN = minFractNN
       )
 
 

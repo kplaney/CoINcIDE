@@ -76,6 +76,6 @@ saveRDS(CoINcIDE_results,file=paste0(saveDir,"/CoINcIDE_results_",experimentName
 # saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"),compress=TRUE)
 # 
  message("saved these files:")
- message(paste0(saveDir,"/CoINcIDE_results_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".RData.gzip"))
-# message(paste0(saveDir,"/CoINcIDE_Nullresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".RData.gzip"))
-#message(paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".RData.gzip"))
+ message(paste0(saveDir,"/CoINcIDE_results_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))
+# message(paste0(saveDir,"/CoINcIDE_Nullresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))
+#message(paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds))

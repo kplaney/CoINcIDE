@@ -1,49 +1,19 @@
 
-#CHANGE: /home/kplaney/breast_analysis to /home/kplaney/breast_analysis_withTop20Genes/
-
-
 #200 features, pearson:
+library("CoINcIDE")
 saveDir <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
 globalSaveDir <-  "/home/ywrfc09/breast_analysis"
-load(paste0(saveDir,"/curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.RData.gzip"))
 load(paste0(saveDir,"/metaFeatures_200.RData.gzip"))
-source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_geneExprProcess.R")
-#load data matrix list
-load(paste0(globalSaveDir,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 
-#remove datasets with too many missing top gene features
-if(length(metaFeatures$datasetListIndicesToRemove)>0){
-  
-  dataMatrixList <- dataMatrixList[-metaFeatures$datasetListIndicesToRemove]
-  
-}
-
-clustSampleIndexList <-  kmeansConsensus$clustSampleIndexList_PACR
-clustFeatureIndexList <- kmeansConsensus$clustFeatureIndexList_PACR
+clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/curatedbreastData_kmeansConsensus_nstart1pItem9200Features_2015-05-04.rds")
+clustSampleIndexList <-  clusterCoINcIDE_output$clustSampleIndexList_PACR
+clustFeatureIndexList <- clusterCoINcIDE_output$clustFeatureIndexList_PACR
 
 
-clusterCoINcIDE_output =  kmeansConsensus
-
-edgeMethod <- "pearson"
-centroidMethod <- "mean"
 outputFile <- "~/CoINcIDE_messages.txt"
-numSims <- 500
-source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_computeEdges.R")
-breast_278genes_pearson_meanCentroid <-CoINcIDE_getAdjMatrices(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
-                                                                            edgeMethod=edgeMethod,centroidMethod=centroidMethod,
-                                                                            numSims=500,
-                                                                            outputFile=outputFile)
-
-
-
-
-save(breast_278genes_pearson_meanCentroid,file=paste0(saveDir,"breast_278genes_pearson_meanCentroid.RData.gzip"),compress="gzip")
-
 
 source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
-
-load(paste0(saveDir,"breast_278genes_pearson_meanCentroid.RData.gzip"))
-CoINcIDE_output <- breast_278genes_pearson_meanCentroid
+CoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/CoINcIDE_results_breast278F_pearson_edgeMethod_mean_centroidMethod2015-07-08.rds")
 
 saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
 
@@ -51,10 +21,7 @@ saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
 load(paste0(globalSaveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
 
-saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
-
-
-experimentName <- "breast_278genes_pearson_meanCentroid"
+experimentName <- "breast_278genes_pear_meanCent"
 eset_featureDataFieldName="gene_symbol"
 networkColors = "Set3"
 outcomesVarBinary=NA
@@ -83,14 +50,91 @@ source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_w
 
 
 breast_278genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                                                    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
                                                                     clustSizeThresh = 0,saveDir =saveDirNew,experimentName = experimentName,networkColors = networkColors,
                                                                     commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
-                                                                    survivalAnalysis=FALSE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                                                    survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                                     CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                                     ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
-                                                                    GSEAanalysis=FALSE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                                    findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=TRUE)
+                                                                    GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                    findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+
+
+###2000 genes:
+library("CoINcIDE")
+saveDir <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
+globalSaveDir <-  "/home/ywrfc09/breast_analysis"
+load(paste0(saveDir,"/metaFeatures_2000.RData.gzip"))
+
+clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/curatedbreastData_kmeansConsensus_nstart1pItem92000Features_2015-05-05.rds")
+clustSampleIndexList <-  clusterCoINcIDE_output$clustSampleIndexList_PACR
+clustFeatureIndexList <- clusterCoINcIDE_output$clustFeatureIndexList_PACR
+
+
+outputFile <- "~/CoINcIDE_messages.txt"
+
+source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+CoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/CoINcIDE_results_breast2052F_pearson_edgeMethod_mean_centroidMethod2015-07-08.rds")
+
+saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
+
+
+load(paste0(globalSaveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
+esets=esets_minVar001_17_studies
+
+experimentName <- "breast_2052genes_pear_meanCent"
+eset_featureDataFieldName="gene_symbol"
+networkColors = "Set3"
+outcomesVarBinary=NA
+#not enough continuous variables for breast data
+outcomesVarCont = NA
+ovarian <- FALSE
+eset_uniquePatientID="dbUniquePatientID"
+fisherTestVariables <- c("DFS","RFS","metastasis","pCR",
+                         "tumor_stage_preTrt" ,
+                         "preTrt_lymph_node_status" , 
+                         "neoadjuvant_or_adjuvant","ER_preTrt","HER2_preTrt","hist_grade","chemotherapyClass",
+                         "anti_HER2","anti_estrogen")
+
+fisherTestVariableLegendNames <- c("DFS","RFS","metastasis","pCR","pretreat\ntumor stage",
+                                   "pretreat\nlymph node","neoadjuvant\nvs adjuvant","pretreat\nER status",
+                                   "pretreat\nHER2 status","hist grade","chemotherapy","anti-HER2\ntreat",
+                                   "anti-ER\ntreat")
+
+
+fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment tumor stage",
+                                  "pretreatment lymph node","neoadjuvant vs adjuvant","pretreatment ER status",
+                                  "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
+                                  "anti-ER treatment")
+
+source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+
+
+breast_2052genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                                                             meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                             clustSizeThresh = 0,saveDir =saveDirNew,experimentName = experimentName,networkColors = networkColors,
+                                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                                             GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                             findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #intersect: p-value, fract, meanMetric
 
 

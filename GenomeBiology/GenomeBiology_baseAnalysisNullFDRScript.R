@@ -44,7 +44,7 @@ if((length(dataMatrixList) != length(clustFeatureIndexList)) || (length(dataMatr
 #just make these default for now.
 outputFile <- "~/CoINcIDE_messages.txt"
 numSims <- 500
-numNullIter <- 10
+numNullIter <- 5
 
 CoINcIDE_nullOutputList <- computeAdjMatricesNullMatrixList(dataMatrixList,numIter=numNullIter,
                                           clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
@@ -63,9 +63,9 @@ globalFDR_results <- global_FDR(CoINcIDE_outputList=CoINcIDE_nullOutputList,
                          saveDir = saveDir,experimentName = "nullTest",
                          commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,clustIndexMatrix,minFractNN =.8,findCommWithWeights=TRUE)
 
-saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"),compress=TRUE)
+saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_",Sys.Date(),".rds"),compress=TRUE)
 
  message("saved these files:")
- message(paste0(saveDir,"/CoINcIDE_results_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".RData.gzip"))
-# message(paste0(saveDir,"/CoINcIDE_Nullresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".RData.gzip"))
-#message(paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".RData.gzip"))
+# message(paste0(saveDir,"/CoINcIDE_results_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))
+ message(paste0(saveDir,"/CoINcIDE_Nullresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))
+message(paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))

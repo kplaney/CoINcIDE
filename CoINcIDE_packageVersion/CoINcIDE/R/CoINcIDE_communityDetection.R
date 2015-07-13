@@ -182,7 +182,7 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
         
         for(a in 1:length(adjMatricesList)){
           
-          #must have non-NA adjacency vales
+          #must have non-NA adjacency valUes
           if(!is.na(adjMatricesList[[a]][p,n]) && !is.na(adjMatricesList[[a]][n,p])){
             #is it below threshold? must pass ALL thresholds.
             #NOTE: will need to figure something else if doing a Euc dist...want > then.
