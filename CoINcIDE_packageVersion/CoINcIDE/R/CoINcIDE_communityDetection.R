@@ -165,7 +165,7 @@ assignFinalEdges <- function(computeTrueSimilOutput,pvalueMatrix,indEdgePvalueTh
 }
 
 #create wrapper function for filterEdges (this is what user sees.)
-filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",length(thresholdVector)),saveDir="/home/kplaney/",fileTag="",saveEdgeFile=TRUE){
+filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",length(thresholdVector)),saveDir="./",fileTag="",saveEdgeFile=TRUE){
   
   #creates directory if there isn't one
   dir.create(saveDir,showWarnings = FALSE);
@@ -196,7 +196,6 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
           #must have non-NA adjacency valUes
           if(!is.na(adjMatricesList[[a]][p,n]) && !is.na(adjMatricesList[[a]][n,p])){
             #is it below threshold? must pass ALL thresholds.
-            #NOTE: will need to figure something else if doing a Euc dist...want > then.
             if(threshDir[a]==">="){
               
               if(adjMatricesList[[a]][p,n] >= thresholdVector[a] && adjMatricesList[[a]][n,p] >= thresholdVector[a]){
@@ -318,10 +317,11 @@ filterEdges <- function(adjMatricesList,thresholdVector,threshDir=rep(">=",lengt
 # plot(undirGraph)
 
 findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag="CoINcIDE_communityNodeAttributes_",
-                            saveDir="./",minNumUniqueStudiesPerCommunity=3,experimentName="sparseBC",
+                            saveDir="./",minNumUniqueStudiesPerCommunity=3,experimentName="exp",
                             commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel"),
                             makePlots=TRUE,plotToScreen=FALSE,saveGraphData=TRUE,nodeFontSize=.7,nodePlotSize=10,
-                            findCommWithWeights=FALSE, plotSimilEdgeWeight = TRUE,fractEdgesInVsOutComm=.75){
+                            findCommWithWeights=FALSE, plotSimilEdgeWeight = TRUE,fractEdgesInVsOutComm=0){
+  
   
   if(findCommWithWeights || plotSimilEdgeWeight){
     
@@ -608,6 +608,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   #assumption: study number is in the second location. cluster number is in the first.:  x_x_..
   membership <- cbind(membership,clustIndexMatrix[na.omit(match(membership[,"clust"],clustIndexMatrix[,1])) ,2])
   colnames(membership)[ncol(membership)] <- "studyNum";
+  #come back: add total # edges here per node?
   
   numMembersInComm <- table(membership[,"community"]);
   
@@ -644,8 +645,10 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
   fractEdgesInOut <- numEdgesInComm/totalNumEdgesInComm
   numEdgesNotInComm <- totalNumEdges - numEdgesInComm
+  fractEdgesInVsOutComm <- 
   membership <- data.frame(membership, cbind(totalNumEdges,numEdgesInComm,fractEdgesInOut,numEdgesNotInComm))
 
+  commEdgeInfo <- date.frame()
   for(c in 1:numCommunitiesOrig){
     
     #these will be double-counted as both nodes for each edge will be in the community
@@ -653,11 +656,19 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     #these will not be double-counted.
     numTotalEdgesNotInCommunity <- sum(membership[which(membership[,"community"]==unique(membership[,"community"])),"numEdgesNotInComm"])
     
-    if( (length(unique(membership[which(membership[,"community"]==unique(membership[,"community"])[c]), "studyNum"]))>=minNumUniqueStudiesPerCommunity) 
-        && ((numTotalEdgesInCommunity/numTotalEdgesNotInCommunity) >= fractEdgesInVsOutComm) ){
+    fractEdgesInVsOut <- numTotalEdgesInCommunity/numTotalEdgesNotInCommunity
+    
+    numDatasetsPerCommunity <- length(unique(membership[which(membership[,"community"]==unique(membership[,"community"])[c]), "studyNum"]))
+    
+    tmp <- data.frame(numTotalEdgesInCommunity,numTotalEdgesNotInCommunity, fractEdgesInVsOut, numDatasetsPerCommunity,stringsAsFactors=FALSE)
+    
+    if( (numDatasetsPerCommunity)>=minNumUniqueStudiesPerCommunity) 
+        && ((fractEdgesInVsOut)) >= fractEdgesInVsOutComm) ){
       
         k <- 1 + k;
         commKeep[k] <- unique(membership[,"community"])[c];
+        commEdgeInfo <- rbind(commEdgeInfo,tmp)
+        rownames(commEdgeInfo)[k] <- k
       
     }
     
@@ -974,7 +985,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   output <- list(numCommunities=finalNumCommunities,numCommunitiesOrig=numCommunitiesOrig,undirGraph=undirGraph,communityObjectUnpruned=comm,
                  ClustKey=graphKey,undirGraph_base=undirGraph_base,unPrunedDendogram=unPrunedDendogram,
                  edgeDF=igraph_edgeDF,attrDF=igraph_attrDF,undirGraph_full=undirGraph_full,edgeDF_full=igraph_edgeDF_full,attrDF_full=igraph_attrDF_full,
-                 commMethod=commMethod,modularity=modularity,communityObject_full=comm,commLose=commLose,clustLose=clustLose);
+                 commMethod=commMethod,modularity=modularity,communityObject_full=comm,commLose=commLose,clustLose=clustLose,finalCommEdgeInfo=commEdgeInfo);
   return(output);
   
 }
