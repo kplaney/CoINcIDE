@@ -10,7 +10,7 @@ TEST
 \usage{
 computeAdjMatricesNullMatrixList(dataMatrixList,numIter=5,numParallelCores=1,
                                    clustSampleIndexList,clustFeatureIndexList,
-edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+edgeMethod=c("spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),
 numSims=500,
 outputFile="./CoINcIDE_messages.txt",

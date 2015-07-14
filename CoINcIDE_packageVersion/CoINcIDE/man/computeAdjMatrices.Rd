@@ -24,33 +24,13 @@ computeAdjMatrices(dataMatrixList, clustSampleIndexList, clustFeatureIndexList, 
   \item{edgeMethod}{
 %%     ~~Describe \code{edgeMethod} here~~
 }
-  \item{numParallelCores}{
-%%     ~~Describe \code{numParallelCores} here~~
-}
-  \item{minTrueSimilThresh}{
-%%     ~~Describe \code{minTrueSimilThresh} here~~
-}
-  \item{maxTrueSimilThresh}{
-%%     ~~Describe \code{maxTrueSimilThresh} here~~
-}
+
   \item{numSims}{
 %%     ~~Describe \code{numSims} here~~
 }
   \item{outputFile}{
 %%     ~~Describe \code{outputFile} here~~
-}
-  \item{fractFeatIntersectThresh}{
-%%     ~~Describe \code{fractFeatIntersectThresh} here~~
-}
-  \item{numFeatIntersectThresh}{
-%%     ~~Describe \code{numFeatIntersectThresh} here~~
-}
-  \item{clustSizeThresh}{
-%%     ~~Describe \code{clustSizeThresh} here~~
-}
-  \item{clustSizeFractThresh}{
-%%     ~~Describe \code{clustSizeFractThresh} here~~
-}
+
   \item{checkNA}{
 %%     ~~Describe \code{checkNA} here~~
 }

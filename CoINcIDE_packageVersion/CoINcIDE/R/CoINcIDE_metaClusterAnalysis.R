@@ -1231,7 +1231,7 @@ mapGeneIDs <- function(geneticFeatures,bioMartSource="ensembl",bioMartDataset="h
 
 computeAdjMatricesNullMatrixList <- function(dataMatrixList,numIter=5,numParallelCores=1,
                                    clustSampleIndexList,clustFeatureIndexList,
-edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+edgeMethod=c("spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),
 numSims=500,
 outputFile="./CoINcIDE_messages.txt",
@@ -1266,13 +1266,15 @@ centroidMethod=c("mean","median")){
   
 }
 #do in loop nullMatrixList <- createNulDataMatrixList(dataMatrixList)
-global_FDR <- function(CoINcIDE_outputList,
-edgeMethod=c("distCor","spearman","pearson","kendall","Euclidean","cosine",
+globalFDR <- function(CoINcIDE_outputList,
+edgeMethod=c("spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
 outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
     meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, 
 saveDir = "./",experimentName = "nullTest",
-    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,findCommWithWeights=FALSE
+    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,findCommWithWeights=FALSE,
+minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,
+fractEdgesInVsOutEdge=0
    
     
 ){
@@ -1302,7 +1304,7 @@ saveDir = "./",experimentName = "nullTest",
                                     minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=maxTrueSimilThresh,
                                     fractFeatIntersectThresh=fractFeatIntersectThresh,numFeatIntersectThresh=numFeatIntersectThresh ,
                                     clustSizeThresh=clustSizeThresh, clustSizeFractThresh= clustSizeFractThresh,saveDir=saveDir,fileTag="CoINcIDE_edges_",
-                                    clustIndexMatrix,minFractNN =minFractNN
+                                    clustIndexMatrix,minFractNN =minFractNN,minNumEdgesForCluster=minNumEdgesForCluster
   )
   
   meanMeanMetric <- append(meanMeanMetric, as.vector(finalEdgeInfo$meanMeanMetricMatrix))
@@ -1318,7 +1320,8 @@ saveDir = "./",experimentName = "nullTest",
                               clustIndexMatrix=CoINcIDE_output$clustIndexMatrix,fileTag=experimentName,
                               saveDir=saveDir,minNumUniqueStudiesPerCommunity=minNumUniqueStudiesPerCommunity,experimentName=experimentName,
                               commMethod=commMethod,
-                              makePlots=FALSE,saveGraphData=FALSE,plotToScreen=FALSE,findCommWithWeights=findCommWithWeights)
+                              makePlots=FALSE,saveGraphData=FALSE,plotToScreen=FALSE,findCommWithWeights=findCommWithWeights,
+                              fractEdgesInVsOutComm=fractEdgesInVsOutComm,fractEdgesInVsOutEdge=fractEdgesInVsOutEdge)
   
   
   numFalseEdges_afterGN[[i]] <- nrow(commInfo$edgeDF)
@@ -1332,6 +1335,7 @@ saveDir = "./",experimentName = "nullTest",
     numFalseMetaclusters_afterGN[[i]] <- 0
     numFalseClusters_afterGN[[i]]  <- 0
     numFalseDatasetsInNetwork[[i]] <- 0
+    
   }
 
   
@@ -1378,57 +1382,3 @@ saveDir = "./",experimentName = "nullTest",
   return(FDR_results)
   
 }
-# #for example: can create TCGA membership, overlay with ours.
-# visualizeTwoMetaclustMemberships <- function(memberMatrix1,memberMatrix2,returnSampleMemberMatrix()$fullMemberMatrix){
-#   
-#  totalColNames <- union(colnames(memberMatrix1),colnames(memberMatrix2))
-#  overlayMatrix <- matrix(data=NA,ncol=length(totalColNames),nrow=length(totalColNames),
-#                          dimnames=list(totalColNames,totalColNames))
-#  
-#  for(t in 1:length(totalColNames)){
-#    
-#    for(s in 1:length(totalColNames)){
-#    
-#      #have we computed this index yet?
-#      if(is.na(overlayMatrix[t,s])){
-#        
-#    if(!is.na(match(colnames(memberMatrix1),totalColNames[t]))){
-#      
-#      
-#      value1 <- memberMatrix1[totalColNames[t],totalColNames[s]] 
-#      
-#    }else{
-#      #want to be able to ID when a sample was simply not included in an analysis.
-#      value1  <- -2
-#      
-#    }
-#      
-#      if(!is.na(match(colnames(memberMatrix2),totalColNames[t]))){
-#        
-#        value2 <- memberMatrix2[totalColNames[t],totalColNames[s]]   
-#        
-#      }else{
-#        
-#        value2 <- -2
-#        
-#      }
-#      
-#          
-#          overlayMatrix[t,s] <- value1 + value 2
-#          
-#    #end of if NA      
-#    }
-#        
-#  
-#    }
-#    
-#  }
-#  
-#  if(any(is.na(overlayMatrix))){
-#    
-#    stop("Error: you are getting NAs in your overlayMatrix.")
-#    
-#  }
-#   return(overlayMatrix)
-#   #EOF
-# }

@@ -38,15 +38,14 @@ createTissueSimDatasets(numSimDatasets=10,
 }
 %- maybe also 'usage' for other objects documented here.
 
-  \item{dataMatrixList}{
-%%     ~~Describe \code{dataMatrixList} here~~
-}
-
   \item{minRandSize}{
 %%     ~~Describe \code{dataMatrixList} here~~
 }
 
   \item{maxRandSize}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{minRandNumClust}{
 %%     ~~Describe \code{dataMatrixList} here~~
 }
 }

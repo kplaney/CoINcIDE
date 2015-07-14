@@ -12,16 +12,9 @@
 #i.e. user has already run FDR function, decided on some of these features.
 computeAdjMatrices <- function(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
 edgeMethod=c("spearman","pearson","kendall","Euclidean","cosine",
-                      "Manhattan","Minkowski","Mahalanobis"),numParallelCores=1,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,
-numSims=500,
-outputFile="./CoINcIDE_messages.txt",fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
-checkNA=FALSE,centroidMethod=c("mean","median")){
+                      "Manhattan","Minkowski","Mahalanobis"),
+numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c("mean","median")){
   
-    if(edgeMethod=="distCor"){
-      
-      stop("Haven't coded up distance correlation metrics yet.")
-      
-    }
   
     if(length(centroidMethod)>1){
       
@@ -29,12 +22,6 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
       
     }
     
-  if(edgeMethod=="distCor"){
-    
-    
-    message("Note: because of how it is computed, edgeMethod=distCor may result in a long run time over 24 hours.")
-    
-  }
   
  #   
   #check: if rownames are null.
@@ -73,9 +60,8 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
   ##check: all clustIndex lists have featureIndexLists, and these
   #exist in the fullDataMatrix?
   date <- Sys.time();
-  inputVariablesDF <- data.frame(date,edgeMethod,numParallelCores,minTrueSimilThresh,maxTrueSimilThresh,
-  numSims,fractFeatIntersectThresh,
-  numFeatIntersectThresh,clustSizeThresh, clustSizeFractThresh);
+  inputVariablesDF <- data.frame(date,edgeMethod,
+  numSims,centroidMethod);
   
   #capture.output prints the data correctly.
   capture.output(paste0("\nRunning find CoINcIDE_getAdjMatrices on ",Sys.time()," with the following inputs:\n"),append=TRUE,file=outputFile);
@@ -196,7 +182,13 @@ checkNA=FALSE,centroidMethod=c("mean","median")){
 #ADD thresholds here.
         #  if(threshStats$..)
          sampleIndices <- clustSampleIndexList[[as.numeric(clustIndexMatrix[c,2])]][[as.numeric(clustIndexMatrix[c,3])]]
-        features <- intersect(rownames(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]])[ clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[1]] ],
+        
+         if(all(is.null(rownames(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]])))){
+           
+           stop("You have null feature names in at least one of your data matrix list objects.")
+           
+         }
+         features <- intersect(rownames(dataMatrixList[[as.numeric(clustIndexMatrix[c,2])]])[ clustFeatureIndexList[[as.numeric(clustIndexMatrix[c,2])]][[1]] ],
                                     #just pick first feature index for now.
                               
                                     rownames(dataMatrixList[[n]])[ clustFeatureIndexList[[n]][[1]] ])

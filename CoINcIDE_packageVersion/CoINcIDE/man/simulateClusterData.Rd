@@ -8,14 +8,14 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-simulateClusterData(numSimDatasets = 1, clustMatrixList, numRows, numPerClustList, stddevNoise = 0, method = c("eigen", "chol"), eigenValueMin = -0.001)
+simulateClusterData(numSimDatasets = 1, clustMatrixListOrig, numRows, numPerClustList, stddevNoise = 0, method = c("eigen", "chol"), eigenValueMin = -0.001)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{numSimDatasets}{
 %%     ~~Describe \code{numSimDatasets} here~~
 }
-  \item{clustMatrixList}{
+  \item{clustMatrixListOrig}{
 %%     ~~Describe \code{clustMatrixList} here~~
 }
   \item{numRows}{
