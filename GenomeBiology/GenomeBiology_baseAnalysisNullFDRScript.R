@@ -13,7 +13,7 @@ dataMatrixList <- args[4]
 
 experimentName <- args[5]
 saveDir <- args[6]
-
+minTrueSimilThresh <- args[7]
 
 message("edge method is ",edgeMethod)
 message("centroid method is ", centroidMethod)
@@ -46,7 +46,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
 numSims <- 500
 numNullIter <- 5
 
-CoINcIDE_nullOutputList <- computeAdjMatricesNullMatrixList(dataMatrixList,numIter=numNullIter,
+CoINcIDE_nullOutput <- computeAdjMatricesNullMatrixList(dataMatrixList,numIter=numNullIter,
                                           clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
                                           edgeMethod=edgeMethod,
                                           numSims=numSims,
@@ -54,16 +54,17 @@ CoINcIDE_nullOutputList <- computeAdjMatricesNullMatrixList(dataMatrixList,numIt
                                           centroidMethod=centroidMethod)
 
 
-saveRDS(CoINcIDE_nullOutputList,file=paste0(saveDir,"/CoINcIDE_NullOutput_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"),compress=TRUE)
+saveRDS(CoINcIDE_nullOutput,file=paste0(saveDir,"/CoINcIDE_NullOutput_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"),compress=TRUE)
   
-globalFDR_results <- global_FDR(CoINcIDE_outputList=CoINcIDE_nullOutputList,
-                         edgeMethod=edgeMethod,
+globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                         edgeMethod=edgeMethod,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=Inf,
                          outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
-                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, 
+                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
                          saveDir = saveDir,experimentName = "nullTest",
-                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,clustIndexMatrix,minFractNN =.8,findCommWithWeights=TRUE)
+                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                         findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
 
-saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_",Sys.Date(),".rds"),compress=TRUE)
+saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
  message("saved these files:")
 # message(paste0(saveDir,"/CoINcIDE_results_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))

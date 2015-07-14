@@ -630,13 +630,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   #assumption: study number is in the second location. cluster number is in the first.:  x_x_..
   membership <- cbind(membership,clustIndexMatrix[na.omit(match(membership[,"clust"],clustIndexMatrix[,1])) ,2])
   colnames(membership)[ncol(membership)] <- "studyNum";
-  #come back: add total # edges here per node?
-  
-  numMembersInComm <- table(membership[,"community"]);
-  
-  #this is baseline...but those studies may not be all unique
-  #commKeepTemp <- which(numMembersInComm>=minNumNodesPerCommunity);
-  
+
   #now see if this actually meets the thresholds
   commKeep <- c();
   k <- 0;
@@ -694,24 +688,34 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
   commEdgeInfo <- data.frame()
   k <- 0
+
+  numMembersInComm <- table(membership[,"community"]);
+  
+  #want to remove the factors - otherwise can mess up final commKeep vector.
+  commNum <- as.vector(unique(membership[,"community"]))
+  if(!all(commNum == unique(membership[,"community"]))){
+    
+    stop("Potential bug in removing factor levels.")
+    
+  }
   for(c in 1:numCommunitiesOrig){
     
     #these will be double-counted as both nodes for each edge will be in the community
-    numTotalEdgesInCommunity <- sum(membership[which(membership[,"community"]==unique(membership[,"community"])[c]),"numEdgesInComm"])/2
+    numTotalEdgesInCommunity <- sum(membership[which(membership[,"community"]==commNum[c]),"numEdgesInComm"])/2
     #these will not be double-counted.
-    numTotalEdgesNotInCommunity <- sum(membership[which(membership[,"community"]==unique(membership[,"community"])[c]),"numEdgesNotInComm"])
+    numTotalEdgesNotInCommunity <- sum(membership[which(membership[,"community"]==commNum[c]),"numEdgesNotInComm"])
     
     fractEdgesInVsOut <- numTotalEdgesInCommunity/(numTotalEdgesNotInCommunity+numTotalEdgesInCommunity)
     
-    numDatasetsPerCommunity <- length(unique(membership[which(membership[,"community"]==unique(membership[,"community"])[c]), "studyNum"]))
-    
+    numDatasetsPerCommunity <- length(unique(membership[which(membership[,"community"]==commNum[c]), "studyNum"]))
+    #message(numDatasetsPerCommunity)
     tmp <- data.frame(numTotalEdgesInCommunity,numTotalEdgesNotInCommunity, fractEdgesInVsOut, numDatasetsPerCommunity,stringsAsFactors=FALSE)
     
-    if( (numDatasetsPerCommunity>=minNumUniqueStudiesPerCommunity) 
-        && (fractEdgesInVsOut >= fractEdgesInVsOutComm) ){
-      
+    if( (numDatasetsPerCommunity>=minNumUniqueStudiesPerCommunity) && (fractEdgesInVsOut >= fractEdgesInVsOutComm) ){
+        message(unique(membership[,"community"])[c])
+        message(commNum[c])
         k <- 1 + k;
-        commKeep[k] <- unique(membership[,"community"])[c];
+        commKeep[k] <- commNum[c];
         commEdgeInfo <- rbind(commEdgeInfo,tmp)
         rownames(commEdgeInfo)[k] <- k
       

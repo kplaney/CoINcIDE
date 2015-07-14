@@ -61,10 +61,20 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
                                                               GSEAanalysis=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=.5, fractEdgesInVsOutComm=0)
+                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=.5,
+                                                              minNumEdgesForCluster=1)
   
   
-  
+  breast_pam50FullCentroidsOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                                              meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .7, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                              clustSizeThresh = 0,saveDir =saveDirPAM50,experimentName = experimentName,networkColors = networkColors,
+                                                              commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                                              survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                                              CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                              GSEAanalysis=FALSE, clinVarPlots=FALSE,fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=TRUE,fractEdgesInVsOutEdge=0,
+                                                              minNumEdgesForCluster=1) 
  
   
   
@@ -73,7 +83,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
 
   
 ####PAM50 short
-  library("CoINcIDE")
+library("CoINcIDE")
 saveDirPAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses"
 saveDir <- "/home/ywrfc09/breast_analysis/"
 outputFile <- "~/CoINcIDE_messages.txt"
@@ -124,7 +134,7 @@ clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/
      
      source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
 breast_pam50Short_pearson_centroidMean <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                                            meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                            meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .3, maxTrueSimilThresh = Inf,minFractNN=.8,
                                                             clustSizeThresh = 0,saveDir =saveDirPAM50,experimentName = experimentName,networkColors = networkColors,
                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,

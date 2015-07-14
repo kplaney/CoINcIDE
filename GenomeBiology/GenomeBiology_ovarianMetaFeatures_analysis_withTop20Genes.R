@@ -38,7 +38,7 @@ ovarian_240genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(me
                                                                              CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                                              ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
                                                                              GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                                             findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+                                                                             findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=TRUE)
 
 
 
@@ -78,12 +78,12 @@ fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence
 ovarian_240genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .5, maxTrueSimilThresh = Inf,minFractNN=.8,
                                                                               clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
-                                                                              commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                                                              commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=4, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
-                                                                              GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+                                                                              GSEAanalysis=FALSE,clinVarPlots=FALSE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=TRUE)
 
 
 
