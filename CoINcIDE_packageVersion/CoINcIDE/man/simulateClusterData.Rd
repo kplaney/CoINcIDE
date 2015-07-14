@@ -8,7 +8,7 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-simulateClusterData(numSimDatasets = 1, clustMatrixList, numRows, numPerClust, stddevNoise = 0, method = c("eigen", "chol"), eigenValueMin = -0.001)
+simulateClusterData(numSimDatasets = 1, clustMatrixList, numRows, numPerClustList, stddevNoise = 0, method = c("eigen", "chol"), eigenValueMin = -0.001)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -21,7 +21,7 @@ simulateClusterData(numSimDatasets = 1, clustMatrixList, numRows, numPerClust, s
   \item{numRows}{
 %%     ~~Describe \code{numRows} here~~
 }
-  \item{numPerClust}{
+  \item{numPerClustList}{
 %%     ~~Describe \code{numPerClust} here~~
 }
   \item{stddevNoise}{

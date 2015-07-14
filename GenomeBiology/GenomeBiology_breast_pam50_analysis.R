@@ -61,8 +61,11 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
                                                               GSEAanalysis=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=.5, fractEdgesInVsOutComm=0)
   
+  
+  
+ 
   
   
 
@@ -128,7 +131,7 @@ breast_pam50Short_pearson_centroidMean <- metaFeaturesAnalysisWrapper(metaFeatur
                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
                                                             GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                            findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+                                                            findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=.5, fractEdgesInVsOutComm=0)
 
 
 ###PAM50 full
@@ -195,7 +198,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                                                          CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                                          ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
                                                                          GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                                         findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+                                                                         findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=.5, fractEdgesInVsOutComm=0)
      
      
    

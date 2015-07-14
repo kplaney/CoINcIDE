@@ -21,6 +21,30 @@ centroidMethod=c("mean","median"))
   \item{dataMatrixList}{
 %%     ~~Describe \code{dataMatrixList} here~~
 }
+  \item{numIter}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{numParallelCores}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{clustSampleIndexList}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{clustFeatureIndexList}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{edgeMethod}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{numSims}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{outputFile}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{centroidMethod}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~

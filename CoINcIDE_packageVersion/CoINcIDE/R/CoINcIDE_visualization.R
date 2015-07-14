@@ -114,7 +114,7 @@ plotMetaFeatureES <- function(ESMatrix,saveFile=FALSE,plotToScreen=TRUE,
 advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
                                   saveDir="/home/kplaney/ISMB/",experimentName="networks",colorCodes,
-                                 plotToScreen=FALSE,nodePlotSize=10,nodeFontSize=.7){
+                                 plotToScreen=FALSE,nodePlotSize=10,nodeFontSize=.7,plotEdgeWeight = TRUE){
   
 
    if(!plotToScreen){
@@ -138,7 +138,6 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
   
   names(network_stats) <- c("numCommunities","numClusters","origNumClusters","numEdges",
                             "numStudies"); 
-
   if(missing(colorCodes)){
     
     if(brewPal==FALSE){
@@ -171,16 +170,19 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
   
   
   if(!is.null(communityMembership$attrDF$size)){
+    
 
     V(undirGraph)$size <- communityMembership$attrDF$size;
     
     if(!plotToScreen){
+      
+    if(!plotEdgeWeight){
     #save plots
     png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
         
         layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-         vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,size=#samples");
+         vertex.color= V(undirGraph)$color,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,size=#samples");
     
     
     plot.new()
@@ -212,10 +214,56 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
            title="Meta-clusters")
     dev.off();
-
     
-
+    #with edge weight
     }else{
+      
+      #save plots
+      png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+      
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
+           vertex.color= V(undirGraph)$color, edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,size=#samples");
+      
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      dev.off();
+      
+      
+      #with study numbers
+      png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_scaledNodes_studyNumlabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
+           vertex.color= V(undirGraph)$color, edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset,node size=#samples");
+      
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      dev.off();
+      
+      
+      #end if plot edge weights
+    }
+
+      #don't plot to screen
+    }else{
+      
+      if(!plotEdgeWeight){
       
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
           plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,
@@ -248,14 +296,50 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
           legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
                  title="Meta-clusters")
              
-      
+      }else{
+        #plot edge weights
+        layout(matrix(c(1,2), 1,2), widths=c(3,1))
+        plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,
+             vertex.color= V(undirGraph)$color, edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,node size=#samples");
+        
+        
+        plot.new()
+        #want community numbers from smallest to largest.
+        colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+        colours = unique(V(undirGraph)$color)[colorOrder]
+        #labels = paste(1:length(colours))
+        labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+        
+        legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+               title="Meta-clusters")
+        
+        
+        #with study numbers
+        layout(matrix(c(1,2), 1,2), widths=c(3,1))
+        plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
+             vertex.color= V(undirGraph)$color, edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset,node size=#samples");
+        
+        plot.new()
+        #want community numbers from smallest to largest.
+        colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+        colours = unique(V(undirGraph)$color)[colorOrder]
+        #labels = paste(1:length(colours))
+        labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+        
+        legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+               title="Meta-clusters")
+        
+        
     }
     
   }
   
+}
+  #now plot without relative sizes.
   if(!plotToScreen){
     
-    #without relative sizes
+    if(!plotEdgeWeight){
+    
     png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
     
     layout(matrix(c(1,2), 1,2), widths=c(3,1))
@@ -287,8 +371,51 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
            title="Meta-clusters")
     dev.off();
     
-  }else{
+    #plot edgeWeights
+    }else{
+      
+      png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_unscaledNodes_nolabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+      
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+           vertex.color= V(undirGraph)$color, edge.width = E(undirGraph)$weights, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster");
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      dev.off();
+      #with study nums
+      png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_unscaledNodes_studyNumlabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+           vertex.color= V(undirGraph)$color,  edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset");
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      dev.off();
+      
+      
+      
+      
+      
+    }
     
+  }else{
+    #plot to screen
+    
+    if(!plotEdgeWeight){
+      
     layout(matrix(c(1,2), 1,2), widths=c(3,1))
     plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
          vertex.color= V(undirGraph)$color, edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster");
@@ -317,6 +444,40 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
            title="Meta-clusters")
     
+    #plot edge weights
+    }else{
+      
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+           vertex.color= V(undirGraph)$color,  edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster");
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      
+      layout(matrix(c(1,2), 1,2), widths=c(3,1))
+      plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph)$studyNum,vertex.size=nodePlotSize,vertex.label.color="black",vertex.label.cex=nodeFontSize,
+           vertex.color= V(undirGraph)$color,  edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,#=dataset");
+      
+      plot.new()
+      #want community numbers from smallest to largest.
+      colorOrder <- sort.int(as.numeric(as.character(unique(V(undirGraph)$community))),index.return=TRUE,decreasing=FALSE)$ix
+      colours = unique(V(undirGraph)$color)[colorOrder]
+      #labels = paste(1:length(colours))
+      labels = as.numeric(as.character(unique(V(undirGraph)$community)))[colorOrder]
+      
+      legend("center",legend=labels, col=colours, pch=19,pt.cex=2,
+             title="Meta-clusters")
+      
+      
+      
+    }
     
   }
   output <- list(undirGraph=undirGraph,attrDF=communityMembership$attrDF,network_stats=network_stats);

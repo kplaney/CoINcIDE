@@ -10,12 +10,43 @@ TEST
 \usage{
 createTissueSimDatasets(numSimDatasets=10,
                                    eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
+                                   randNumClust=FALSE,
                                    numPerClust = c(50,50,50,50),
-                                   stddevNoise=0,numRows=200)
+                                   stddevNoise=0,numRows=200,minRandSize=1,maxRandSize=100,minRandNumClust=2)
+}
+\arguments{
+  \item{numSimDatasets}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{eigenValueMin}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{simType}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{randNumClust}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{numPerClust}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{stddevNoise}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+  \item{numRows}{
+%%     ~~Describe \code{dataMatrixList} here~~
 }
 %- maybe also 'usage' for other objects documented here.
-\arguments{
+
   \item{dataMatrixList}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+
+  \item{minRandSize}{
+%%     ~~Describe \code{dataMatrixList} here~~
+}
+
+  \item{maxRandSize}{
 %%     ~~Describe \code{dataMatrixList} here~~
 }
 }

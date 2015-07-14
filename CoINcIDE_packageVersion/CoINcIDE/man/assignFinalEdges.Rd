@@ -8,7 +8,7 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-assignFinalEdges(computeTrueSimilOutput, pvalueMatrix, indEdgePvalueThresh = 0.1, meanEdgePairPvalueThresh = 0.05, minTrueSimilThresh = -Inf, maxTrueSimilThresh = Inf, fractFeatIntersectThresh = 0, numFeatIntersectThresh = 0, clustSizeThresh = 0, clustSizeFractThresh = 0, saveDir = "./", fileTag = "CoINcIDE_edges", clustIndexMatrix, minFractNN = 0.7)
+assignFinalEdges(computeTrueSimilOutput, pvalueMatrix, indEdgePvalueThresh = 0.1, meanEdgePairPvalueThresh = 0.05, minTrueSimilThresh = -Inf, maxTrueSimilThresh = Inf, fractFeatIntersectThresh = 0, numFeatIntersectThresh = 0, clustSizeThresh = 0, clustSizeFractThresh = 0, saveDir = "./", fileTag = "CoINcIDE_edges", clustIndexMatrix, minFractNN = 0.7,minNumEdgesForCluster=1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -48,13 +48,14 @@ assignFinalEdges(computeTrueSimilOutput, pvalueMatrix, indEdgePvalueThresh = 0.1
   \item{fileTag}{
 %%     ~~Describe \code{fileTag} here~~
 }
-  \item{restrictEdges}{
-%%     ~~Describe \code{restrictEdges} here~~
-}
   \item{clustIndexMatrix}{
 %%     ~~Describe \code{clustIndexMatrix} here~~
 }
   \item{minFractNN}{
+%%     ~~Describe \code{minFractNN} here~~
+}
+
+\item{minNumEdgesForCluster}{
 %%     ~~Describe \code{minFractNN} here~~
 }
 

@@ -8,7 +8,8 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-findCommunities(edgeMatrix, edgeWeightMatrix, clustIndexMatrix, fileTag = "CoINcIDE_communityNodeAttributes_", saveDir = "./", minNumUniqueStudiesPerCommunity = 3, experimentName = "sparseBC", commMethod = c("edgeBetween", "fastGreedy", "walktrap", "eigenvector", "optimal", "spinglass", "multilevel"), makePlots = TRUE, plotToScreen = FALSE, saveGraphData = TRUE, nodeFontSize = 0.7, nodePlotSize = 10, findCommWithWeights = FALSE, plotSimilEdgeWeight = TRUE,minMedianNumEdgesPerNodeInCommunity=3)
+findCommunities(edgeMatrix, edgeWeightMatrix, clustIndexMatrix, fileTag = "CoINcIDE_communityNodeAttributes_", saveDir = "./", minNumUniqueStudiesPerCommunity = 3, experimentName = "exp", commMethod = c("edgeBetween", "fastGreedy", "walktrap", "eigenvector", "optimal", "spinglass", "multilevel"), makePlots = TRUE, plotToScreen = FALSE, saveGraphData = TRUE, nodeFontSize = 0.7, nodePlotSize = 10, findCommWithWeights = FALSE, plotSimilEdgeWeight = TRUE,fractEdgesInVsOutComm=0,
+                            fractEdgesInVsOutEdge=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -57,9 +58,14 @@ findCommunities(edgeMatrix, edgeWeightMatrix, clustIndexMatrix, fileTag = "CoINc
   \item{plotSimilEdgeWeight}{
 %%     ~~Describe \code{plotSimilEdgeWeight} here~~
 }
-  \item{minMedianNumEdgesPerNodeInCommunity}{
+  \item{fractEdgesInVsOutComm}{
 %%     ~~Describe \code{plotSimilEdgeWeight} here~~
 }
+
+  \item{fractEdgesInVsOutEdge}{
+%%     ~~Describe \code{plotSimilEdgeWeight} here~~
+}
+
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~

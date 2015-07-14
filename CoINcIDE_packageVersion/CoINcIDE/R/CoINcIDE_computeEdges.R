@@ -449,19 +449,21 @@ computeClusterPairAssignFract_matrixStatsSimil <- function(compareMatrix,centroi
   
          fract <- table(Class)/ncol(compareMatrix)
         #if zero samples assigned to a cluster: won't be in here.
+         #bestMatch is the index for the best match.
         bestMatch <- as.numeric(names(fract)[which.max(fract)])
         bestFract <- fract[which.max(fract)]
 
         
         allMeanMetrics <- c()
+        
         for(a in 1:ncol(centroidMatrix)){
-          
+          #collapse the similarity between this centroid (column a) and all samples (rows) into a single mean value.
           allMeanMetrics[a] <- mean(sampleCentroidSimil[,a])
           
         }
         
   
-        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract,meanMetric= allMeanMetrics[bestMatch],allMeanMetrics=allMeanMetrics)
+        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract,meanMetric=allMeanMetrics[bestMatch],allMeanMetrics=allMeanMetrics)
   
 }
 
@@ -495,7 +497,7 @@ computeClusterPairAssignFract_cor <- function(compareMatrix,centroidMatrix,
           
         }
   
-        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract,meanMetric= allMeanMetrics[bestMatch],allMeanMetrics=allMeanMetrics)
+        results <- list(fract=fract,bestMatch=bestMatch,bestFract=bestFract,meanMetric= allMeanMetrics[bestMatch], allMeanMetrics=allMeanMetrics)
     
   return(results)
 

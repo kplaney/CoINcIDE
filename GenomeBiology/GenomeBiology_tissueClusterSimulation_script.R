@@ -4,7 +4,7 @@ source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_computeEdges.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_communityDetection.R")
 
 ##test out FDR.
-highQualityDataset <- createTissueClusterSimDatasets(numSimDatasets=10,
+highQualityDataset <- createTissueSimDatasets(numSimDatasets=2,
                                    eigenValueMin = -.001,simType=c("highQualityClust"),
                                    numPerClust = c(50,50,50,50),
                                    stddevNoise=0,numRows=200)
