@@ -1,5 +1,5 @@
-\name{computeAdjMatrices}
-\alias{computeAdjMatrices}
+\name{meanMetricDensityPlot}
+\alias{meanMetricDensityPlot}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 TEST
@@ -8,34 +8,21 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-computeAdjMatrices(dataMatrixList, clustSampleIndexList, clustFeatureIndexList, edgeMethod = c("spearman", "pearson", "kendall", "Euclidean", "cosine", "Manhattan", "Minkowski", "Mahalanobis"), numSims = 500, outputFile = "./CoINcIDE_messages.txt", checkNA = FALSE, centroidMethod = c("mean", "median"))
+meanMetricDensityPlot(meanMetricMatrix,saveDir="./",savePlot=TRUE,experimentName="expr")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{dataMatrixList}{
-%%     ~~Describe \code{dataMatrixList} here~~
+  \item{meanMetricMatrix}{
+%%     ~~Describe \code{origDataMatrix} here~~
 }
-  \item{clustSampleIndexList}{
-%%     ~~Describe \code{clustSampleIndexList} here~~
+  \item{saveDir}{
+%%     ~~Describe \code{minNumGenes} here~~
 }
-  \item{clustFeatureIndexList}{
-%%     ~~Describe \code{clustFeatureIndexList} here~~
+  \item{savePlot}{
+%%     ~~Describe \code{centroidRData} here~~
 }
-  \item{edgeMethod}{
-%%     ~~Describe \code{edgeMethod} here~~
-}
-
-  \item{numSims}{
-%%     ~~Describe \code{numSims} here~~
-}
-  \item{outputFile}{
-%%     ~~Describe \code{outputFile} here~~
-
-  \item{checkNA}{
-%%     ~~Describe \code{checkNA} here~~
-}
-  \item{centroidMethod}{
-%%     ~~Describe \code{centroidMethod} here~~
+  \item{experimentName}{
+%%     ~~Describe \code{centroidRData} here~~
 }
 }
 \details{

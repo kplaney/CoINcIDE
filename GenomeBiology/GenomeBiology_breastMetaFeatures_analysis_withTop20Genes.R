@@ -21,7 +21,7 @@ saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
 load(paste0(globalSaveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
 
-experimentName <- "breast_278genes_pear_meanCent"
+experimentName <- "breast_278genes_pear_meanCent_MM3"
 eset_featureDataFieldName="gene_symbol"
 networkColors = "Set3"
 outcomesVarBinary=NA
@@ -48,19 +48,23 @@ fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment t
 
 source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
 
+#looks like simil thresh of .3 or .5 appropriate
+densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDir,
+                                     experimentName=experimentName,savePlot=TRUE)
 
+
+#match up Y axis limit for both 278 and 2052
 breast_278genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                                                    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
-                                                                    clustSizeThresh = 0,saveDir =saveDirNew,experimentName = experimentName,networkColors = networkColors,
+                                                                    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .3, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                    clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
                                                                     commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                                     survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                                     CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                                     ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
-                                                                    GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                                    findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
+                                                                    GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                    findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=800)
 
-
-###2000 genes:
+##2000 genes:
 library("CoINcIDE")
 saveDir <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
 globalSaveDir <-  "/home/ywrfc09/breast_analysis"
@@ -82,7 +86,7 @@ saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
 load(paste0(globalSaveDir,"/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 esets=esets_minVar001_17_studies
 
-experimentName <- "breast_2052genes_pear_meanCent"
+experimentName <- "breast_2052genes_pear_meanCent_MM4"
 eset_featureDataFieldName="gene_symbol"
 networkColors = "Set3"
 outcomesVarBinary=NA
@@ -109,19 +113,22 @@ fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment t
 
 source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
 
+#looks like simil thresh of .4 appropriate
+densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDir,
+                                     experimentName=experimentName,savePlot=TRUE)
 
-breast_2052genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                                                             meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
-                                                                             clustSizeThresh = 0,saveDir =saveDirNew,experimentName = experimentName,networkColors = networkColors,
-                                                                             commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
-                                                                             survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
-                                                                             CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
-                                                                             GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.8,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                                             findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE)
 
 
 
+breast_2052genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                                                                                                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                                                                               clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                                                                                                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                                                                                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                                                                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                                                                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                                                                                               GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                                                                               findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=800)
 
 
 

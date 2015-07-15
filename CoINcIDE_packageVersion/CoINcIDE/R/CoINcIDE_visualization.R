@@ -1194,3 +1194,35 @@ merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,experimentNa
    
 }
 
+meanMetricDensityPlot <- function(meanMetricMatrix,saveDir="./",savePlot=TRUE,experimentName="expr"){
+
+  dataF <- as.vector(meanMetricMatrix)
+  masterDF <- dataF[-which(is.na(dataF))]
+  dens <- density(masterDF)
+  masterDF <- as.data.frame(masterDF,stringsAsFactors=FALSE)
+  densityPlot <- ggplot(data = masterDF, aes(x=masterDF))+
+    #alpha in geom_density. controls transparency of color, if used fill= above.
+    #if want transparent fill: geom_density(alpha=0). but different lines
+    #are better for a black and white publication.
+    geom_density() +labs(title = "Density curves ")+
+    labs(title = "Density curve for \nCoINcIDE edge mean metric",
+         y="Density",x="Mean metric")+
+    
+    theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  if(savePlot){
+    
+    options(bitmapType="cairo")
+    png(filename=paste0(saveDir,"/",experimentName,"_densityPlot_",Sys.Date(),".png"),
+        width = 700, height = 1000,res=160);
+    plot(densityPlot)
+    dev.off()
+    
+  }
+  
+  meanMetricAtMaxDensity <- dens$x[which(dens$y==max(dens$y))]
+  message("The meanMetricAtMaxDensity is a global maximum; view the density plot to estimate a value at a local maximum that may have a higher mean metric.")
+  output <- list(meanMetricAtMaxDensity=meanMetricAtMaxDensity,densityPlot=densityPlot)
+  return(output)
+  
+}

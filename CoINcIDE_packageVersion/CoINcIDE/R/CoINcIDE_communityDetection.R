@@ -712,8 +712,8 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     tmp <- data.frame(numTotalEdgesInCommunity,numTotalEdgesNotInCommunity, fractEdgesInVsOut, numDatasetsPerCommunity,stringsAsFactors=FALSE)
     
     if( (numDatasetsPerCommunity>=minNumUniqueStudiesPerCommunity) && (fractEdgesInVsOut >= fractEdgesInVsOutComm) ){
-        message(unique(membership[,"community"])[c])
-        message(commNum[c])
+        #message(unique(membership[,"community"])[c])
+        #message(commNum[c])
         k <- 1 + k;
         commKeep[k] <- commNum[c];
         commEdgeInfo <- rbind(commEdgeInfo,tmp)
