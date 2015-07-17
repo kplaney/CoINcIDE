@@ -142,7 +142,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   networkStats <- advancedNetworkPlots(communityMembership=commInfo,
                                        brewPal = networkColors,
                                        saveDir=saveDir,clustIndexMatrix=clustIndexMatrix,
-                                       plotToScreen=plotToScreen,experimentName=experimentName)$network_stats
+                                       plotToScreen=plotToScreen,experimentName=experimentName,
+                                       plotEdgeWeight=plotSimilEdgeWeight)$network_stats
   
   
   write.table(networkStats,quote=FALSE,file=paste0(saveDir,"/",experimentName,"_networkStats_",Sys.Date(),".txt"))

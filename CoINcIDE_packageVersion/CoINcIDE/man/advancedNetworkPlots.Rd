@@ -8,7 +8,7 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-advancedNetworkPlots(communityMembership, clustIndexMatrix, brewPal = c("Set3", "Paired", "Spectral", "BrBG", "PiYG", "RdYlGn", "RdYlBu", "RdBu", "PiYG", "Set2"), saveDir = "/home/kplaney/ISMB/", experimentName = "networks", colorCodes, plotToScreen = FALSE, nodePlotSize = 10, nodeFontSize = 0.7,   plotEdgeWeight=FALSE)
+advancedNetworkPlots(communityMembership, clustIndexMatrix, brewPal = c("Set3", "Paired", "Spectral", "BrBG", "PiYG", "RdYlGn", "RdYlBu", "RdBu", "PiYG", "Set2"), saveDir = "/home/kplaney/ISMB/", experimentName = "networks", colorCodes, plotToScreen = FALSE, nodePlotSize = 10, nodeFontSize = 0.7,   plotEdgeWeight=FALSE,edgeWeightsColName="simil")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -42,6 +42,10 @@ advancedNetworkPlots(communityMembership, clustIndexMatrix, brewPal = c("Set3", 
   \item{plotEdgeWeight}{
 %%     ~~Describe \code{nodeFontSize} here~~
 }
+  \item{edgeWeightsColName}{
+%%     ~~Describe \code{nodeFontSize} here~~
+}
+
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~

@@ -400,8 +400,8 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
     if(max(get.edge.attribute(graph=undirGraph_base,name=edgeWeightsColName))<=1){
       
-      #just scale up so can see easier.
-      plotEdgeWeights <- 3*get.edge.attribute(graph=undirGraph_base,name=edgeWeightsColName)
+      #don't scale up here just to make sure won't affect community detection.
+      plotEdgeWeights <- get.edge.attribute(graph=undirGraph_base,name=edgeWeightsColName)
       
     }else{
       
@@ -732,6 +732,15 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   #df you feed in: A data frame containing a symbolic edge list in the first two columns. Additional columns are considered as edge attributes
   undirGraph_full <- graph.data.frame(igraph_edgeDF_full,directed=FALSE,vertices=igraph_attrDF_full);
   
+  #scale up edge weights now that done with community detection.
+  
+  
+  if(!is.null(edgeWeightsColName)){
+  
+    E(undirGraph_base)$weights <- 3*E(undirGraph_base)$weights
+  
+  }
+  
   if(makePlots){
   
       if(!is.null(edgeWeightsColName)){
@@ -745,8 +754,7 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
       networkCommPlot_full <- plot(undirGraph_full, layout=layout.fruchterman.reingold,vertex.label=V(undirGraph_full)$studyNum,vertex.label.color="black",vertex.label.cex=nodeFontSize,vertex.size=nodePlotSize,
                                    vertex.color= V(undirGraph_full)$color, edge.arrow.size=3,main=paste0(nrow(igraph_attrDF_full)," clusters with edges across ",length(unique(membership[,ncol(membership)])), " datasets.\n",
-                                                                                                         numCommunitiesOrig," meta-clusters of any size found ",
-                                                                                                         "with\n community detection method ",commMethod,"."),xlab="color=meta-cluster,node=cluster,#=dataset",
+                                                                                                         numCommunitiesOrig," meta-clusters of any size found ",                                                                                           "with\n community detection method ",commMethod,"."),xlab="color=meta-cluster,node=cluster,#=dataset",
                                    edge.width = E(undirGraph_base)$weights);
       
       plot.new()

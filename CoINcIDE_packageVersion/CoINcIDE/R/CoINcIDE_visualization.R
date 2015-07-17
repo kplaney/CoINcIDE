@@ -114,8 +114,10 @@ plotMetaFeatureES <- function(ESMatrix,saveFile=FALSE,plotToScreen=TRUE,
 advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
                                   saveDir="/home/kplaney/ISMB/",experimentName="networks",colorCodes,
-                                 plotToScreen=FALSE,nodePlotSize=10,nodeFontSize=.7,plotEdgeWeight = TRUE){
+                                 plotToScreen=FALSE,nodePlotSize=10,nodeFontSize=.7,plotEdgeWeight = TRUE,
+                                 edgeWeightsColName="simil"){
   
+
 
    if(!plotToScreen){
      
@@ -169,6 +171,28 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
   undirGraph <- graph.data.frame(communityMembership$edgeDF,directed=FALSE,vertices=communityMembership$attrDF)
   
   
+  if(plotEdgeWeight){
+    
+    #advanced users can change this keyword if they have another data frame column they want to use.
+
+ 
+      #multiple times ten- these original values will all be between -1 and 1
+      
+      if(max(get.edge.attribute(graph=undirGraph,name=edgeWeightsColName))<=1){
+        
+        #just scale up so can see easier.
+        plotEdgeWeights <- 3*get.edge.attribute(graph=undirGraph,name=edgeWeightsColName)
+        
+      }else{
+        
+        stop("You selected to plot edge weights but your similarity (or distance) metric has large values above 1. This will not plot well.")
+        
+      }
+    
+    E(undirGraph)$weights <- plotEdgeWeights
+    
+  }
+  
   if(!is.null(communityMembership$attrDF$size)){
     
 
@@ -217,13 +241,13 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
     
     #with edge weight
     }else{
-      
+      #edge.arrow.size=3,
       #save plots
       png(filename=paste0(saveDir,"/",experimentName,"_communityPlot_scaledNodes_noLabels_",Sys.Date(),".png"),width=1000,height=1000,res=160)
       
       layout(matrix(c(1,2), 1,2), widths=c(3,1))
       plot(undirGraph, layout=layout.fruchterman.reingold,vertex.label=rep.int("",times=nrow(communityMembership$attrDF)),vertex.size=V(undirGraph)$size/10,vertex.label.color="black",vertex.label.cex=.7,
-           vertex.color= V(undirGraph)$color, edge.width = E(undirGraph)$weights,edge.arrow.size=3,main=expName,xlab="color=meta-cluster,node=cluster,size=#samples");
+           vertex.color= V(undirGraph)$color, edge.width = E(undirGraph)$weights,main=expName,xlab="color=meta-cluster,node=cluster,size=#samples");
       
       
       plot.new()
