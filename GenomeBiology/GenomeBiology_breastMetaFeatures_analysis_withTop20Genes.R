@@ -1,3 +1,4 @@
+#!/usr/bin/Rscript --default-packages=utils
 
 #200 features, pearson:
 library("CoINcIDE")

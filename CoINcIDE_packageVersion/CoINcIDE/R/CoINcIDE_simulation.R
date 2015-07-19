@@ -57,6 +57,7 @@ createTissueSimDatasets <-  function(numSimDatasets=10,
   }
   
   clustFeatureIndexListOrig <- clustFeatureIndexList
+  clustSampleIndexListOrig <- clustSampleIndexList
   tissueData <- createLungMatrixList()
   tissueSimData <- simulateClusterData(numSimDatasets=numSimDatasets, stddevNoise= stddevNoise,method="eigen",eigenValueMin=eigenValueMin,clustMatrixListOrig=tissueData$clustMatrixList,numRows=numRows,numPerClustList=numPerClustList)
 
@@ -110,6 +111,7 @@ createTissueSimDatasets <-  function(numSimDatasets=10,
           }else{
             
             exprMatrix <-  clustMatrixList[[s]][[e]]
+            
           }
           
           counter <- counter + ncol( clustMatrixList[[s]][[e]] ) 
@@ -123,10 +125,12 @@ createTissueSimDatasets <-  function(numSimDatasets=10,
       
       }else{
       
-        clustSampleIndexList <- tissueSimData$clustSampleIndexList
+        clustSampleIndexList <- clustSampleIndexListOrig
         clustFeatureIndexList <-  clustFeatureIndexListOrig
         dataMatrixList <- tissueSimData$dataMatrixList
         clustFeaturesList <- tissueSimData$clustFeaturesList
+        clustMatrixList <- tissueSimData$clustMatrixList
+        
     }
     
   }else if(simType=="mixedClustQualityClust"){
@@ -192,20 +196,13 @@ createLungMatrixList <- function(){
 }
 ########
 calcCorMeanMatrix <- function(clustMatrixList,corMethod=c("pearson")){
+
   
-  warning("Assumes your clustMatrixList is in this order: Carcinoid,Colon,Normal,SmallCell\n")
-  
-  if(!all(names(clustMatrixList) == c("Carcinoid","Colon","Normal","SmallCell"))){
-    
-    warning("Your clustMatrixList is NOT in this order: Carcinoid,Colon,Normal,SmallCell\n")
-    
-  }
-  
-  clustCorMeans <- matrix(data=NA,nrow=4,ncol=4,
+  clustCorMeans <- matrix(data=NA,nrow=length(clustMatrixList),ncol=length(clustMatrixList),
                           dimnames=list(names(clustMatrixList),
                                         names(clustMatrixList)))
   
-  intraClustCorMeans <- array(data=NA,dim=4,dimnames=list(names(clustMatrixList)))
+  intraClustCorMeans <- array(data=NA,dim=length(clustMatrixList),dimnames=list(names(clustMatrixList)))
   
   diag(clustCorMeans) <- 1
   
@@ -385,7 +382,7 @@ simulateClusterData <- function(numSimDatasets=1,clustMatrixListOrig,numRows,num
         #also want zero noise scenario to be truly similar across datasets.
         totalClustIndices <- c(count:(count+(maxNumSamples[d]-1)))
         subClustIndices <- sample(totalClustIndices,size=numPerClustList[[s]][[d]],replace=FALSE)
-        clustMatrixList[[s]][[d]] <- dataMatrixList[[s]][ ,subClustIndices]
+        clustMatrixList[[s]][[d]] <- dataMatrixList[[s]][ ,subClustIndices, drop=FALSE]
         
         cNamesTmp <- paste0(rep.int(colnames(clustMatrixListOrig[[d]])[1],times=numPerClustList[[s]][[d]]),"_",c(1:numPerClustList[[s]][[d]]))
         cNames <- append(cNames,cNamesTmp)
@@ -643,14 +640,14 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
                        eigenValueMin = -.001,simType=c("highQualityClust","mixedClustQualityClust","unevenSizeClust"),
                        noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                        numWrapperSims=100,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
-                       clustSizeThresh=0,clustSizeFractThresh=0,numParallelCores=8,minTrueSimilThresh=.4,
+                       clustSizeThresh=0,clustSizeFractThresh=0,minTrueSimilThresh=.4,
                        maxTrueSimilThresh=Inf,edgeMethod=c("pearson"),centroidMethod=c("mean"),
                        indEdgePvalueThresh=.05,meanEdgePairPvalueThresh=.1,
                       minFractNN=.8,minRandNumClust=2,randNumClust=FALSE,minRandSize=1,maxRandSize=100
 ){
   
   
-  
+  numWrapperSimsOrig <- numWrapperSims
   outputFile <- paste0(saveDir,"/simsMessages.txt")
   
   ROC <- list();
@@ -696,7 +693,8 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
         
         numTotalClusters <- numTotalClusters+1
         #tissue names in same cluster will all be identical before _ tag.
-        clustNameVector[numTotalClusters] <- strsplit2(colnames(dataMatrixList[[s]][,clustSampleIndexList[[s]][[c]] ])[1],"_")[,1]
+        #drop=FALSE: in case cluster is a size of 1.
+        clustNameVector[numTotalClusters] <- strsplit2(colnames(dataMatrixList[[s]][,clustSampleIndexList[[s]][[c]], drop=FALSE])[1],"_")[,1]
       }
         
       }  

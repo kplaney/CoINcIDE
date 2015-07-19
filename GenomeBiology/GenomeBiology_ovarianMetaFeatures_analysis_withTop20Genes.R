@@ -1,3 +1,5 @@
+#!/usr/bin/Rscript --default-packages=utils
+
 library("CoINcIDE")
 source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
 outputFile <- "~/CoINcIDE_messages.txt"

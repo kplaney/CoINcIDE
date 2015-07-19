@@ -1,3 +1,5 @@
+#!/usr/bin/Rscript --default-packages=utils
+
 library("CoINcIDE")
 saveDirPAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses"
 saveDir <- "/home/ywrfc09/breast_analysis/"
@@ -68,9 +70,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                                               findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,clinVarPlots=TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0,
                                                               minNumEdgesForCluster=1)
   
- 
-
-
+  
   
 ####PAM50 short
 library("CoINcIDE")
