@@ -1033,6 +1033,13 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
   
   }
   
+  }else{
+    
+    message("No final communities because zero edges in input edge matrix.")
+    output <- list(numCommunities=0)
+    return(output)
+    
+    
   }
 
   if(saveGraphData){
@@ -1052,13 +1059,6 @@ findCommunities <- function(edgeMatrix,edgeWeightMatrix,clustIndexMatrix,fileTag
     
     
     #zero communities at initial input - no edges.
-  }else{
-    
-    message("No final communities because zero edges in input edge matrix.")
-    output <- list(numCommunities=0)
-    return(output)
-    
-    
   }
   
   

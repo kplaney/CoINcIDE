@@ -597,22 +597,26 @@ compute_edge_ROC_metrics <- function(trueEdges,predEdges,numTotalClusters){
   num_truePos <- nrow(trueEdgesFound);
   #any predicted left that weren't true edges?
   num_falsePos <- nrow(predEdges);
-  #how many true edges? did we miss?
+  #how many true edges did we miss?
   num_falseNeg <- nrow(trueEdgesMissed);
-  #total number of possible edges is number of biclusters squared (a lot!)
-  # minus numTotalClusters is minusing out of the diagonal
-  #/2: we only want the upper (or lower) triangle to remove redundancy.
-  num_trueNeg <- numTotalClusters^2/2 -numTotalClusters -nrow(trueEdges);
+  
+  #total number of possible edges is (N * (N-1)) / 2
+  #http://stackoverflow.com/questions/5058406/what-is-the-maximum-number-of-edges-in-a-directed-graph-with-n-nodes
+  #/2 becuase edges are not directed. (one edge possible between each cluster pair.)
+  totalPossEdges <- (numTotalClusters*(numTotalClusters-1))/2
+  #must also minus out the false positives, and the false negatives - these should not be counted as true negatives.
+  num_trueNeg <- totalPossEdges-num_truePos-num_falsePos-num_falseNeg;
   
   if(num_falseNeg+num_truePos != nrow(trueEdges)){
     
-    stop("\nCalculating FN or TP wrong.\n");
+    stop("\nUnit test 1: Calculating FN or TP wrong.\n");
     
   }
   
-  if( (num_trueNeg+num_falseNeg+num_truePos+num_falsePos) != (numTotalClusters^2/2-numTotalClusters)){
+  #num_falsePos: want to minus this:  true edges found + true edges missed + "rest" of edges are the num_trueNeg
+  if( (num_falseNeg+num_truePos+num_trueNeg+num_falsePos) != totalPossEdges){
     
-    stop("\nCalculating FP or TN wrong.\n");
+    stop("\nUnit test 2: Calculating FP or TN wrong as FP,TN,FN and TP sum does not equal total possible edges.\n");
     
   }
   
@@ -651,7 +655,10 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
   outputFile <- paste0(saveDir,"/simsMessages.txt")
   
   ROC <- list();
-
+  commMedianMaxTissueType <- list();
+  commMeanMaxTissueType <- list();
+  
+  
   #just run n=1, i.e. zero data, once. do by hand.
   for(n in 1:length(noiseVector)){
     cat("\nLoop ",n,"Noise level: ",noiseVector[n],"\n")
@@ -667,6 +674,8 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
       
     }
     ROC[[n]] <- list();
+    commMedianMaxTissueType[[n]] <- list();
+    commMeanMaxTissueType[[n]] <- list();
     
     for(t in c(1:numWrapperSims)){
       
@@ -721,7 +730,48 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
 
         ROC[[n]][[t]]   <-    compute_edge_ROC_metrics(trueEdges=trueEdgeMatrix,predEdges=predEdges$filterEdgeOutput$edgeMatrix,numTotalClusters=numTotalClusters);
 
-      
+        commInfo <- findCommunities(edgeMatrix=predEdges$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=predEdges$filterEdgeOutput$edgeWeightMatrix,
+                                    clustIndexMatrix=adjMatrixOut$clustIndexMatrix,fileTag="sims",
+                                    saveDir=saveDir,minNumUniqueStudiesPerCommunity=2,experimentName="sims",
+                                    commMethod="edgeBetween",
+                                    makePlots=FALSE,saveGraphData=FALSE,plotToScreen=FALSE, findCommWithWeights=TRUE, plotSimilEdgeWeight = FALSE,
+                                    fractEdgesInVsOutComm=0, fractEdgesInVsOutEdge=0)
+
+        if(commInfo$numCommunities>0){        
+        
+          sampleClustCommKey <- returnSampleMemberMatrix(clustSampleIndexList=clustSampleIndexList,
+                                                  dataMatrixList=dataMatrixList,communityInfo=commInfo)$sampleClustCommKey
+          
+          
+        commClustTable <- table(sampleClustCommKey$community,sampleClustCommKey$globalClustNum)
+        commTissueMakeUp <- list()
+        
+        for(c in 1:commInfo$numCommunities){
+          
+          tmp <- c()
+          for(r in 1:ncol(commClustTable)){
+            
+          tmp <- append(tmp,rep.int(clustNameVector[r],commClustTable[c,r]))
+            
+          }
+          
+          #fraction of most prevalent tissue type.
+          commTissueMakeUp[[c]] <- max(table(tmp))/length(tmp)
+          
+        }
+        
+        #take mean across all communities
+        commMeanMaxTissueType[[n]][[t]] <- mean(unlist(commTissueMakeUp))
+        commMedianMaxTissueType[[n]][[t]] <- median(unlist(commTissueMakeUp))
+        
+        }else{
+          #non communities - technically all match then? use NA as placeholder to symbolize this special case.
+          commMeanMaxTissueType[[n]][[t]] <- NA
+          commMedianMaxTissueType[[n]][[t]] <- NA
+          
+        }
+        clustSizes <- table(aggregateData$sampleClustCommKey$globalClustNum)
+        
       #loop of simulations
     }
     
@@ -760,6 +810,33 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
   colnames(ROC_matrixFull) <- c("sd_noise","PPV","TPR","FPR","FP","TP","FN","TN");
   rownames(ROC_matrixFull) <- noiseVector;
   
+  ROC_SDmatrixFull <- do.call(rbind,lapply(ROC,FUN=function(ROC_unit){
+    
+    #this will make 1 matrix for 1 noise level, with each row a simulation.                     
+    oneNoiseLevelData <- do.call(rbind,lapply(ROC_unit,FUN=function(data){
+      
+      ROC_stats <- c(data$PPV,data$TPR,data$FPR,data$FP,data$TP,data$FN,data$TN);
+      return(ROC_stats);
+    }
+    
+    )
+    
+    )
+    
+    #take standard deviation across all iterations for this noise level.
+    oneNoiseLevelData <- colSds(data.matrix(oneNoiseLevelData));
+    return(oneNoiseLevelData);
+    
+  }
+  
+  )
+  
+  );
+  
+  ROC_SDmatrixFull <- cbind(noiseVector, ROC_SDmatrixFull)
+  colnames(ROC_SDmatrixFull) <- c("sd_noise","sd_PPV","sd_TPR","sd_FPR","sd_FP","sd_TP","sd_FN","sd_TN");
+  rownames(ROC_SDmatrixFull) <- noiseVector;
+  
   #a simple plot
   df <- data.frame(ROC_matrixFull);
   #theme(plot.title = element_text(size = rel(2)))
@@ -767,9 +844,30 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
                                                                         y="TPR",x="sd noise")+
     theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                                                                                  plot.title = element_text(size = rel(2)));
+  commMedianMaxTissueTypeList <- commMedianMaxTissueType
+  commMeanMaxTissueTypeList <- commMeanMaxTissueType
+  #aggregate across all t to return for each noise level.
+  commMedianMaxTissueType <- lapply(commMedianMaxTissueType,FUN=function(noiseUnit){
+    
+    return(median(unlist(noiseUnit)))
+    
+    
+  })
+  commMedianMaxTissueType <- unlist(commMedianMaxTissueType)
   
+  commMeanMaxTissueType <- lapply(commMeanMaxTissueType,FUN=function(noiseUnit){
+    
+    return(mean(unlist(noiseUnit)))
+    
+    
+  })
   
-  output <- list(TPR_plot=TPR_plot,ROC=ROC, ROC_matrixFull=ROC_matrixFull);
+  commMeanMaxTissueType <- unlist( commMeanMaxTissueType)
+  output <- list(TPR_plot=TPR_plot,ROC=ROC, ROC_matrixFull=ROC_matrixFull,
+                 ROC_SDmatrixFull= ROC_SDmatrixFull,  commMedianMaxTissueTypeList=commMedianMaxTissueTypeList,
+                 commMeanMaxTissueTypeList=commMeanMaxTissueTypeList,commMedianMaxTissueType=commMedianMaxTissueType,
+                 commMeanMaxTissueType=commMeanMaxTissueType
+  );
   
   return(output);
 

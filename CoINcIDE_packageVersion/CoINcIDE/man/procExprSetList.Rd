@@ -1,5 +1,5 @@
-\name{computeAdjMatrices}
-\alias{computeAdjMatrices}
+\name{procExprSetList}
+\alias{procExprSetList}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 TEST
@@ -8,34 +8,33 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-computeAdjMatrices(dataMatrixList, clustSampleIndexList, clustFeatureIndexList, edgeMethod = c("spearman", "pearson", "kendall", "Euclidean", "cosine", "Manhattan", "Minkowski", "Mahalanobis"), numSims = 500, outputFile = "./CoINcIDE_messages.txt", checkNA = FALSE, centroidMethod = c("mean", "median"))
+procExprSetList(exprSetList, outputFileDirectory = "./", numTopVarGenes, minVarPercentile, maxVarPercentile = 1, minVar, featureDataFieldName = "gene_symbol", uniquePDataID = "unique_patient_ID")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{dataMatrixList}{
-%%     ~~Describe \code{dataMatrixList} here~~
+  \item{exprSetList}{
+%%     ~~Describe \code{exprSetList} here~~
 }
-  \item{clustSampleIndexList}{
-%%     ~~Describe \code{clustSampleIndexList} here~~
+  \item{outputFileDirectory}{
+%%     ~~Describe \code{outputFileDirectory} here~~
 }
-  \item{clustFeatureIndexList}{
-%%     ~~Describe \code{clustFeatureIndexList} here~~
+  \item{numTopVarGenes}{
+%%     ~~Describe \code{numTopVarGenes} here~~
 }
-  \item{edgeMethod}{
-%%     ~~Describe \code{edgeMethod} here~~
+  \item{minVarPercentile}{
+%%     ~~Describe \code{minVarPercentile} here~~
 }
-
-  \item{numSims}{
-%%     ~~Describe \code{numSims} here~~
+  \item{maxVarPercentile}{
+%%     ~~Describe \code{maxVarPercentile} here~~
 }
-  \item{outputFile}{
-%%     ~~Describe \code{outputFile} here~~
+  \item{minVar}{
+%%     ~~Describe \code{minVar} here~~
 }
-  \item{checkNA}{
-%%     ~~Describe \code{checkNA} here~~
+  \item{featureDataFieldName}{
+%%     ~~Describe \code{featureDataFieldName} here~~
 }
-  \item{centroidMethod}{
-%%     ~~Describe \code{centroidMethod} here~~
+  \item{uniquePDataID}{
+%%     ~~Describe \code{uniquePDataID} here~~
 }
 }
 \details{

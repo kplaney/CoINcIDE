@@ -168,12 +168,12 @@ createExpressionSetList <- function(exprMatrixList,masterPhenoData,patientKey="G
   
 }
   
-processExprSetList <- function(exprSetList,outputFileDirectory="./",
+procExprSetList <- function(exprSetList,outputFileDirectory="./",
                                      numTopVarGenes,minVarPercentile,maxVarPercentile=1,minVar,
                                      featureDataFieldName="gene_symbol",uniquePDataID="unique_patient_ID"){
   
   outputFile = paste0(outputFileDirectory,
-                      "/curatedBreastData_processExpressionSetMessages.txt")
+                      "/CoINcIDE_processExpressionSetMessages.txt")
 
   for(e in 1:length(exprSetList)){
     message("\nAnalyzing dataset ",e, " or dataset named ",
@@ -181,27 +181,27 @@ processExprSetList <- function(exprSetList,outputFileDirectory="./",
     
     if(!missing(numTopVarGenes)){
       
-     exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
+     exprSetList[[e]] <- procExprSet( exprSetList[[e]],
                         outputFileDirectory=outputFileDirectory,
                         numTopVarGenes=numTopVarGenes,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
     
     }else if(!missing(minVarPercentile) && !missing(maxVarPercentile) 
              && missing(minVar)){
       
-      exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
+      exprSetList[[e]] <- procExprSet( exprSetList[[e]],
                           outputFileDirectory=outputFileDirectory,
                           maxVarPercentile=maxVarPercentile,
                           minVarPercentile=minVarPercentile,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
       
     }else if(!missing(minVar)){
       
-      exprSetList[[e]] <- processExpressionSet( exprSetList[[e]],
+      exprSetList[[e]] <- procExprSet( exprSetList[[e]],
                           outputFileDirectory=outputFileDirectory,minVar=minVar,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
       
       
    }else{
       
-      exprSetList[[e]] <- processExpressionSet(exprSetList[[e]],
+      exprSetList[[e]] <- procExprSet(exprSetList[[e]],
                           outputFileDirectory=outputFileDirectory,featureDataFieldName=featureDataFieldName,uniquePDataID=uniquePDataID)
     
     }
@@ -213,10 +213,15 @@ processExprSetList <- function(exprSetList,outputFileDirectory="./",
 }
 
 #assumption:  your feature data has a column that labeled gene_symbol.
-processExpressionSet <- function(exprSet,outputFileDirectory="./",
+procExprSet <- function(exprSet,outputFileDirectory="./",
                                  numTopVarGenes,minVarPercentile,
                                  maxVarPercentile=1,minVar,featureDataFieldName="gene_symbol",uniquePDataID="unique_patient_ID"){
   
+  if(length(na.omit(match(featureDataFieldName,colnames(fData(exprSet)))))!=1){
+    
+    stop(paste0("Your featureDataFieldName ",featureDataFieldName, " is not found as a unique column name in the fData feature data slot."))
+ 
+  }
   study <- list(expr=exprSet@assayData$exprs,
                 keys=fData(exprSet)[ ,featureDataFieldName],phenoData=pData(exprSet))
   tmp <- filterAndImputeSamples(study,studyName = "study",
@@ -1330,7 +1335,7 @@ exprSetListToMatrixList <- function(esetList,featureDataFieldName="gene_symbol")
   
 }
 
-merge_datasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC','none','combat'),NA_genesRemove=TRUE,
+mergeDatasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC','none','combat'),NA_genesRemove=TRUE,
                               outputFile="./mergeDatasets",combatPvalueThresh=.05){
   
   dataMatrixList <- list();

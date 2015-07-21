@@ -2,7 +2,7 @@
 library("CoINcIDE")
 source("/home/ywrfc09//CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_simulation.R")
 
-minTrueSimilVector <- c(0.5,0.4,0.3,0.2,0.1)
+minTrueSimilVector <- seq(from=0,to=1,by=.1)
 saveDir <- "/home/ywrfc09/simulations"
 for(m in 1:length(minTrueSimilVector)){
 #this is NOT for communities - just for edges.

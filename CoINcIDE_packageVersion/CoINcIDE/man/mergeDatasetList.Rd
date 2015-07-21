@@ -1,5 +1,5 @@
-\name{computeAdjMatrices}
-\alias{computeAdjMatrices}
+\name{mergeDatasetList}
+\alias{mergeDatasetList}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 TEST
@@ -8,34 +8,30 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-computeAdjMatrices(dataMatrixList, clustSampleIndexList, clustFeatureIndexList, edgeMethod = c("spearman", "pearson", "kendall", "Euclidean", "cosine", "Manhattan", "Minkowski", "Mahalanobis"), numSims = 500, outputFile = "./CoINcIDE_messages.txt", checkNA = FALSE, centroidMethod = c("mean", "median"))
+mergeDatasetList(datasetList, minNumGenes = 10000, minNumPatients = 40, batchNormalize = c("BMC", "none", "combat"), NA_genesRemove = TRUE, outputFile = "./mergeDatasets", combatPvalueThresh = 0.05)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{dataMatrixList}{
-%%     ~~Describe \code{dataMatrixList} here~~
+  \item{datasetList}{
+%%     ~~Describe \code{datasetList} here~~
 }
-  \item{clustSampleIndexList}{
-%%     ~~Describe \code{clustSampleIndexList} here~~
+  \item{minNumGenes}{
+%%     ~~Describe \code{minNumGenes} here~~
 }
-  \item{clustFeatureIndexList}{
-%%     ~~Describe \code{clustFeatureIndexList} here~~
+  \item{minNumPatients}{
+%%     ~~Describe \code{minNumPatients} here~~
 }
-  \item{edgeMethod}{
-%%     ~~Describe \code{edgeMethod} here~~
+  \item{batchNormalize}{
+%%     ~~Describe \code{batchNormalize} here~~
 }
-
-  \item{numSims}{
-%%     ~~Describe \code{numSims} here~~
+  \item{NA_genesRemove}{
+%%     ~~Describe \code{NA_genesRemove} here~~
 }
   \item{outputFile}{
 %%     ~~Describe \code{outputFile} here~~
 }
-  \item{checkNA}{
-%%     ~~Describe \code{checkNA} here~~
-}
-  \item{centroidMethod}{
-%%     ~~Describe \code{centroidMethod} here~~
+  \item{combatPvalueThresh}{
+%%     ~~Describe \code{combatPvalueThresh} here~~
 }
 }
 \details{

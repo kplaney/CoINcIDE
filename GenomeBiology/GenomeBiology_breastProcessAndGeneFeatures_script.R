@@ -13,21 +13,18 @@ data("curatedBreastDataExprSetList")
 #same parameters as for ovarian
 #use this code from CoINcIDE
 library("CoINcIDE")
-esets <- processExprSetList(exprSetList=curatedBreastDataExprSetList,outputFileDirectory=saveDirGlobal,
-                                  minVar=.001,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
+esets <- procExprSetList(exprSetList=curatedBreastDataExprSetList,outputFileDirectory=saveDirGlobal,
+                                  minVar=.001,featureDataFieldName="gene_symbol",uniquePDataID="patient_ID")
 
-save(esets,file=paste0(saveDirGlobal,"/curatedBreastData_esets_proc.RData.gzip"),compress="gzip")
+#save(esets,file=paste0(saveDirGlobal,"/curatedBreastData_esets_proc.RData.gzip"),compress="gzip")
 
-#remove curatedBreastData package so functions don't conflict.
+#remove curatedBreastData package, curatedBreastDataExprSetList - done with them now.
 rm(list="curatedBreastData")
+rm(list="curatedBreastDataExprSetList")
 ###merge datasets - with no norm to see which datasets needed to be dropped
 
-load(paste0(saveDirGlobal,"/curatedBreastData_esets_proc.RData.gzip"))
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
-#combat code:
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_batchCorrection.R")
+#load(paste0(saveDirGlobal,"/curatedBreastData_esets_proc.RData.gzip"))
+
 #now format just as a list of data matrices.
 dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene_symbol")
 
@@ -37,7 +34,7 @@ names(dataMatrixList) <- names(esets)
 #40 patients and at least 10,000 genes.  will help with merged analyses.
 
 #also merge this one
-output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('none'));
+output <- mergeDatasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('none'));
 save(output,file=paste0(saveDirGlobal,"/mergedExprMatrix_minVar001_17_studies_no_norm.RData.gzip"),compress="gzip")
 
 
@@ -45,11 +42,6 @@ save(output,file=paste0(saveDirGlobal,"/mergedExprMatrix_minVar001_17_studies_no
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 
-load(paste0(saveDirGlobal,"/curatedBreastData_esets_proc.RData.gzip"))
-#now format just as a list of data matrices.
-dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName="gene_symbol")
-
-names(dataMatrixList) <- names(esets)
 
 
 ##ALSO: merge matrices first to help decide which studies to keep overall
@@ -57,7 +49,7 @@ names(dataMatrixList) <- names(esets)
 #also merge this one
 load(paste0(saveDirGlobal,"/mergedExprMatrix_minVar001_17_studies_no_norm.RData.gzip"),compress="gzip")
 
-#NOW: also remove these smaller datasets from the esets list before save
+#NOW: also remove these smaller datasets from the processed esets list before save
 
 if(length(output$removeDatasetIndices>0)){
   
@@ -77,7 +69,7 @@ save(dataMatrixList,file=paste0(saveDirGlobal,"/curatedBreastData_dataMatrixList
 
 ###meta-features
 
-load(paste0(saveDir,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
+load(paste0(saveDirGlobal,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip"))
 source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 #ran meta-feature analysis for 1000,500,1000,2000 features.
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 

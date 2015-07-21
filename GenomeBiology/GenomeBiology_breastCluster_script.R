@@ -1,10 +1,11 @@
 
+library("CoINCIDE")
+
 ###note: pam50 consensus was run in the "select K" script.
 
 ###so just do pam50 centroid clustering here:
-
+load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 ####make subtype dataframe first
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_visualization.R")
 for(d in 1:length(dataMatrixList)){
   
   tmp <- assignCentroidSubtype(t(dataMatrixList[[d]]),minNumGenes=30,centroidRData="/home/data/breast_microarrayDB/pam50_centroids_updatedSymbols.RData");
@@ -91,14 +92,11 @@ for(d in 1:length(dataMatrixList)){
       colnames(dataMatrixList[[d]])))
     
   }
-  
+  clustFeaturesList[[d]] <- pam50GeneShort
   
 }
 
 
-clustFeaturesList[[d]] <- pam50GeneShort
-
-}
 
 #no need to do k-means here; we created naive clustering assignments with the pam50 centroids
 saveDir <- "/home/kplaney/breast_analysis/"
@@ -114,7 +112,7 @@ save(pam50Full_centroidCluster,file=paste0(saveDir,"/pam50Full_centroidCluster.R
 ###########do for each number of features (just change numFeatures variable)
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 2000
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -134,8 +132,6 @@ for(d in 1:length(dataMatrixList)){
   clustFeaturesList[[d]] <- metaFeatures$finalFeatures
   
 }
-
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -152,7 +148,6 @@ save(kmeansConsensus,file=paste0(saveDir,"/curatedbreastData_kmeansConsensus_nst
 #######1000
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 1000
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -173,7 +168,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -191,7 +185,6 @@ save(kmeansConsensus,file=paste0(saveDir,"/curatedbreastData_kmeansConsensus_nst
 ####500
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 500
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -211,8 +204,6 @@ for(d in 1:length(dataMatrixList)){
   clustFeaturesList[[d]] <- metaFeatures$finalFeatures
   
 }
-
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -230,7 +221,6 @@ save(kmeansConsensus,file=paste0(saveDir,"/curatedbreastData_kmeansConsensus_nst
 ####200
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 200
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -251,7 +241,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -269,7 +258,6 @@ save(kmeansConsensus,file=paste0(saveDir,"/curatedbreastData_kmeansConsensus_nst
 ###250,300
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 250
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -290,7 +278,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -307,7 +294,6 @@ save(kmeansConsensus,file=paste0(saveDir,"/curatedbreastData_kmeansConsensus_nst
 ##300
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 300
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -328,7 +314,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -348,7 +333,6 @@ save(kmeansConsensus,file=paste0(saveDir,"/curatedbreastData_kmeansConsensus_nst
 ###########do for each number of features (just change numFeatures variable)
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 2000
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -369,7 +353,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansGap<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -386,7 +369,6 @@ save(kmeansGap,file=paste0(saveDir,"/curatedbreastData_kmeansGap_nstart25_",numF
 #######1000
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 1000
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -407,7 +389,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansGap<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -425,7 +406,6 @@ save(kmeansGap,file=paste0(saveDir,"/curatedbreastData_kmeansGap_nstart25_",numF
 ####500
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 500
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -446,7 +426,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansGap<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -464,7 +443,6 @@ save(kmeansGap,file=paste0(saveDir,"/curatedbreastData_kmeansGap_nstart25_",numF
 ####200
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 200
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -484,8 +462,6 @@ for(d in 1:length(dataMatrixList)){
   clustFeaturesList[[d]] <- metaFeatures$finalFeatures
   
 }
-
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 kmeansGap<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
@@ -505,7 +481,6 @@ save(kmeansGap,file=paste0(saveDir,"/curatedbreastData_kmeansGap_nstart25_",numF
 ###########do for each number of features (just change numFeatures variable)
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 2000
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -526,7 +501,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 hclustOut <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
@@ -541,7 +515,6 @@ save(hclustOut,file=paste0(saveDir,"/curatedbreastData_hclust_",numFeatures,"Fea
 #######1000
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 1000
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -562,7 +535,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 hclustOut <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
@@ -578,7 +550,6 @@ save(hclustOut,file=paste0(saveDir,"/curatedbreastData_hclust_",numFeatures,"Fea
 ####500
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 500
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -599,7 +570,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85
 hclustOut <- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("hc"),
@@ -616,7 +586,6 @@ save(hclustOut,file=paste0(saveDir,"/curatedbreastData_hclust_",numFeatures,"Fea
 ####200
 load("/home/kplaney/breast_analysis/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
 numFeatures <- 200
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load(paste0("/home/kplaney/breast_analysis/metaFeatures_",numFeatures,".RData.gzip"))
 saveDir <- "/home/kplaney/breast_analysis/"
 ##do for each 200,500,1000,2000 (load different metaFeatures RData object each time.)
@@ -637,7 +606,6 @@ for(d in 1:length(dataMatrixList)){
   
 }
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_cluster.R")
 
 
 #we know these are strong clusters. have  minMeanClustConsensus around .85

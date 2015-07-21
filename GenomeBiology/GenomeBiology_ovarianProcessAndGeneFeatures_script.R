@@ -1,4 +1,5 @@
 library("Biobase")
+library("CoINcIDE")
 library("curatedOvarianData")
 datasetNames <- data(package="curatedOvarianData")
 datasetNames <- datasetNames[3]$results[,"Item"]
@@ -32,7 +33,10 @@ expandProbesets <- function (eset, sep = "///"){
 #tar xvzf curatedOvarianData_1.3.5.tar.gz
  strEsets <- list.files("/home/kplaney/R/x86_64-redhat-linux-gnu-library/curatedOvarianData/data/")
 # #datalist is a text file...shouldn't be any other text files in this directory, only .rda files.
- strEsets <- strEsets[-which(strEsets=="datalist")]
+
+ #only want rda datasets
+  strEsets <- strEsets[grep("rda",strEsets)]
+ 
 # library("limma")
 # names(strEsets) <- strsplit2(strEsets,split=".rda")[,1]
 # #now load all of this data. equivalent of data() call above if can install package.
@@ -51,7 +55,6 @@ strEsets <- ls(pattern="^.*_eset$")
 
 ##now back to common code for server or local computer:
 
-#ERROR: still not removing all of these??
 #UBD///GABBR1 in final output...
 esets <- list()
 for (strEset in strEsets){
@@ -137,28 +140,31 @@ for(e in 1:length(esets)){
   
 }
 
-#COME BACK:  filter by primary site? 
+#something to think about later: filter by primary site? 
 head(pData(esets[["TCGA_eset"]])[,"primarysite"])
 
 
 #}
-#remove datasets that are too small? allow them for now.
-#now process, then grab meta-features
-#sounds like there SHOULD be some duplicated samples  in here.
 #want very lowly varying genes to be removed for Combat.
-esets <- processExprSetList(exprSetList=esets,outputFileDirectory="/home/kplaney/ovarian_analysis/",
+#featureDataFieldName: must match the gene symbol column title for these esets.
+#source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
+esets <- procExprSetList(exprSetList=esets,outputFileDirectory="/home/kplaney/ovarian_analysis/",
                                   minVar=.001,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
 
-#just strictly limit TCGA dataset now - bc of combat
-#esets[["TCGA_eset"]] <- processExpressionSet(exprSet,esets[["TCGA_eset"]],
-#                                 outputFileDirectory="/home/kplaney/ovarian_analysis/",
-#                                  minVar=.1,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
-#look for batches - break these apart?
-#but it only looks like TCGA has actual site batches -
-#the rest look like the date the samples were collected?
-#in the R documentation it says 
-#"Hybridization date when Affymetrix CEL files are available"
-#perhaps TOO granular for our purposes.
+#look at batches - looks like the only true batches (besides machine runs) are in the TCGA dataset.
+for(e in 1:length(esets)){ 
+  
+  if(!all(is.na(pData(esets[[e]])[,"batch"]))){
+    
+    cat("\n",names(esets[[e]]))
+    
+  }
+  
+}
+
+tmp<- procExprSetList(exprSetList=esets,outputFileDirectory="/home/kplaney/ovarian_analysis/",
+                      minVar=.001,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
+
 
 for(e in 1:length(esets)){
   
@@ -169,7 +175,6 @@ for(e in 1:length(esets)){
   }
   
 }
-
 
 #only split up TCGA into batches
 #na.omit: if any NA batch variables, then unique will return one "NA" 
@@ -194,7 +199,6 @@ outcomesAndCovariates <- pData(esets[["TCGA_eset"]])[,"batch",drop=FALSE]
 rownames(outcomesAndCovariates) <- colnames(exprs(esets[["TCGA_eset"]]))
 exprMatrix <- exprs(esets[["TCGA_eset"]])
 rownames(exprMatrix) <- featureNames(esets[["TCGA_eset"]])
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_batchCorrection.R")
 batchCorrect <- batchNormalization(countsMatrixNoNANoDup=exprMatrix,outcomesAndCovariates=outcomesAndCovariates,MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile="combatoutput.txt")
 
 esets[["TCGA_eset"]] <- esets[["TCGA_eset"]][rownames(batchCorrect$GEN_Data_Corrected), colnames(batchCorrect$GEN_Data_Corrected)]
@@ -207,8 +211,6 @@ save(esets,file="/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip
 ####
 ###select features
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 load("/home/kplaney/ovarian_analysis/esets_proc_TCGAcombat.RData.gzip")
 
 
@@ -263,7 +265,6 @@ save(metaFeatures,file="/home/kplaney/ovarian_analysis_withTop20Genes/metaFeatur
 
 ###now do without top 20
 #ran meta-feature analysis for 1000,500,1000,2000 features.
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
@@ -276,7 +277,6 @@ message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[m
 #(saved each one after ran)
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_200.RData.gzip",compress="gzip")
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
@@ -288,7 +288,6 @@ message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[m
 
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_500.RData.gzip",compress="gzip")
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
@@ -300,7 +299,6 @@ message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[m
 
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_1000.RData.gzip",compress="gzip")
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
@@ -313,7 +311,6 @@ message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[m
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_2000.RData.gzip",compress="gzip")
 
 ##now do 250, 300
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),
@@ -325,7 +322,6 @@ message(paste0("Dropping the following datasets: ",paste(names(dataMatrixList)[m
 
 save(metaFeatures,file="/home/kplaney/ovarian_analysis/metaFeatures_250.RData.gzip",compress="gzip")
 
-source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE/R/CoINcIDE_featureSelection.R")
 load("/home/kplaney/ovarian_analysis/curatedOvarianData_procDataMatrixList.RData.gzip")
 metaFeatures <- selectFeaturesMetaVariance_wrapper(dataMatrixList,rankMethod=c("mad"), 
                                                    numNAstudiesAllowedPerFeat=ceiling(length(dataMatrixList)/10),

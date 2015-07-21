@@ -5,7 +5,7 @@ export(addClinicalVarToNodeAttributes, advancedNetworkPlots,assignCentroidSubtyp
        ConsensusClusterPlus_CoINcIDE,createExpressionSetList,
        createNullDataMatrixList,createPhenoMasterTableFromMatrixList,createS4exprSet,
        exprSetListToMatrixList,findCommunities, exprSetListToMatrixList, findCommunities,
-       globalFDR, GSEA, merge_datasetList, processExpressionSet, processExprSetList, returnSampleMemberMatrix,
+       globalFDR, GSEA, procExprSet, procExprSetList, mergeDatasetList, returnSampleMemberMatrix,
        selectFeaturesMetaVariance, selectFeaturesMetaVariance_wrapper, selectMetaclustSigGenes, simulateClusterData,
        summarizePosESMetaclustGenes,meanMetricDensityPlot)
 
