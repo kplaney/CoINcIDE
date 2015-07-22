@@ -8,7 +8,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
 
 
 ####analyze
-  source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")
+  source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")
   #grab data matrix list, clust features list
   load(paste0(saveDirPAM50,"/pam50_centroids_updatedSymbols.RData"))
   pam50Genes <- centroidMatrix[,1]
@@ -72,6 +72,18 @@ outputFile <- "~/CoINcIDE_messages.txt"
   
   
   
+  CoINcIDE_nullOutput <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses//CoINcIDE_NullOutput_PAM50centroidCluster_pearsonedgeMethod_mean_centroidMethod2015-07-09.rds")
+  globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                                 edgeMethod="pearson",minTrueSimilThresh=0.3,maxTrueSimilThresh=Inf,
+                                 outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+                                 meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                                 saveDir = saveDir,experimentName = "nullTest",
+                                 commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                                 findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
+  
+  saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
+  
+  
 ####PAM50 short
 library("CoINcIDE")
 saveDirPAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses"
@@ -122,7 +134,7 @@ clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/
                                        "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
                                        "anti-ER treatment")
      
-     source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+     source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R") 
      #looks like simil thresh of .3 appropriate
      densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDirPAM50,
                                           experimentName=experimentName,savePlot=TRUE)
@@ -138,18 +150,25 @@ clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/
                                                             ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
                                                             GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
                                                             findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1)
+     
+     CoINcIDE_nullOutput <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses//CoINcIDE_NullOutput_PAM50kmeansShort_pearsonedgeMethod_mean_centroidMethod2015-07-09.rds")
+     globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                                    edgeMethod="pearson",minTrueSimilThresh=0.3,maxTrueSimilThresh=Inf,
+                                    outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+                                    meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                                    saveDir = saveDir,experimentName = "nullTest",
+                                    commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                                    findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
+     
+     saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
-
+     
+     
+     #now plot with altered scale to match merged analyses.
      experimentName <- "pam50ShortKmeans_pear_meanCent_MM3_subtypePlotsWith2000Axis"   
 breast_pam50Short_pearson_centroidMean <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                                                                meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .3, maxTrueSimilThresh = Inf,minFractNN=.8,
-                                                                                               clustSizeThresh = 0,saveDir =saveDirPAM50,experimentName = experimentName,networkColors = networkColors,
-                                                                                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
-                                                                                               survivalAnalysis=FALSE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
-                                                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
-                                                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
-                                                                                               GSEAanalysis=FALSE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                                                               findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=2000)
+                                                                                     findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=2000)
      
 ###PAM50 full
 library("CoINcIDE")
@@ -205,7 +224,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                        "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
                                        "anti-ER treatment")
      
-     source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+     source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R") 
      #looks like simil thresh of .25 appropriate
      densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDirPAM50,
                                           experimentName=experimentName,savePlot=TRUE)
@@ -223,7 +242,26 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                                                          findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1)
      
  
- ######################## 
+ 
+  
+  
+  CoINcIDE_nullOutput <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses//CoINcIDE_NullOutput_PAM50kmeansFull_pearsonedgeMethod_mean_centroidMethod2015-07-09.rds")
+  globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                                 edgeMethod="pearson",minTrueSimilThresh=0.25,maxTrueSimilThresh=Inf,
+                                 outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+                                 meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                                 saveDir = saveDir,experimentName = "nullTest",
+                                 commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                                 findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
+  
+  saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
+  
+  
+  
+  
+  
+  
+  ######################## 
   ####have not run....
   
     #####pearson, median centroid
@@ -408,7 +446,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                        "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
                                        "anti-ER treatment")
      
-     source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+     source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R") 
      
      breast_pam50Short_pearson_centroidMean <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                                            meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .5, maxTrueSimilThresh = Inf,minFractNN=.8,
@@ -483,7 +521,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                        "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
                                        "anti-ER treatment")
      
-     source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+     source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R") 
      
      
      load("~/pam50Full_kmeansConsClusters_pearson_meanCentroid.RData.gzip")

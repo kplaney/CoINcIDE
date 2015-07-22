@@ -4,6 +4,7 @@ source("/home/ywrfc09//CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoI
 
 minTrueSimilVector <- seq(from=0,to=1,by=.1)
 saveDir <- "/home/ywrfc09/simulations"
+
 for(m in 1:length(minTrueSimilVector)){
 #this is NOT for communities - just for edges.
 highQuality <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
@@ -18,6 +19,9 @@ highQuality <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
 
 saveRDS(highQuality,file=paste0(saveDir,"/highQuality_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
+}
+
+for(m in 1:length(minTrueSimilVector)){
 highQualityUnevenSize <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                               eigenValueMin = -.001,simType=c("unevenSizeClust"),
                                               noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
@@ -30,7 +34,11 @@ highQualityUnevenSize <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
 
 saveRDS(highQualityUnevenSize,file=paste0(saveDir,"/highQualityUnevenSize_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
+}
 
+
+for(m in 1:length(minTrueSimilVector)){
+  
 highQualityUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                       eigenValueMin = -.001,simType=c("highQualityClust"),
                                       noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
@@ -43,7 +51,11 @@ highQualityUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",numSimDatas
 
 saveRDS(highQualityUnevenNumClustMin2,file=paste0(saveDir,"/highQualityUnevenNumClustMin2_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
+}
 
+
+for(m in 1:length(minTrueSimilVector)){
+  
 highQualityUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                                         eigenValueMin = -.001,simType=c("highQualityClust"),
                                                         noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
@@ -56,7 +68,10 @@ highQualityUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",numSimDatas
 
 saveRDS(highQualityUnevenNumClustMin1,file=paste0(saveDir,"/highQualityUnevenNumClustMin1_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
+}
 
+
+for(m in 1:length(minTrueSimilVector)){
 
 highQualityUnevenSizeUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                                         eigenValueMin = -.001,simType=c("unevenSizeClust"),
@@ -71,7 +86,9 @@ highQualityUnevenSizeUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",n
 
 saveRDS(highQualityUnevenSizeUnevenNumClustMin2,file=paste0(saveDir,"/highQualityUnevenSizeUnevenNumClustMin2_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
+}
 
+for(m in 1:length(minTrueSimilVector)){
 
 highQualityUnevenSizeUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                                                           eigenValueMin = -.001,simType=c("unevenSizeClust"),
@@ -85,7 +102,11 @@ highQualityUnevenSizeUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",n
 
 saveRDS(highQualityUnevenSizeUnevenNumClustMin1,file=paste0(saveDir,"/highQualityUnevenSizeUnevenNumClustMin1_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
+}
 
+
+for(m in 1:length(minTrueSimilVector)){
+  
 mixedQualityClust <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                             eigenValueMin = -.001,simType=c("mixedClustQualityClust"),
                                             noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),

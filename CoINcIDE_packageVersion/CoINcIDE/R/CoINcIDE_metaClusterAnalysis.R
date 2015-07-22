@@ -1362,10 +1362,10 @@ fractEdgesInVsOutEdge=0
   totalPossibleIndPvalues <- length(which(!is.na(CoINcIDE_output$pvalue)))
   FDR_indPvalue_beforeOtherThresh <- numFalseIndPvaluesBeforeOtherThresh/totalPossibleIndPvalues
   #an "edge" means two p-values in essence were kept.
-  FDR_indPvalue_afterOtherThresh <- (numFalseEdges_afterThresh*2)/totalPossibleIndPvalues
-  FDR_indPvalue_afterGN <- (numFalseIndPvaluesBeforeOtherThresh*2)/totalPossibleIndPvalues
+  FDR_indPvalue_afterOtherThresh <-  (numFalseEdges_afterThresh*2)/totalPossibleIndPvalues
+  FDR_indPvalue_afterGN <-(numFalseEdges_afterGN*2)/totalPossibleIndPvalues
   
-  FDR_edgesAfterThresh <- numFalseEdges_afterThresh/totalPossibleEdges
+  FDR_edgesAfterAllThresh <- numFalseEdges_afterThresh/totalPossibleEdges
   FDR_edgesAfterGN <- numFalseEdges_afterGN/totalPossibleEdges
 
   
@@ -1376,7 +1376,7 @@ fractEdgesInVsOutEdge=0
                       meanFractNNQuantilesBeforeThresh=meanFractNNQuantilesBeforeThresh,numFalseEdges_afterThresh=numFalseEdges_afterThresh,
                       numFalseEdges_afterGN=numFalseEdges_afterGN,numFalseIndPvaluesBeforeOtherThresh=numFalseIndPvaluesBeforeOtherThresh,
                       FDR_indPvalue_beforeOtherThresh=FDR_indPvalue_beforeOtherThresh,FDR_indPvalue_afterOtherThresh=FDR_indPvalue_afterOtherThresh,
-                      FDR_indPvalue_afterGN=FDR_indPvalue_afterGN,numFalseDatasetsInNetwork=numFalseDatasetsInNetwork)
+                      FDR_indPvalue_afterGN=FDR_indPvalue_afterGN,FDR_edgesAfterGN=FDR_edgesAfterGN,FDR_edgesAfterAllThresh=FDR_edgesAfterAllThresh,numFalseDatasetsInNetwork=numFalseDatasetsInNetwork)
 
   
   return(FDR_results)

@@ -13,7 +13,7 @@ clustFeatureIndexList <- clusterCoINcIDE_output$clustFeatureIndexList_PACR
 
 outputFile <- "~/CoINcIDE_messages.txt"
 
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+ source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")
 CoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/CoINcIDE_results_breast278F_pearson_edgeMethod_mean_centroidMethod2015-07-08.rds")
 
 saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
@@ -47,7 +47,7 @@ fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment t
                                   "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
                                   "anti-ER treatment")
 
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+ source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")
 
 #looks like simil thresh of .3 or .5 appropriate
 densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDir,
@@ -65,6 +65,25 @@ breast_278genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(met
                                                                     GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
                                                                     findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=800)
 
+
+
+
+CoINcIDE_nullOutput <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes///CoINcIDE_NullOutput_breast278F_pearsonedgeMethod_mean_centroidMethod2015-07-09.rds")
+globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                               edgeMethod="pearson",minTrueSimilThresh=0.3,maxTrueSimilThresh=Inf,
+                               outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                               saveDir = saveDir,experimentName = "nullTest",
+                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                               findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
+
+saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
+
+
+
+
+
+
 ##2000 genes:
 library("CoINcIDE")
 saveDir <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
@@ -78,7 +97,7 @@ clustFeatureIndexList <- clusterCoINcIDE_output$clustFeatureIndexList_PACR
 
 outputFile <- "~/CoINcIDE_messages.txt"
 
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+ source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")
 CoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/CoINcIDE_results_breast2052F_pearson_edgeMethod_mean_centroidMethod2015-07-08.rds")
 
 saveDirNew <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes/"
@@ -112,7 +131,7 @@ fisherTestVariableTitleNames <- c("DFS","RFS","metastasis","pCR","pretreatment t
                                   "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
                                   "anti-ER treatment")
 
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+ source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")
 
 #looks like simil thresh of .4 appropriate
 densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDir,
@@ -131,6 +150,29 @@ breast_2052genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(me
                                                                                                                                GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
                                                                                                                                findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=800)
 
+
+
+
+
+
+
+
+CoINcIDE_nullOutput <- readRDS("/home/ywrfc09/breast_analysis/metaRankWithTop20Genes///CoINcIDE_NullOutput_breast2052F_pearsonedgeMethod_mean_centroidMethod2015-07-09.rds")
+globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                               edgeMethod="pearson",minTrueSimilThresh=0.4,maxTrueSimilThresh=Inf,
+                               outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                               saveDir = saveDir,experimentName = "nullTest",
+                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                               findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
+
+saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
+
+
+
+
+
+#######did not run 
 
 
 

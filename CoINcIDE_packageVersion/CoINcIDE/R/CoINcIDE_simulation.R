@@ -770,7 +770,7 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
           commMedianMaxTissueType[[n]][[t]] <- NA
           
         }
-        clustSizes <- table(aggregateData$sampleClustCommKey$globalClustNum)
+
         
       #loop of simulations
     }
@@ -849,7 +849,8 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
   #aggregate across all t to return for each noise level.
   commMedianMaxTissueType <- lapply(commMedianMaxTissueType,FUN=function(noiseUnit){
     
-    return(median(unlist(noiseUnit)))
+    #NA: no communities detected.
+    return(median(unlist(noiseUnit),na.rm=TRUE))
     
     
   })
@@ -857,7 +858,7 @@ runTissueClusterSimROC <- function(saveDir="./",numSimDatasets=10,
   
   commMeanMaxTissueType <- lapply(commMeanMaxTissueType,FUN=function(noiseUnit){
     
-    return(mean(unlist(noiseUnit)))
+    return(mean(unlist(noiseUnit),na.rm=TRUE))
     
     
   })

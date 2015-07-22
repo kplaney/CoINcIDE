@@ -13,7 +13,6 @@ dataMatrixList <- args[4]
 
 experimentName <- args[5]
 saveDir <- args[6]
-minTrueSimilThresh <- args[7]
 
 message("edge method is ",edgeMethod)
 message("centroid method is ", centroidMethod)
@@ -44,7 +43,7 @@ if((length(dataMatrixList) != length(clustFeatureIndexList)) || (length(dataMatr
 #just make these default for now.
 outputFile <- "~/CoINcIDE_messages.txt"
 numSims <- 500
-numNullIter <- 5
+numNullIter <- 10
 
 CoINcIDE_nullOutput <- computeAdjMatricesNullMatrixList(dataMatrixList,numIter=numNullIter,
                                           clustSampleIndexList=clustSampleIndexList,clustFeatureIndexList=clustFeatureIndexList,
@@ -56,17 +55,6 @@ CoINcIDE_nullOutput <- computeAdjMatricesNullMatrixList(dataMatrixList,numIter=n
 
 saveRDS(CoINcIDE_nullOutput,file=paste0(saveDir,"/CoINcIDE_NullOutput_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"),compress=TRUE)
   
-globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
-                         edgeMethod=edgeMethod,minTrueSimilThresh=minTrueSimilThresh,maxTrueSimilThresh=Inf,
-                         outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
-                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
-                         saveDir = saveDir,experimentName = "nullTest",
-                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
-                         findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
-
-saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
-
  message("saved these files:")
 # message(paste0(saveDir,"/CoINcIDE_results_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))
  message(paste0(saveDir,"/CoINcIDE_Nullresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))
-message(paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"_edgeMethod_",centroidMethod,"_centroidMethod",Sys.Date(),".rds"))

@@ -1,7 +1,7 @@
 #!/usr/bin/Rscript --default-packages=utils
 
 library("CoINcIDE")
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")   
 outputFile <- "~/CoINcIDE_messages.txt"
 saveDir <- "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes"
 globalSaveDir <- "/home/ywrfc09/ovarian_analysis/"
@@ -52,11 +52,21 @@ ovarian_240genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(me
 
 
 
+CoINcIDE_nullOutput <- readRDS("/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/CoINcIDE_NullOutput_ovarian240F_pearsonedgeMethod_mean_centroidMethod2015-07-09.rds")
+globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                               edgeMethod="pearson",minTrueSimilThresh=0.5,maxTrueSimilThresh=Inf,
+                               outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                               saveDir = saveDir,experimentName = "nullTest",
+                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                               findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
+
+saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
 
 #2000
 library("CoINcIDE")
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")   
 outputFile <- "~/CoINcIDE_messages.txt"
 saveDir <- "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes"
 globalSaveDir <- "/home/ywrfc09/ovarian_analysis/"
@@ -91,9 +101,8 @@ densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=sa
 
 
 
-
 ovarian_2014genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                                                              meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                              meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .5, maxTrueSimilThresh = Inf,minFractNN=.8,
                                                                               clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
                                                                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
@@ -105,6 +114,31 @@ ovarian_2014genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(m
 
 
 
+
+CoINcIDE_nullOutput <- readRDS("/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes/CoINcIDE_NullOutput_ovarian2014F_pearsonedgeMethod_mean_centroidMethod2015-07-10.rds")
+
+globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_NullOutputList,
+                               edgeMethod="pearson",minTrueSimilThresh=0.5,maxTrueSimilThresh=Inf,
+                               outputFile=outputFile,fractFeatIntersectThresh=0,numFeatIntersectThresh=0 ,clustSizeThresh=0, clustSizeFractThresh=0,
+                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                               saveDir = saveDir,experimentName = "nullTest",
+                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3,minFractNN =.8,
+                               findCommWithWeights=TRUE,minNumEdgesForCluster=1,fractEdgesInVsOutComm=0,fractEdgesInVsOutEdge=0)
+
+saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
+
+
+#also try with 0.7 (other global max)
+experimentName <- "2014F_pear_meanCent_MM7"
+ovarian_2014genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                                                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .7, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                               clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                                                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                                               GSEAanalysis=TRUE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                               findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1)
 
 
 
@@ -119,7 +153,7 @@ ovarian_2014genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(m
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_computeEdges.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R")
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")   
 saveDir <- "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes"
 globalSaveDir <- "/home/ywrfc09/ovarian_analysis/"
 #200 features, pearson:
@@ -222,7 +256,7 @@ ovarian_500genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(me
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_computeEdges.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R")
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")   
 saveDir <- "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes"
 globalSaveDir <- "/home/ywrfc09/ovarian_analysis/"
 #200 features, pearson:
@@ -327,7 +361,7 @@ ovarian_1000genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(m
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion//CoINcIDE/R/CoINcIDE_computeEdges.R")
 source("/home/ywrfc09/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R")
-source("/home/ywrfc09/CoINcIDE/coincide/oldCode/CoINcIDE_metaFeatures_analysis_wrapper.R")   
+source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")   
 saveDir <- "/home/ywrfc09/ovarian_analysis/metaRankWithTop20Genes"
 globalSaveDir <- "/home/ywrfc09/ovarian_analysis/"
 #200 features, pearson:

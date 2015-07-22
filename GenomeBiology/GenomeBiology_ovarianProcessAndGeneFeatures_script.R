@@ -147,34 +147,25 @@ head(pData(esets[["TCGA_eset"]])[,"primarysite"])
 #}
 #want very lowly varying genes to be removed for Combat.
 #featureDataFieldName: must match the gene symbol column title for these esets.
+library("CoINcIDE")
 #source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_geneExprProcess.R")
 esets <- procExprSetList(exprSetList=esets,outputFileDirectory="/home/kplaney/ovarian_analysis/",
                                   minVar=.001,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
 
-#look at batches - looks like the only true batches (besides machine runs) are in the TCGA dataset.
+#look at batches - looks like the only true batches (besides machine runs)
+#are in the TCGA dataset.
 for(e in 1:length(esets)){ 
   
   if(!all(is.na(pData(esets[[e]])[,"batch"]))){
     
-    cat("\n",names(esets[[e]]))
+    cat("\n",names(esets)[e]," contains labeled batches")
+    cat("\n",unique(pData(esets[[e]])[,"batch"],"\n"))
     
   }
   
 }
 
-tmp<- procExprSetList(exprSetList=esets,outputFileDirectory="/home/kplaney/ovarian_analysis/",
-                      minVar=.001,featureDataFieldName="gene",uniquePDataID="unique_patient_ID")
 
-
-for(e in 1:length(esets)){
-  
-  if(!all(is.na(pData(esets[[e]])[,"batch"]))){
-    
-    cat("\n",names(esets[[e]]))
-    
-  }
-  
-}
 
 #only split up TCGA into batches
 #na.omit: if any NA batch variables, then unique will return one "NA" 
@@ -186,7 +177,7 @@ which(is.na(pData(esets[["TCGA_eset"]])[,"batch"]))
 #hmm...so most are serious?
 table(pData(esets[["TCGA_eset"]])[,"batch"],pData(esets[["TCGA_eset"]])[,"histological_type"])
 unique(pData(esets[["TCGA_eset"]])[,"histological_type"])
-#yep...only 10 a NA, rest are serous
+#yep...only 2 are NA, rest are serous
 length(which(is.na(pData(esets[["TCGA_eset"]])[,"histological_type"])))
 #this matches the Nature paper saying the samples are only serous: http://www.nature.com/nature/journal/v474/n7353/full/nature10166.html
 
@@ -199,8 +190,16 @@ outcomesAndCovariates <- pData(esets[["TCGA_eset"]])[,"batch",drop=FALSE]
 rownames(outcomesAndCovariates) <- colnames(exprs(esets[["TCGA_eset"]]))
 exprMatrix <- exprs(esets[["TCGA_eset"]])
 rownames(exprMatrix) <- featureNames(esets[["TCGA_eset"]])
-batchCorrect <- batchNormalization(countsMatrixNoNANoDup=exprMatrix,outcomesAndCovariates=outcomesAndCovariates,MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile="combatoutput.txt")
 
+#p-value after batch correction:
+#source("/home/kplaney/gitRepos/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_batchCorrection.R")
+batchCorrect <- batchNormalization(countsMatrixNoNANoDup=exprMatrix,outcomesAndCovariates=outcomesAndCovariates,MinInBatch=4,combatModelFactorName=NULL,pvalueThresh=.05,batchColName="batch",outputFile="combatoutput.txt")
+#original p-value:
+# batchCorrect$beforePvalue
+#[1] 6.129178e-05
+#p-value after batch correction:
+# batchCorrect$afterPvalue
+#[1] 0.5019748
 esets[["TCGA_eset"]] <- esets[["TCGA_eset"]][rownames(batchCorrect$GEN_Data_Corrected), colnames(batchCorrect$GEN_Data_Corrected)]
 featureNames(esets[["TCGA_eset"]] ) <- rownames(batchCorrect$GEN_Data_Corrected)
 validObject(esets[["TCGA_eset"]])
