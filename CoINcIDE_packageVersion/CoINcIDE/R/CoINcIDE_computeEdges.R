@@ -418,7 +418,7 @@ computeClusterPairAssignFract_matrixStatsDist <- function(compareMatrix,centroid
         allMeanMetrics <- c()
         for(a in 1:ncol(centroidMatrix)){
           
-          allMeanMetrics[a] <- mean(sampleCentroidSimil[,a])
+          allMeanMetrics[a] <- mean(sampleCentroidDist[,a])
           
         }
   
