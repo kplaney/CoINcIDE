@@ -235,6 +235,7 @@ numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c(
            passedThresh <- FALSE
            tmp <- centroidFunction(compareMatrix=compareClust,centroidMatrix=nullCentroidMatrix,edgeMethod=edgeMethod)
            
+           #does null data meet NN fract thresh and meanMetric (dist) thresh? (ie is null distance smaller than true dist)
            if( (tmp$bestFract>=thresh) && (tmp$meanMetric <= fractNNresults$meanMetric)) {
            #if not looking at correlation: 
          #    if( (tmp$bestFract>=thresh) ) {
@@ -244,7 +245,7 @@ numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c(
            
                return(passedThresh)
            
-         },compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalClustIndex,c])
+         },compareClust=compareClust,edgeMethod=edgeMethod,thresh=trueFractNNmatrix[globalRefClustIndex,c])
 
         
         
