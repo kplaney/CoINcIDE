@@ -13,7 +13,8 @@
 computeAdjMatrices <- function(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
 edgeMethod=c("spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),
-numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c("mean","median")){
+numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c("mean","median"),seedNum=rnorm(1),
+memorySave=FALSE){
   
   
     if(length(centroidMethod)>1){
@@ -100,9 +101,7 @@ numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c(
   
   clustIndexMatrix <- strsplit2(clustDetailedNames,"_");
   cat("\nThere are ",nrow(clustIndexMatrix), " total clusters across ",length(dataMatrixList), "datasets.\n",append=TRUE,file=outputFile)
-  
-  threshStats <- computeThreshParam(clustIndexMatrix,
-                                    dataMatrixList,clustSampleIndexList,clustFeatureIndexList)
+
 
 
   
@@ -143,13 +142,29 @@ numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c(
   trueFractNNmatrix <- matrix(data=NA,nrow=numClust,ncol=numClust)
  
         #COME BACK: do foreach loop here.
-  for(n in 1:length(dataMatrixList)){
+  numDatasets <- length(dataMatrixList)
+  
+  if(memorySave){
+    
+    set.seed(seedNum)
+    randTag <- rnorm(1)
+    save(dataMatrixList,file=paste0(saveDir,"/dataMatrixList.rds"),compress=TRUE)
+    #remove the dataMatrixList - not needed anymore and will free up space/memory.
+    rm(list="dataMatrixList")
+  }
+  for(n in 1:numDatasets){
     
     message("On dataset (loop) ",n)
     
   #for each dataset: make centroid set and null centroid sets
   centroidMatrixOrig <- matrix(data=NA,ncol=length(clustFeatureIndexList[[n]]),nrow=length(clustFeatureIndexList[[n]][[1]]))
-          
+  
+  if(memorySave){
+    
+    dataMatrixList <- readRDS(file=paste0(saveDir,"/dataMatrixList.rds"))
+    
+  }
+                           
   if(centroidMethod=="mean"){
 
         for(d in 1:length(clustFeatureIndexList[[n]])){
@@ -168,7 +183,12 @@ numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c(
         }
   
     }
-  
+
+  if(memorySave){
+    
+    rm(list="dataMatrixList")
+    
+  }
   rownames( centroidMatrixOrig) <- rownames(dataMatrixList[[n]])[clustFeatureIndexList[[n]][[1]]]
     nullCentroidListOrig <- createNullCentroidMatrixList(centroidMatrixOrig,numIter=numSims)
         
@@ -281,11 +301,24 @@ numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c(
   #}
 
 #end of looping through all datasets
+         rm(list="nullCentroidList")
 }
 
+    rm(list="nullCentroidListOrig")
    
  }
 
+  if(memorySave){
+    
+    dataMatrixList <- readRDS(file=paste0(saveDir,"/dataMatrixList.rds"))
+    
+  }
+
+  threshStats <- computeThreshParam(clustIndexMatrix,
+                                    dataMatrixList,clustSampleIndexList,clustFeatureIndexList)
+  
+  
+  rm(list="dataMatrixList")
   threshStats$meanMetricMatrix <- meanMetricMatrix
   threshStats$trueFractNNmatrix <- trueFractNNmatrix
   
