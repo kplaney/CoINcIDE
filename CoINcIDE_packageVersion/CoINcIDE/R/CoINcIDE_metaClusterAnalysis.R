@@ -111,261 +111,6 @@ addClinicalVarToNodeAttributes <- function(sampleClustCommKey,phenoMasterDF){
                                    
 }
 
-#NOTE: groupings need names
-#ovarian: use recurrence_status as binary variable
-#for ovarian: not a big difference if neo or adjuvant
-survivalAnalysis <- function(saveNameTag = "survivalAnalysis",outcomesVarBinary="os_event",outcomesVarCont = "os_days_to_event",
-                             sampleClustCommPhenoData,CutoffPointYears=5,uniquePatientID="unique_patient_ID",
-                             groupingTerm="community",addRX=FALSE){
-  
-
-  #only take samples with the groupingTerm you're looking at.
-  sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, groupingTerm])), ]
-  #remove samples with NA values.
-  groupings <- sampleClustCommPhenoData[, groupingTerm]
-  
-  message("Groupings total counts:\n")
-  cat(table(groupings),"\n")
-  
-  groupingsBinary <- groupings[which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary]))];
-  
-  
-  message("Groupings total counts for binary outcomes variable:\n")
-  cat(table(groupingsBinary),"\n")
-  
-  outcomesData <-  sampleClustCommPhenoData
-  #outcomesData <-  outcomesData[which(!is.na( outcomesData[,outcomesVarBinary])),];
-  
-  #keep samples with NA days to event for now?
-  groupingsCont <- as.numeric(as.factor(groupings[which(!is.na(outcomesData[,outcomesVarCont]))]))
-  
-  message("Groupings total counts for binary outcomes variable:\n")
-  cat(table(groupingsCont),"\n")
-  
-  #outcomesData <- outcomesData[which(!is.na(outcomesData[,outcomesVarCont])),];
-  
-  #if binary is character string categories: make it a factor first, then numeric,
-  #otherwise coxph function will throw errors.
-  outcomesDataShort <- data.frame(as.numeric(as.factor(outcomesData[,outcomesVarBinary])),outcomesData[,outcomesVarCont],
-  );
-  
-  #sometimes the names are duplicated across studies - remove this line
-  #rownames(outcomesDataShort ) <- outcomesData[,uniquePatientID];
-  colnames(outcomesDataShort) <- c("Censoring","TimeToLastContactOrEvent","groupings")
-  
-  nonCensoredTerm=1
-  censoredTerm=0
-  Survival <- outcomesDataShort
-  #creating the survival objects with the time and censoring variables
-  OverallSurvival <- Surv(Survival$TimeToLastContactOrEvent,Survival$Censoring==nonCensoredTerm);
-  #KP:
-  #creating a survival object cutoff at a certain point
-  CutoffPoint <- CutoffPointYears*365;
-  CutoffSamples=Survival$TimeToLastContactOrEvent>CutoffPoint & !is.na(Survival$TimeToLastContactOrEvent)
-  SurvivalCutoff=Survival
-  SurvivalCutoff$TimeToLastContactOrEvent[CutoffSamples]=CutoffPoint
-  SurvivalCutoff$Censoring[CutoffSamples]=censoredTerm
-  #"Surv" creates a survival object. really for binary outcomes data.
-  OverallSurvivalCutoff=Surv(SurvivalCutoff$TimeToLastContactOrEvent,SurvivalCutoff$Censoring==nonCensoredTerm)
-  
-  results<-array(dim=c(1,13))
-  #dataMatrix <- data.matrix(data);
-  ########################################################
-  # cox survival
-  ########################################################
-  
-  ########################################################
-  
-  # STEP 1: Cox model on complete survival data + kaplan meier
-  #Fits a Cox proportional hazards regression model.
-  #***add in Rx info??
-  #plot.survfit: can plot this data after using survfit.coxph
-  #ex for plotting survival data: > leukemia.surv <- survfit(Surv(time, status) ~ x, data = aml) 
-  #> plot(leukemia.surv, lty = 2:3) 
-  #here: run test <- cox.zph(coxfit), plot.cox.zph(test)
-  #COME BACK: include therapy too coxph( Surv(time, status) ~ therapy + ReceptorA + ReceptorB , data= sample.data) 
-  #hmmm...not working?? is this because most patients died?
-  #if groups are ill-balanced, may get a warnings: http://stats.stackexchange.com/questions/66591/coxph-ran-out-of-iterations-and-did-not-converge
-  coxfit=coxph(OverallSurvival~groupings, data=Survival)
-  plot.cox.zph(cox.zph(coxfit))
-  
-  tmp=summary(coxfit)
-  #results[i,1]=tmp$logtest[3]  
-  
-  results[1,1]=tmp$waldtest[3]
-  results[1,2]=exp(coxfit$coefficients)
-  results[1,3]=tmp$conf.int[3]
-  results[1,4]=tmp$conf.int[4]
-  results[1,5]=tmp$coefficients[4] # the zscore
-  
-  #kaplan meier...is this correct?
-  kmfit=survdiff(OverallSurvival ~ groupings)
-  results[1,6]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)
-  
-  #calculate the sign of the survival relationship
-  #do we save this somethere?? in 7?
-  mfit=survfit(OverallSurvival ~ groupings)
-  plot(mfit)
-  mfit.summary=summary(mfit)
-  
-  ########################################################
-  # STEP 2: Cox model on survival data with CUTOFF + kaplan meier
-  
-  coxfit=coxph(OverallSurvivalCutoff~groupings, data= SurvivalCutoff)
-  
-  tmp=summary(coxfit)
-  results[,8]=tmp$waldtest[3]
-  #what is this??
-  results[,9]=exp(coxfit$coefficients)
-  results[,10]=tmp$conf.int[3]
-  results[,11]=tmp$conf.int[4]
-  results[,12]=tmp$coefficients[4] # the zscore
-  
-  #The survfit function from the survival package computes the Kaplan-Meier estimator for truncated and/or censored data
-  #survfit: This function creates survival curves from either a formula (e.g. the Kaplan-Meier), a previously fitted Cox model, or a previously fitted accelerated failure time model.
-  kmfit=survdiff(OverallSurvivalCutoff ~ groupings)
-  results[,13]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)  
-  
-  
-  ########################################################
-  # writing to file
-  ########################################################
-  #write.table(results,Args[7],sep="\t")
-  
-  #ADD FDR TESTING!
-  ColumnLabels= c('Overall-WaldTest', 'Overall-HR','Overall-HRlower' ,'Overall-HRupper' ,'Overall-Zscore', 'Overall-KMtest' ,
-                  'Cutoff-WaldTest', 'Cutoff-HR' ,'Cutoff-HRlower' ,'Cutoff-HRupper' ,'Cutoff-Zscore', 'Cutoff-KMtest' );
-  
-  colnames(results) <- ColumnLabels;
-  rownames(results) <- colnames(dataMatrix);
-  
-  
-  
-  ########################################################
-  #STEP 3:  covariate modeling....
-  #COME BACK.
-  
-  if(addRX){
-    
-    
-    #remove samples that don't have Rx info.
-    sampleClustCommPhenoData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[, c("chemo","estrogen_ther","her2_ther")])), ]
-    #remove samples with NA values.
-    groupings <- sampleClustCommPhenoData[, groupingTerm]
-    groupings <- groupings[which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary]))];
-    outcomesData <- sampleClustCommPhenoData[which(!is.na(sampleClustCommPhenoData[,outcomesVarBinary])),];
-    
-    #keep samples with NA days to event for now?
-    groupings <- as.numeric(as.factor(groupings[which(!is.na(outcomesData[,outcomesVarCont]))]))
-    outcomesData <- outcomesData[which(!is.na(outcomesData[,outcomesVarCont])),];
-    
-    #if binary is character string categories: make it a factor first, then numeric,
-    #otherwise coxph function will throw errors.
-    outcomesDataShort <- data.frame(as.numeric(as.factor(outcomesData[,outcomesVarBinary])),outcomesData[,outcomesVarCont],
-    );
-    
-    #sometimes the names are duplicated across studies - remove this line
-    #rownames(outcomesDataShort ) <- outcomesData[,uniquePatientID];
-    colnames(outcomesDataShort) <- c("Censoring","TimeToLastContactOrEvent","groupings")
-    
-    nonCensoredTerm=1
-    censoredTerm=0
-    Survival <- outcomesDataShort
-    #creating the survival objects with the time and censoring variables
-    OverallSurvival <- Surv(Survival$TimeToLastContactOrEvent,Survival$Censoring==nonCensoredTerm);
-    #KP:
-    #creating a survival object cutoff at a certain point
-    CutoffPoint <- CutoffPointYears*365;
-    CutoffSamples=Survival$TimeToLastContactOrEvent>CutoffPoint & !is.na(Survival$TimeToLastContactOrEvent)
-    SurvivalCutoff=Survival
-    SurvivalCutoff$TimeToLastContactOrEvent[CutoffSamples]=CutoffPoint
-    SurvivalCutoff$Censoring[CutoffSamples]=censoredTerm
-    #"Surv" creates a survival object. really for binary outcomes data.
-    OverallSurvivalCutoff=Surv(SurvivalCutoff$TimeToLastContactOrEvent,SurvivalCutoff$Censoring==nonCensoredTerm)
-    
-    results_rx<-array(dim=c(1,13))
-    #dataMatrix <- data.matrix(data);
-    ########################################################
-    # cox survival
-    ########################################################
-    
-    ########################################################
-    
-    # STEP 1: Cox model on complete survival data + kaplan meier
-    #Fits a Cox proportional hazards regression model.
-    #***add in Rx info??
-    #plot.survfit: can plot this data after using survfit.coxph
-    #ex for plotting survival data: > leukemia.surv <- survfit(Surv(time, status) ~ x, data = aml) 
-    #> plot(leukemia.surv, lty = 2:3) 
-    #here: run test <- cox.zph(coxfit), plot.cox.zph(test)
-    #COME BACK: include therapy too coxph( Surv(time, status) ~ therapy + ReceptorA + ReceptorB , data= sample.data) 
-    #hmmm...not working?? is this because most patients died?
-    #if groups are ill-balanced, may get a warnings: http://stats.stackexchange.com/questions/66591/coxph-ran-out-of-iterations-and-did-not-converge
-    coxfit=coxph(OverallSurvival~groupings, data=Survival)
-    plot.cox.zph(cox.zph(coxfit))
-    
-    tmp=summary(coxfit)
-    #results[i,1]=tmp$logtest[3]  
-    
-    results_rx[1,1]=tmp$waldtest[3]
-    results_rx[1,2]=exp(coxfit$coefficients)
-    results_rx[1,3]=tmp$conf.int[3]
-    results_rx[1,4]=tmp$conf.int[4]
-    results_rx[1,5]=tmp$coefficients[4] # the zscore
-    
-    #kaplan meier...is this correct?
-    kmfit=survdiff(OverallSurvival ~ groupings)
-    results_rx[1,6]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)
-    
-    #calculate the sign of the survival relationship
-    #do we save this somethere?? in 7?
-    mfit=survfit(OverallSurvival ~ groupings)
-    plot(mfit)
-    mfit.summary=summary(mfit)
-    
-    ########################################################
-    # STEP 2: Cox model on survival data with CUTOFF + kaplan meier
-    
-    coxfit=coxph(OverallSurvivalCutoff~groupings, data= SurvivalCutoff)
-    
-    tmp=summary(coxfit)
-    results_rx=tmp$waldtest[3]
-    #what is this??
-    results_rx[,9]=exp(coxfit$coefficients)
-    results_rx[,10]=tmp$conf.int[3]
-    results_rx[,11]=tmp$conf.int[4]
-    results_rx[,12]=tmp$coefficients[4] # the zscore
-    
-    #The survfit function from the survival package computes the Kaplan-Meier estimator for truncated and/or censored data
-    #survfit: This function creates survival curves from either a formula (e.g. the Kaplan-Meier), a previously fitted Cox model, or a previously fitted accelerated failure time model.
-    kmfit=survdiff(OverallSurvivalCutoff ~ groupings)
-    results_rx[,13]= 1 - pchisq(kmfit$chisq, length(kmfit$n) - 1)  
-    
-    
-    ########################################################
-    # writing to file
-    ########################################################
-    #write.table(results,Args[7],sep="\t")
-    
-    #ADD FDR TESTING!
-    ColumnLabels= c('Overall-WaldTest', 'Overall-HR','Overall-HRlower' ,'Overall-HRupper' ,'Overall-Zscore', 'Overall-KMtest' ,
-                    'Cutoff-WaldTest', 'Cutoff-HR' ,'Cutoff-HRlower' ,'Cutoff-HRupper' ,'Cutoff-Zscore', 'Cutoff-KMtest' );
-    
-    colnames(results) <- ColumnLabels;
-    rownames(results) <- colnames(dataMatrix);
-    
-    
-    
-  }else{
-    
-    results_rx <- NA
-  }
-  #COME BACK: save separate Survival objects for rx and no rx.
-  return(list(results=results,results_rx=results_rx,Survival=Survival,SurvivalCutoff=SurvivalCutoff))
-  
-} 
-
-
 
 binarizeMetaclustStudyStatus <- function(sampleClustCommKey){
   
@@ -1382,3 +1127,667 @@ fractEdgesInVsOutEdge=0
   return(FDR_results)
   
 }
+
+#edge output is edgeDF in findCommunities
+networkLeaveOutAnalysis <- function(finalNodeMatrix, origEdgeMatrix,
+                                    origEdgeWeightsMatrix,finalEdgeMarix,fractLeaveOut=0.1,
+                                    numIter=100,commMethod="edgeBetween",
+                                    findCommWithWeights=TRUE,clustIndexMatrix){
+  
+  
+  #commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel")
+  
+  if(nrow(origEdgeWeightsMatrix) != nrow(origEdgeMatrix)){
+    
+    stop("Indices of your original weight and edge matrix aren't matching up.")
+    
+  }
+  #careful! the append function does something weird with the factors, so just remove the levels here
+  finalNodeMatrix$clust <- as.character(finalNodeMatrix$clust)
+  finalNodeMatrix$igraph_id <- as.character(finalNodeMatrix$igraph_id)
+  finalNodeMatrix$community <- as.character(finalNodeMatrix$community)
+  origEdgeMatrix[,1] <- as.character(origEdgeMatrix[,1])
+  origEdgeMatrix[,2] <- as.character(origEdgeMatrix[,2])
+  finalEdgeMatrix[,1] <- as.character(finalEdgeMatrix[,1])
+  finalEdgeMatrix[,2] <- as.character(finalEdgeMatrix[,2])
+
+
+  #replace igraph clust/node ids with original clust ids
+  
+  if(nrow(finalEdgeMatrix) != length(na.omit(match(finalEdgeMatrix[,1],finalNodeMatrix$igraph_id))) 
+     || nrow(finalEdgeMatrix) != length(na.omit(match(finalEdgeMatrix[,2],finalNodeMatrix$igraph_id))) ){
+    
+    stop("Indexing error going from igraph clust id to global clust id.")
+    
+  }
+  
+  finalEdgeMatrix[,1] <- finalNodeMatrix[na.omit(match(finalEdgeMatrix[,1],finalNodeMatrix$igraph_id)), "clust"]
+  #do for both columns of clusters/nodes
+  finalEdgeMatrix[,2] <- finalNodeMatrix[na.omit(match(finalEdgeMatrix[,2],finalNodeMatrix$igraph_id)), "clust"]
+  
+  
+  
+  uniqueNodes <- unique(append(finalEdgeMatrix[,1],finalEdgeMatrix[,2]))
+  uniqueOrigNodes <-  unique(append(origEdgeMatrix[,1],origEdgeMatrix[,2]))
+  numNodesRemove <- round(fractLeaveOut*length(uniqueNodes))
+  #remove nodes (not edges) that are not in the final edge matrix
+  #if Girvan-Newman removes edges connected to nodes that stayed in network:
+  #want to keep these edges as input for the leave-X-out analysis.
+  prunedNodes <- setdiff(uniqueOrigNodes,uniqueNodes)
+  
+  if(length(setdiff(uniqueNodes,uniqueOrigNodes)) !=0 ){
+    
+    stop("Error: somehow you have extra clusters (nodes) that were not in your original edge matrix.")
+    
+  }
+  
+  removeNodes <- function(nodesToRemove, edgeMatrix,edgeWeightsMatrix,
+                          clustIndexMatrix){
+  
+  if(length(nodesToRemove)>0){
+    
+    #can have duplicated nodes, so must loop and not use match which only finds first match
+    for(n in 1:length(nodesToRemove)){
+      
+    #look in first column
+      removeRows <- which(edgeMatrix[,1]==nodesToRemove[n])
+      if(length(removeRows)>0){
+        
+        edgeMatrix <- edgeMatrix[-removeRows, ,drop=FALSE]
+        edgeWeightsMatrix <- edgeWeightsMatrix[-removeRows, ,drop=FALSE]
+       
+      }
+      
+      }
+    
+      
+      if(nrow(edgeMatrix)>0){
+      #now look in second column
+      #can have duplicated nodes, so must loop and not use match which only finds first match
+      for(n in 1:length(nodesToRemove)){
+        
+        removeRows <- which(edgeMatrix[,2]==nodesToRemove[n])
+      
+      if(length(removeRows)>0){
+        
+        edgeMatrix <- edgeMatrix[-removeRows, ,drop=FALSE]
+        edgeWeightsMatrix <- edgeWeightsMatrix[-removeRows, ,drop=FALSE]
+        
+      }
+  
+      
+     }
+    }
+
+  }
+  return(list(edgeMatrix=edgeMatrix,edgeWeightsMatrix=edgeWeightsMatrix))
+  
+  }
+  
+  tmp <-  removeNodes(nodesToRemove=prunedNodes, edgeMatrix=origEdgeMatrix, 
+                      edgeWeightsMatrix=origEdgeWeightsMatrix)
+  origEdgeMatrix <- tmp$edgeMatrix
+  origEdgeWeightsMatrix <- tmp$edgeWeightsMatrix
+  rm(list="tmp")
+  
+  
+  #create a membership matrix by community (meta-cluster)
+  membershipMatrix <- matrix(data=0,ncol=length(unique(finalNodeMatrix$clust)), nrow=length(unique(finalNodeMatrix$clust)),
+                             dimnames = list(unique(finalNodeMatrix$clust),unique(finalNodeMatrix$clust)))
+  #want to keep diagonals zero - don't count this as a cluster matching to itself
+  #membershipMatrix[diag(membershipMatrix)] <- 1
+  commNums <- unique(finalNodeMatrix$community)
+  
+  for(c in 1:length(commNums)){
+    
+    indices <- na.omit(match(finalNodeMatrix$clust[which(finalNodeMatrix$community==commNums[c])],rownames(membershipMatrix)))
+    if(length(indices)>0){
+    
+    membershipMatrix[indices,indices] <- 1
+    
+    }
+    
+  }
+  
+  #want to keep diagonals zero - don't count this as a cluster matching to itself
+  diag(membershipMatrix) <- 0
+  commNumsOrig <- commNums
+  #for membership comparisons
+  output_numMisMatches <- matrix(data=NA,ncol=(length(commNumsOrig)+1),nrow=numIter,
+                          dimnames=list(c(1:numIter),c("total",commNumsOrig)))
+  output_fractMisMatches  <- matrix(data=NA,ncol=(length(commNumsOrig)+1),nrow=numIter,
+                                               dimnames=list(c(1:numIter),c("total",commNumsOrig)))
+  
+  for(i in 1:numIter){
+    
+    nodesRemove <- sample(x=uniqueNodes,size=numNodesRemove,replace=FALSE)
+    #remove these nodes - aren't included in this analysis
+    tmp_membershipMatrix <- membershipMatrix[-na.omit(match(nodesRemove,rownames(membershipMatrix))),
+                                             -na.omit(match(nodesRemove,colnames(membershipMatrix))) ]
+    tmp <-  removeNodes(nodesToRemove=nodesRemove, edgeMatrix=origEdgeMatrix, edgeWeightsMatrix=origEdgeWeightsMatrix)
+    tmp_origEdgeMatrix <- tmp$edgeMatrix
+    tmp_origEdgeWeightsMatrix <- tmp$edgeWeightsMatrix
+    rm(list="tmp")
+
+    commInfo <- findCommunities(edgeMatrix=tmp_origEdgeMatrix,edgeWeightMatrix= tmp_origEdgeWeightsMatrix ,clustIndexMatrix=clustIndexMatrix,fileTag="CoINcIDE_LeaveXOut_",
+                                            saveDir="./",minNumUniqueStudiesPerCommunity=1,experimentName="exp",
+                                            commMethod=commMethod,
+                                            makePlots=FALSE,plotToScreen=FALSE,saveGraphData=TRUE,nodeFontSize=.7,nodePlotSize=10,
+                                            findCommWithWeights=findCommWithWeights, plotSimilEdgeWeight = FALSE,fractEdgesInVsOutComm=0,
+                                            fractEdgesInVsOutEdge=0)
+
+
+ 
+    #create a membership matrix by community (meta-cluster)
+    #keep same number of nodes as input nodes/tmp matrix.  want nodes that were removed by
+    #community detection algorithms to still be identified here.
+    new_membershipMatrix <- matrix(data=0,ncol=ncol(tmp_membershipMatrix), nrow=nrow(tmp_membershipMatrix),
+                               dimnames = list(colnames(tmp_membershipMatrix),colnames(tmp_membershipMatrix)))
+    #keep diagonal zero: don't want to count this in the Jaccard metric.
+    #new_membershipMatrix[diag(new_membershipMatrix)] <- 1
+    commInfo$attrDF$clust <- as.character(commInfo$attrDF$clust)
+    commInfo$attrDF$community <- as.character(commInfo$attrDF$community)
+    commNums <- unique(as.character(commInfo$attrDF$community))
+    
+    if(length(commNums)>0){
+    for(c in 1:length(commNums)){
+      #Note: if a node was removed/pruned by Girvan-Newman: then will just be zero for all values in here.
+      indices <- na.omit(match(commInfo$attrDF$clust[which(commInfo$attrDF$community==commNums[c])],rownames(new_membershipMatrix)))
+      if(length(indices)>0){
+        
+      new_membershipMatrix[indices,indices] <- 1
+      
+      }
+      
+    }
+    }
+    #    #keep diagonal zero: don't want to count this in the Jaccard metric.
+    diag(new_membershipMatrix) <- 0
+    
+    #just to be on the safe side: make sure row, column indices of tmp, new membership matrix match up.
+    tmp_membershipMatrix<-  tmp_membershipMatrix[na.omit(match(rownames(new_membershipMatrix),rownames(tmp_membershipMatrix))),
+                                                 na.omit(match(rownames(new_membershipMatrix),rownames(tmp_membershipMatrix)))]
+    if(nrow(new_membershipMatrix)!=nrow(tmp_membershipMatrix) ||
+       !all(rownames(tmp_membershipMatrix)==rownames(new_membershipMatrix))
+       ){
+      
+      stop("Dimensions of tmp membership and tmp original membership matrix not matching up.")
+      
+    }
+
+    #only need the lower or upper part of symmetric matrix.
+    #if difference is zero: either both started with zero, or both started with 1.
+    #don't use diagonal - doesn't really count
+    numMisMatches <- sum(abs(tmp_membershipMatrix[upper.tri(tmp_membershipMatrix,diag=FALSE)]-
+                                                   new_membershipMatrix[upper.tri(new_membershipMatrix,diag=FALSE)]))
+    
+    fractMisMatches <- numMisMatches/length(upper.tri(tmp_membershipMatrix,diag=FALSE))
+    
+
+    output_numMisMatches[i,1] <- numMisMatches
+      output_fractMisMatches[i,1] <- fractMisMatches 
+    
+  #use ORIGINAL communities. This is our ground truth level.
+  for(c in 1:(length(commNumsOrig))){
+    #split up by community.
+    indices <- na.omit(match(finalNodeMatrix$clust[which(finalNodeMatrix$community==commNumsOrig[c])],rownames(tmp_membershipMatrix)))
+    
+    if(length(indices)>0){
+      
+    tmp1 <- new_membershipMatrix[indices,indices]
+    tmp2 <- tmp_membershipMatrix[indices,indices]
+    numMisMatches <- sum(abs(tmp2[upper.tri(tmp2,diag=FALSE)]-
+                               tmp1[upper.tri(tmp1,diag=FALSE)]))
+    fractMisMatches <- numMisMatches/length(upper.tri(tmp2,diag=FALSE))
+    
+    output_numMisMatches[i,(c+1)] <- numMisMatches
+    output_fractMisMatches[i,(c+1)] <- fractMisMatches 
+    
+    }
+
+    }
+    #these will not necessarily be equal: only looking at mismatches within a single community
+    #output_numMisMatches[,c(1:5)]!= output_numMisMatches[,1])
+    #end of iteration i
+  }
+  
+  warning("An NA means that randomly no nodes were selected from that original community in the leaveXOut analysis.")
+  return(list(output_numMisMatches=output_numMisMatches,
+              output_fractMisMatches=output_fractMisMatches,
+              numNodesRemove=numNodesRemove,numStartNodes=uniqueNodes))
+}
+#plot
+plotLeaveXOutAnalysis <- function(leaveXOutResults,
+                                  experimentName,saveDir){
+  
+  for(i in 1:length(leaveXOutResults)){
+    
+    tmp <- data.frame(colnames(leaveXOutResults[[i]]$output_numMisMatches),names(leaveXOutResults)[i],colMeans(leaveXOutResults[[i]]$output_fractMisMatches,na.rm=TRUE),
+                      colSds(leaveXOutResults[[i]]$output_fractMisMatches,na.rm=TRUE),
+                      colMeans(leaveXOutResults[[i]]$output_numMisMatches,na.rm=TRUE),colSds(leaveXOutResults[[i]]$output_numMisMatches,na.rm=TRUE))
+    
+    colnames(tmp) <- c("comm","fractLO","fractMisMatch","sd_fractMM","numMisMatch","sd_numMM")
+    
+    if(i ==1){
+      
+      masterDF <- tmp
+      
+    }else{
+      
+      masterDF <- rbind(masterDF,tmp)
+      
+    }
+    
+    
+  }
+LO_plot <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + geom_line(size=.4)+ geom_point(aes(shape=factor(comm),size=5))+
+    labs(title = "",y="Mismatch Fraction",x="Fraction Left Out")+
+    theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    theme(axis.text.x = element_text(colour = "black",size=18),axis.title.x = element_text(colour = "black",size=20,vjust=0),
+          axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
+          plot.title=element_text(colour="black",size=22,vjust=1,hjust=.4))+
+    theme(legend.title=element_text(colour="black",size=18),legend.text=element_text(colour="black",size=10))+
+    labs(shape="Meta-cluster")
+  
+  
+  options(bitmapType="cairo")
+  png(filename=paste0(saveDir,"/LO_plot_",experimentName,"_",Sys.Date(),".png"),width=1500,height=1600,res=200);
+  
+  plot(LO_plot);
+  
+  dev.off();
+#  dodge <- position_dodge(width=0.9)
+#  limits <- aes(ymax = masterDF$fractMisMatch + masterDF$sd_fractMM, ymin=masterDF$fractMisMatch - masterDF$sd_fractMM)
+  
+  #eh...this is not working? no plotting along the points.
+#   LO_plot_withErrorBars <-     LO_plot <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + geom_line(size=.4)+ geom_point(aes(shape=factor(comm),size=5))+
+#     labs(title = "",y="Mismatch Fraction",x="Fraction Left Out")+
+#     scale_color_manual(values=colorCodes)+
+#     theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+#     theme(axis.text.x = element_text(colour = "black",size=18),axis.title.x = element_text(colour = "black",size=20,vjust=0),
+#           axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
+#           plot.title=element_text(colour="black",size=22,vjust=1,hjust=.4))+
+#     theme(legend.title=element_text(colour="black",size=18),legend.text=element_text(colour="black",size=10))+
+#     labs(shape="Fraction Left Out")+ 
+#     geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25)
+  
+  return(list(masterDF=masterDF,LO_plot=LO_plot))
+}
+
+#edge output is edgeDF in findCommunities
+networkVaryMinSimilAnalysis <- function(finalNodeMatrix, origEdgeMatrix,
+                                    origEdgeWeightsMatrix,finalEdgeMarix,
+                                    minSimilThreshVector=c(0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0),
+                                     commMethod="edgeBetween",saveDir="./",
+                                    findCommWithWeights=TRUE,clustIndexMatrix,
+                                    makePlots=TRUE,experimentName= "test"){
+  
+  summaryFile <- paste0(saveDir,"/similVaryTestsNetworkStats_",experimentName,".txt")
+  #commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel")
+  
+  if(nrow(origEdgeWeightsMatrix) != nrow(origEdgeMatrix)){
+    
+    stop("Indices of your original weight and edge matrix aren't matching up.")
+    
+  }
+  #careful! the append function does something weird with the factors, so just remove the levels here
+  finalNodeMatrix$clust <- as.character(finalNodeMatrix$clust)
+  finalNodeMatrix$igraph_id <- as.character(finalNodeMatrix$igraph_id)
+  finalNodeMatrix$community <- as.character(finalNodeMatrix$community)
+  origEdgeMatrix[,1] <- as.character(origEdgeMatrix[,1])
+  origEdgeMatrix[,2] <- as.character(origEdgeMatrix[,2])
+  finalEdgeMatrix[,1] <- as.character(finalEdgeMatrix[,1])
+  finalEdgeMatrix[,2] <- as.character(finalEdgeMatrix[,2])
+  
+  
+  #replace igraph clust/node ids with original clust ids
+  
+  if(nrow(finalEdgeMatrix) != length(na.omit(match(finalEdgeMatrix[,1],finalNodeMatrix$igraph_id))) 
+     || nrow(finalEdgeMatrix) != length(na.omit(match(finalEdgeMatrix[,2],finalNodeMatrix$igraph_id))) ){
+    
+    stop("Indexing error going from igraph clust id to global clust id.")
+    
+  }
+  
+  finalEdgeMatrix[,1] <- finalNodeMatrix[na.omit(match(finalEdgeMatrix[,1],finalNodeMatrix$igraph_id)), "clust"]
+  #do for both columns of clusters/nodes
+  finalEdgeMatrix[,2] <- finalNodeMatrix[na.omit(match(finalEdgeMatrix[,2],finalNodeMatrix$igraph_id)), "clust"]
+  
+  
+  
+  uniqueNodes <- unique(append(finalEdgeMatrix[,1],finalEdgeMatrix[,2]))
+  uniqueOrigNodes <-  unique(append(origEdgeMatrix[,1],origEdgeMatrix[,2]))
+  #remove nodes (not edges) that are not in the final edge matrix
+  #if Girvan-Newman removes edges connected to nodes that stayed in network:
+  #want to keep these edges as input for the leave-X-out analysis.
+  prunedNodes <- setdiff(uniqueOrigNodes,uniqueNodes)
+  
+  if(length(setdiff(uniqueNodes,uniqueOrigNodes)) !=0 ){
+    
+    stop("Error: somehow you have extra clusters (nodes) that were not in your original edge matrix.")
+    
+  }
+  
+  removeNodes <- function(nodesToRemove, edgeMatrix,edgeWeightsMatrix,
+                          clustIndexMatrix){
+    
+    if(length(nodesToRemove)>0){
+      
+      #can have duplicated nodes, so must loop and not use match which only finds first match
+      for(n in 1:length(nodesToRemove)){
+        
+        #look in first column
+        removeRows <- which(edgeMatrix[,1]==nodesToRemove[n])
+        if(length(removeRows)>0){
+          
+          edgeMatrix <- edgeMatrix[-removeRows, ,drop=FALSE]
+          edgeWeightsMatrix <- edgeWeightsMatrix[-removeRows, ,drop=FALSE]
+          
+        }
+        
+      }
+      
+      
+      if(nrow(edgeMatrix)>0){
+        #now look in second column
+        #can have duplicated nodes, so must loop and not use match which only finds first match
+        for(n in 1:length(nodesToRemove)){
+          
+          removeRows <- which(edgeMatrix[,2]==nodesToRemove[n])
+          
+          if(length(removeRows)>0){
+            
+            edgeMatrix <- edgeMatrix[-removeRows, ,drop=FALSE]
+            edgeWeightsMatrix <- edgeWeightsMatrix[-removeRows, ,drop=FALSE]
+            
+          }
+          
+          
+        }
+      }
+      
+    }
+    return(list(edgeMatrix=edgeMatrix,edgeWeightsMatrix=edgeWeightsMatrix))
+    
+  }
+  
+  tmp <-  removeNodes(nodesToRemove=prunedNodes, edgeMatrix=origEdgeMatrix, 
+                      edgeWeightsMatrix=origEdgeWeightsMatrix)
+  origEdgeMatrix <- tmp$edgeMatrix
+  origEdgeWeightsMatrix <- tmp$edgeWeightsMatrix
+  rm(list="tmp")
+  
+  
+  #create a membership matrix by community (meta-cluster)
+  membershipMatrix <- matrix(data=0,ncol=length(unique(finalNodeMatrix$clust)), nrow=length(unique(finalNodeMatrix$clust)),
+                             dimnames = list(unique(finalNodeMatrix$clust),unique(finalNodeMatrix$clust)))
+  #want to keep diagonals zero - don't count this as a cluster matching to itself
+  #membershipMatrix[diag(membershipMatrix)] <- 1
+  commNums <- unique(finalNodeMatrix$community)
+  
+  for(c in 1:length(commNums)){
+    
+    indices <- na.omit(match(finalNodeMatrix$clust[which(finalNodeMatrix$community==commNums[c])],rownames(membershipMatrix)))
+    if(length(indices)>0){
+      
+      membershipMatrix[indices,indices] <- 1
+      
+    }
+    
+  }
+  
+  #want to keep diagonals zero - don't count this as a cluster matching to itself
+  diag(membershipMatrix) <- 0
+  commNumsOrig <- commNums
+  #for membership comparisons
+  output_numMisMatches <- matrix(data=NA,ncol=(length(commNumsOrig)+1),nrow=length(minSimilThreshVector),
+                                 dimnames=list(minSimilThreshVector,c("total",commNumsOrig)))
+  output_fractMisMatches  <- matrix(data=NA,ncol=(length(commNumsOrig)+1),nrow=length(minSimilThreshVector),
+                                    dimnames=list(minSimilThreshVector,c("total",commNumsOrig)))
+  numNodesRemove <- list()
+  commEdgeInfo <- list()
+  
+  for(i in 1:length(minSimilThreshVector)){
+    
+    #remove the nodes that are below the simil thresh.
+    #weights matrix: same row indices as edge matrix.
+    edgesRemove <- which(origEdgeWeightsMatrix[,"simil"] <= minSimilThreshVector[i])
+    nodesRemove <- unique(append(origEdgeMatrix[edgesRemove,1], origEdgeMatrix[edgesRemove,1]))
+    numNodesRemove[[i]] <- length(nodesRemove)
+    #remove these nodes - aren't included in this analysis
+    tmp_membershipMatrix <- membershipMatrix[-na.omit(match(nodesRemove,rownames(membershipMatrix))),
+                                             -na.omit(match(nodesRemove,colnames(membershipMatrix))) ]
+    tmp <-  removeNodes(nodesToRemove=nodesRemove, edgeMatrix=origEdgeMatrix, edgeWeightsMatrix=origEdgeWeightsMatrix)
+    tmp_origEdgeMatrix <- tmp$edgeMatrix
+    tmp_origEdgeWeightsMatrix <- tmp$edgeWeightsMatrix
+    rm(list="tmp")
+    
+    commInfo <- findCommunities(edgeMatrix=tmp_origEdgeMatrix,edgeWeightMatrix= tmp_origEdgeWeightsMatrix ,clustIndexMatrix=clustIndexMatrix,fileTag="CoINcIDE_LeaveXOut_",
+                                saveDir=saveDir,minNumUniqueStudiesPerCommunity=1,experimentName=paste0(experimentName,"_minSimil",minSimilThreshVector[i]),
+                                commMethod=commMethod,
+                                makePlots=makePlots,plotToScreen=FALSE,saveGraphData=TRUE,nodeFontSize=.7,nodePlotSize=10,
+                                findCommWithWeights=findCommWithWeights, plotSimilEdgeWeight = FALSE,fractEdgesInVsOutComm=0,
+                                fractEdgesInVsOutEdge=0)
+    
+    commEdgeInfo[[i]] <- commInfo$finalCommEdgeInfo
+    
+    if(i>1){
+      
+    textOut <- capture.output(commInfo$finalCommEdgeInfo)
+    cat(paste0("Final community stats for simil ",minSimilThreshVector[i],":\n"),textOut,sep="\n",append=TRUE,file=summaryFile)
+    cat(textOut,sep="\n",
+        append=TRUE,file=summaryFile)
+    
+    }else{
+      
+      textOut <- capture.output(commInfo$finalCommEdgeInfo)
+      cat(paste0("Final community stats for simil ",minSimilThreshVector[i],":\n"),textOut,sep="\n",append=FALSE,file=summaryFile)
+      cat(textOut,sep="\n",
+          append=FALSE,file=summaryFile)
+      
+      
+    }
+    
+    if(commInfo$numCommunities>0){
+      
+    networkStats <- advancedNetworkPlots(communityMembership=commInfo,
+                                         brewPal = "Set3",
+                                         saveDir=saveDir,clustIndexMatrix=clustIndexMatrix,
+                                         plotToScreen=FALSE,experimentName=paste0(experimentName,"_minSimil",minSimilThreshVector[i]),
+                                         plotEdgeWeight=FALSE)$network_stats
+    
+      
+    textOut <- capture.output(networkStats)
+    cat(paste0("\nMore network stats for simil ",minSimilThreshVector[i],":\n"),textOut,sep="\n",
+        file=summaryFile,append=TRUE)
+
+    
+    }
+    #create a membership matrix by community (meta-cluster)
+    #keep same number of nodes as input nodes/tmp matrix.  want nodes that were removed by
+    #community detection algorithms to still be identified here.
+    new_membershipMatrix <- matrix(data=0,ncol=ncol(tmp_membershipMatrix), nrow=nrow(tmp_membershipMatrix),
+                                   dimnames = list(colnames(tmp_membershipMatrix),colnames(tmp_membershipMatrix)))
+    #keep diagonal zero: don't want to count this in the Jaccard metric.
+    #new_membershipMatrix[diag(new_membershipMatrix)] <- 1
+    commInfo$attrDF$clust <- as.character(commInfo$attrDF$clust)
+    commInfo$attrDF$community <- as.character(commInfo$attrDF$community)
+    commNums <- unique(as.character(commInfo$attrDF$community))
+    
+    if(length(commNums)>0){
+      for(c in 1:length(commNums)){
+        #Note: if a node was removed/pruned by Girvan-Newman: then will just be zero for all values in here.
+        indices <- na.omit(match(commInfo$attrDF$clust[which(commInfo$attrDF$community==commNums[c])],rownames(new_membershipMatrix)))
+        if(length(indices)>0){
+          
+          new_membershipMatrix[indices,indices] <- 1
+          
+        }
+        
+      }
+    }
+    #    #keep diagonal zero: don't want to count this in the Jaccard metric.
+    diag(new_membershipMatrix) <- 0
+    
+    #just to be on the safe side: make sure row, column indices of tmp, new membership matrix match up.
+    tmp_membershipMatrix<-  tmp_membershipMatrix[na.omit(match(rownames(new_membershipMatrix),rownames(tmp_membershipMatrix))),
+                                                 na.omit(match(rownames(new_membershipMatrix),rownames(tmp_membershipMatrix)))]
+    if(nrow(new_membershipMatrix)!=nrow(tmp_membershipMatrix) ||
+       !all(rownames(tmp_membershipMatrix)==rownames(new_membershipMatrix))
+    ){
+      
+      stop("Dimensions of tmp membership and tmp original membership matrix not matching up.")
+      
+    }
+    
+    #only need the lower or upper part of symmetric matrix.
+    #if difference is zero: either both started with zero, or both started with 1.
+    #don't use diagonal - doesn't really count
+    numMisMatches <- sum(abs(tmp_membershipMatrix[upper.tri(tmp_membershipMatrix,diag=FALSE)]-
+                               new_membershipMatrix[upper.tri(new_membershipMatrix,diag=FALSE)]))
+    
+    fractMisMatches <- numMisMatches/length(upper.tri(tmp_membershipMatrix,diag=FALSE))
+    
+    
+    output_numMisMatches[i,1] <- numMisMatches
+    output_fractMisMatches[i,1] <- fractMisMatches 
+    
+    #use ORIGINAL communities. This is our ground truth level.
+    for(c in 1:(length(commNumsOrig))){
+      #split up by community.
+      indices <- na.omit(match(finalNodeMatrix$clust[which(finalNodeMatrix$community==commNumsOrig[c])],rownames(tmp_membershipMatrix)))
+      
+      if(length(indices)>0){
+        
+        tmp1 <- new_membershipMatrix[indices,indices]
+        tmp2 <- tmp_membershipMatrix[indices,indices]
+        numMisMatches <- sum(abs(tmp2[upper.tri(tmp2,diag=FALSE)]-
+                                   tmp1[upper.tri(tmp1,diag=FALSE)]))
+        fractMisMatches <- numMisMatches/length(upper.tri(tmp2,diag=FALSE))
+        
+        output_numMisMatches[i,(c+1)] <- numMisMatches
+        output_fractMisMatches[i,(c+1)] <- fractMisMatches 
+        
+      }
+      
+    }
+    #these will not necessarily be equal: only looking at mismatches within a single community
+    #output_numMisMatches[,c(1:5)]!= output_numMisMatches[,1])
+    #end of iteration i
+  }
+  
+  warning("An NA means no nodes passed the simil threshold for that original community.")
+  
+  output <- list(output_numMisMatches=output_numMisMatches,
+                 output_fractMisMatches=output_fractMisMatches,
+                 numNodesRemove=numNodesRemove,numStartNodes=uniqueNodes)
+
+  
+  output$output_fractMisMatches[which( output$output_numMisMatches[,"total"]==0), ] <- 0
+  output$output_numMisMatches[which( output$output_numMisMatches[,"total"]==0), ] <- 0
+  
+  for(i in 1:ncol(output$output_fractMisMatches)){
+    
+
+    tmp <- data.frame(minSimilThreshVector,output$output_fractMisMatches[,i],output$output_numMisMatches[,i],
+                    rep(colnames(output$output_fractMisMatches)[i]),length(minSimilThreshVector))
+    
+    colnames(tmp) <- c("minSimil","fractMisMatch","numMisMatch","comm")
+    
+    if(i ==1){
+      
+      masterDF <- tmp
+      
+    }else{
+      
+      masterDF <- rbind(masterDF,tmp)
+      
+    }
+    
+    
+  }
+  
+  simil_plot <- ggplot(data =masterDF,aes(x=minSimil,y=fractMisMatch,point=comm))  + 
+    geom_line(size=.4)+
+    geom_point(aes(shape=factor(comm),size=5))+
+    labs(title = "",y="Mismatch Fraction",x="Mininum Mean Similarity")+
+    theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    theme(axis.text.x = element_text(colour = "black",size=18),axis.title.x = element_text(colour = "black",size=20,vjust=0),
+          axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
+          plot.title=element_text(colour="black",size=22,vjust=1,hjust=.4))+
+    theme(legend.title=element_text(colour="black",size=18),legend.text=element_text(colour="black",size=10))+
+    labs(shape="Meta-cluster")
+  
+  
+  options(bitmapType="cairo")
+  png(filename=paste0(saveDir,"/varySimilMismatchFract_plot_",experimentName,"_",Sys.Date(),".png"),width=1500,height=1600,res=200);
+  
+  plot(simil_plot);
+  
+  dev.off();
+  message("Summary file is :",summaryFile)
+   return(list(output_numMisMatches=output_numMisMatches,commEdgeInfo=commEdgeInfo,
+              output_fractMisMatches=output_fractMisMatches,
+              numNodesRemove=numNodesRemove,numStartNodes=uniqueNodes,simil_plot=simil_plot))
+}
+# #plot
+# plotLeaveXOutAnalysis <- function(leaveXOutResults,
+#                                   experimentName,saveDir){
+#   
+#   for(i in 1:length(leaveXOutResults)){
+#     
+#     tmp <- data.frame(colnames(leaveXOutResults[[i]]$output_numMisMatches),names(leaveXOutResults)[i],colMeans(leaveXOutResults[[i]]$output_fractMisMatches,na.rm=TRUE),
+#                       colSds(leaveXOutResults[[i]]$output_fractMisMatches,na.rm=TRUE),
+#                       colMeans(leaveXOutResults[[i]]$output_numMisMatches,na.rm=TRUE),colSds(leaveXOutResults[[i]]$output_numMisMatches,na.rm=TRUE))
+#     
+#     colnames(tmp) <- c("comm","fractLO","fractMisMatch","sd_fractMM","numMisMatch","sd_numMM")
+#     
+#     if(i ==1){
+#       
+#       masterDF <- tmp
+#       
+#     }else{
+#       
+#       masterDF <- rbind(masterDF,tmp)
+#       
+#     }
+#     
+#     
+#   }
+#   LO_plot <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + geom_line(size=.4)+ geom_point(aes(shape=factor(comm),size=5))+
+#     labs(title = "",y="Mismatch Fraction",x="Fraction Left Out")+
+#     scale_color_manual(values=colorCodes)+
+#     theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+#     theme(axis.text.x = element_text(colour = "black",size=18),axis.title.x = element_text(colour = "black",size=20,vjust=0),
+#           axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
+#           plot.title=element_text(colour="black",size=22,vjust=1,hjust=.4))+
+#     theme(legend.title=element_text(colour="black",size=18),legend.text=element_text(colour="black",size=10))+
+#     labs(shape="Meta-cluster")
+#   
+#   
+#   options(bitmapType="cairo")
+#   png(filename=paste0(saveDir,"/LO_plot_",experimentName,"_",Sys.Date(),".png"),width=1500,height=1600,res=200);
+#   
+#   plot(LO_plot);
+#   
+#   dev.off();
+#   #  dodge <- position_dodge(width=0.9)
+#   #  limits <- aes(ymax = masterDF$fractMisMatch + masterDF$sd_fractMM, ymin=masterDF$fractMisMatch - masterDF$sd_fractMM)
+#   
+#   #eh...this is not working? no plotting along the points.
+#   #   LO_plot_withErrorBars <-     LO_plot <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + geom_line(size=.4)+ geom_point(aes(shape=factor(comm),size=5))+
+#   #     labs(title = "",y="Mismatch Fraction",x="Fraction Left Out")+
+#   #     scale_color_manual(values=colorCodes)+
+#   #     theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+#   #     theme(axis.text.x = element_text(colour = "black",size=18),axis.title.x = element_text(colour = "black",size=20,vjust=0),
+#   #           axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
+#   #           plot.title=element_text(colour="black",size=22,vjust=1,hjust=.4))+
+#   #     theme(legend.title=element_text(colour="black",size=18),legend.text=element_text(colour="black",size=10))+
+#   #     labs(shape="Fraction Left Out")+ 
+#   #     geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25)
+#   
+#   return(list(masterDF=masterDF,LO_plot=LO_plot))
+# }
+# 
+# 
+# 

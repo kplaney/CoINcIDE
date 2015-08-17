@@ -80,6 +80,40 @@ globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_
 saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
 
+options(bitmapType="cairo")
+png(filename=paste0(saveDir,"/",experimentName,"_","dendogram_",Sys.Date(),".png"),width=1800,height=1000,res=160)
+
+plot(breast_278genes_pearson_meanCentroid_analysis$commInfo$unPrunedDendogram)
+
+dev.off()
+finalNodeMatrix <-  breast_278genes_pearson_meanCentroid_analysis$commInfo$attrDF
+origEdgeMatrix <- breast_278genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeMatrix
+origEdgeWeightsMatrix <- breast_278genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix
+#right now these are igraph ids: will need to change that.
+finalEdgeMatrix <- breast_278genes_pearson_meanCentroid_analysis$commInfo$edgeDF[,c(1:2)]
+clustIndexMatrix <- breast_278genes_pearson_meanCentroid_analysis$CoINcIDE_computeEdgesObject$clustIndexMatrix
+
+
+fractLeaveOutVector <- seq(0.1,0.9,by=.1)  
+leaveXOutResults <- list()
+numIter <- 100
+
+for(f in 1:length( fractLeaveOutVector)){
+  message("noiseLevel ",f)
+  leaveXOutResults[[f]] <- networkLeaveOutAnalysis(finalNodeMatrix=finalNodeMatrix, 
+                                                   origEdgeMatrix=origEdgeMatrix,
+                                                   origEdgeWeightsMatrix=origEdgeWeightsMatrix,
+                                                   finalEdgeMarix=finalEdgeMarix,fractLeaveOut=fractLeaveOutVector[f],
+                                                   numIter=numIter,commMethod="edgeBetween",
+                                                   findCommWithWeights=TRUE,clustIndexMatrix=clustIndexMatrix)
+  
+}
+
+names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
+saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
+
+LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
+                                     experimentName=experimentName,saveDir=saveDir)
 
 
 
@@ -169,6 +203,40 @@ globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_
 saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
 
+options(bitmapType="cairo")
+png(filename=paste0(saveDir,"/",experimentName,"_","dendogram_",Sys.Date(),".png"),width=1800,height=1000,res=160)
+
+plot(breast_2052genes_pearson_meanCentroid_analysis$commInfo$unPrunedDendogram)
+
+dev.off()
+finalNodeMatrix <-  breast_2052genes_pearson_meanCentroid_analysis$commInfo$attrDF
+origEdgeMatrix <- breast_2052genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeMatrix
+origEdgeWeightsMatrix <- breast_2052genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix
+#right now these are igraph ids: will need to change that.
+finalEdgeMatrix <- breast_2052genes_pearson_meanCentroid_analysis$commInfo$edgeDF[,c(1:2)]
+clustIndexMatrix <- breast_2052genes_pearson_meanCentroid_analysis$CoINcIDE_computeEdgesObject$clustIndexMatrix
+
+
+fractLeaveOutVector <- seq(0.1,0.9,by=.1)  
+leaveXOutResults <- list()
+numIter <- 100
+
+for(f in 1:length( fractLeaveOutVector)){
+  message("noiseLevel ",f)
+  leaveXOutResults[[f]] <- networkLeaveOutAnalysis(finalNodeMatrix=finalNodeMatrix, 
+                                                   origEdgeMatrix=origEdgeMatrix,
+                                                   origEdgeWeightsMatrix=origEdgeWeightsMatrix,
+                                                   finalEdgeMarix=finalEdgeMarix,fractLeaveOut=fractLeaveOutVector[f],
+                                                   numIter=numIter,commMethod="edgeBetween",
+                                                   findCommWithWeights=TRUE,clustIndexMatrix=clustIndexMatrix)
+  
+}
+
+names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
+saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
+
+LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
+                                     experimentName=experimentName,saveDir=saveDir)
 
 
 

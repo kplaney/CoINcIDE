@@ -63,6 +63,54 @@ globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_
 
 saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
+options(bitmapType="cairo")
+png(filename=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/dendogram_",Sys.Date(),".png"),width=1800,height=1000,res=160)
+
+plot(ovarian_240genes_pearson_meanCentroid_analysis$commInfo$unPrunedDendogram)
+
+dev.off()
+
+finalNodeMatrix <-  ovarian_240genes_pearson_meanCentroid_analysis$commInfo$attrDF
+origEdgeMatrix <- ovarian_240genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeMatrix
+origEdgeWeightsMatrix <- ovarian_240genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix
+#right now these are igraph ids: will need to change that.
+finalEdgeMatrix <- ovarian_240genes_pearson_meanCentroid_analysis$commInfo$edgeDF[,c(1:2)]
+clustIndexMatrix <- ovarian_240genes_pearson_meanCentroid_analysis$CoINcIDE_computeEdgesObject$clustIndexMatrix
+
+
+fractLeaveOutVector <- seq(0.1,0.9,by=.1)  
+leaveXOutResults <- list()
+numIter <- 100
+
+for(f in 1:length( fractLeaveOutVector)){
+  message("noiseLevel ",f)
+  leaveXOutResults[[f]] <- networkLeaveOutAnalysis(finalNodeMatrix=finalNodeMatrix, 
+                                                   origEdgeMatrix=origEdgeMatrix,
+                                                   origEdgeWeightsMatrix=origEdgeWeightsMatrix,
+                                                   finalEdgeMarix=finalEdgeMarix,fractLeaveOut=fractLeaveOutVector[f],
+                                                   numIter=numIter,commMethod="edgeBetween",
+                                                   findCommWithWeights=TRUE,clustIndexMatrix=clustIndexMatrix)
+  
+}
+
+names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
+saveDir <- paste0(saveDir,"/",experimentName,"_",Sys.Date())
+saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
+
+LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
+                                     experimentName=experimentName,saveDir=saveDir)
+
+
+#also look at when vary simil ranges
+varySimil <- networkVaryMinSimilAnalysis(finalNodeMatrix, origEdgeMatrix,
+                                         origEdgeWeightsMatrix,finalEdgeMarix,
+                                         minSimilThreshVector=c(0.6,0.7,0.8,0.9,1.0),
+                                         commMethod="edgeBetween",saveDir=saveDir,
+                                         findCommWithWeights=TRUE,clustIndexMatrix,
+                                         makePlots=TRUE,experimentName= experimentName)
+
+saveRDS(varySimil,file=paste0(saveDir,"/varySimilResults.rds"),compress=TRUE)
+
 
 #2000
 library("CoINcIDE")
@@ -130,7 +178,7 @@ saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",expe
 
 #also try with 0.7 (other global max)
 experimentName <- "2014F_pear_meanCent_MM7"
-ovarian_2014genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+ovarian_2014genes_pearson_meanCentroid_analysis7 <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                                                meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .7, maxTrueSimilThresh = Inf,minFractNN=.8,
                                                                                clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
                                                                                commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
@@ -145,6 +193,55 @@ ovarian_2014genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(m
 
 
 
+
+options(bitmapType="cairo")
+png(filename=paste0(saveDir,"/",experimentName,"_",Sys.Date(),"/dendogram_",Sys.Date(),".png"),width=1800,height=1000,res=160)
+
+plot(ovarian_2014genes_pearson_meanCentroid_analysis$commInfo$unPrunedDendogram)
+
+dev.off()
+
+finalNodeMatrix <-  ovarian_2014genes_pearson_meanCentroid_analysis$commInfo$attrDF
+origEdgeMatrix <- ovarian_2014genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeMatrix
+origEdgeWeightsMatrix <- ovarian_2014genes_pearson_meanCentroid_analysis$finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix
+#right now these are igraph ids: will need to change that.
+finalEdgeMatrix <- ovarian_2014genes_pearson_meanCentroid_analysis$commInfo$edgeDF[,c(1:2)]
+clustIndexMatrix <- ovarian_2014genes_pearson_meanCentroid_analysis$CoINcIDE_computeEdgesObject$clustIndexMatrix
+
+
+fractLeaveOutVector <- seq(0.1,0.9,by=.1)  
+leaveXOutResults <- list()
+numIter <- 100
+
+for(f in 1:length( fractLeaveOutVector)){
+  message("noiseLevel ",f)
+  leaveXOutResults[[f]] <- networkLeaveOutAnalysis(finalNodeMatrix=finalNodeMatrix, 
+                                                   origEdgeMatrix=origEdgeMatrix,
+                                                   origEdgeWeightsMatrix=origEdgeWeightsMatrix,
+                                                   finalEdgeMarix=finalEdgeMarix,fractLeaveOut=fractLeaveOutVector[f],
+                                                   numIter=numIter,commMethod="edgeBetween",
+                                                   findCommWithWeights=TRUE,clustIndexMatrix=clustIndexMatrix)
+  
+}
+
+names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
+
+saveDir <- paste0(saveDir,"/",experimentName,"_",Sys.Date())
+saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
+
+LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
+                                     experimentName=experimentName,saveDir=saveDir)
+
+
+#also look at when vary simil ranges
+varySimil <- networkVaryMinSimilAnalysis(finalNodeMatrix, origEdgeMatrix,
+                                         origEdgeWeightsMatrix,finalEdgeMarix,
+                                         minSimilThreshVector=c(0.6,0.7,0.8,0.9,1.0),
+                                         commMethod="edgeBetween",saveDir=saveDir,
+                                         findCommWithWeights=TRUE,clustIndexMatrix,
+                                         makePlots=TRUE,experimentName= experimentName)
+
+saveRDS(varySimil,file=paste0(saveDir,"/varySimilResults.rds"),compress=TRUE)
 
 
 ############

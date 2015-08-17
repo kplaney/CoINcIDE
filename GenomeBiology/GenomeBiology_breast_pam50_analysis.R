@@ -83,6 +83,40 @@ outputFile <- "~/CoINcIDE_messages.txt"
   
   saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
   
+  options(bitmapType="cairo")
+  png(filename=paste0(saveDirPAM50,"/",experimentName,"_","dendogram_",Sys.Date(),".png"),width=1800,height=1000,res=160)
+  
+  plot(breast_pam50FullCentroidsOut$commInfo$unPrunedDendogram)
+  
+  dev.off()
+  finalNodeMatrix <-  breast_pam50FullCentroidsOut$commInfo$attrDF
+  origEdgeMatrix <- breast_pam50FullCentroidsOut$finalEdgeInfo$filterEdgeOutput$edgeMatrix
+  origEdgeWeightsMatrix <- breast_pam50FullCentroidsOut$finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix
+  #right now these are igraph ids: will need to change that.
+  finalEdgeMatrix <- breast_pam50FullCentroidsOut$commInfo$edgeDF[,c(1:2)]
+  clustIndexMatrix <- breast_pam50FullCentroidsOut$CoINcIDE_computeEdgesObject$clustIndexMatrix
+  
+ 
+  fractLeaveOutVector <- seq(0.1,0.9,by=.1)  
+  leaveXOutResults <- list()
+  numIter <- 100
+  
+  for(f in 1:length( fractLeaveOutVector)){
+    message("noiseLevel ",f)
+    leaveXOutResults[[f]] <- networkLeaveOutAnalysis(finalNodeMatrix=finalNodeMatrix, 
+                                                origEdgeMatrix=origEdgeMatrix,
+                                      origEdgeWeightsMatrix=origEdgeWeightsMatrix,
+                                      finalEdgeMarix=finalEdgeMarix,fractLeaveOut=fractLeaveOutVector[f],
+                                      numIter=numIter,commMethod="edgeBetween",
+                                      findCommWithWeights=TRUE,clustIndexMatrix=clustIndexMatrix)
+    
+  }
+  
+  names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
+  saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
+  
+  LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
+                                    experimentName=experimentName,saveDir=saveDirPAM50)
   
 ####PAM50 short
 library("CoINcIDE")
@@ -162,14 +196,54 @@ clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/
      
      saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
+     options(bitmapType="cairo")
+     png(filename=paste0(saveDirPAM50,"/",experimentName,"_","dendogram_",Sys.Date(),".png"),width=1800,height=1000,res=160)
+     
+     plot(breast_pam50Short_pearson_centroidMean$commInfo$unPrunedDendogram)
+     
+     dev.off()
+     
+     finalNodeMatrix <-  breast_pam50Short_pearson_centroidMean$commInfo$attrDF
+     origEdgeMatrix <- breast_pam50Short_pearson_centroidMean$finalEdgeInfo$filterEdgeOutput$edgeMatrix
+     origEdgeWeightsMatrix <- breast_pam50Short_pearson_centroidMean$finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix
+     #right now these are igraph ids: will need to change that.
+     finalEdgeMatrix <- breast_pam50Short_pearson_centroidMean$commInfo$edgeDF[,c(1:2)]
+     clustIndexMatrix <- breast_pam50Short_pearson_centroidMean$CoINcIDE_computeEdgesObject$clustIndexMatrix
+     
+     
+     fractLeaveOutVector <- seq(0.1,0.9,by=.1)  
+     leaveXOutResults <- list()
+     numIter <- 100
+     
+     for(f in 1:length( fractLeaveOutVector)){
+       message("noiseLevel ",f)
+       leaveXOutResults[[f]] <- networkLeaveOutAnalysis(finalNodeMatrix=finalNodeMatrix, 
+                                                        origEdgeMatrix=origEdgeMatrix,
+                                                        origEdgeWeightsMatrix=origEdgeWeightsMatrix,
+                                                        finalEdgeMarix=finalEdgeMarix,fractLeaveOut=fractLeaveOutVector[f],
+                                                        numIter=numIter,commMethod="edgeBetween",
+                                                        findCommWithWeights=TRUE,clustIndexMatrix=clustIndexMatrix)
+       
+     }
+     
+     names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
+     saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
+     
+     LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
+                                          experimentName=experimentName,saveDir=saveDirPAM50)
+     
+     
      
      
      #now plot with altered scale to match merged analyses.
      experimentName <- "pam50ShortKmeans_pear_meanCent_MM3_subtypePlotsWith2000Axis"   
 breast_pam50Short_pearson_centroidMean <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                                                                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .3, maxTrueSimilThresh = Inf,minFractNN=.8,
-                                                                                     findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=2000)
-     
+                                                                                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, 
+                                                                      minTrueSimilThresh = .3, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                                     findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, 
+                                                                      fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=2000)
+
+
 ###PAM50 full
 library("CoINcIDE")
 saveDirPAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses"
@@ -256,10 +330,54 @@ outputFile <- "~/CoINcIDE_messages.txt"
   
   saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
   
+  options(bitmapType="cairo")
+  png(filename=paste0(saveDirPAM50,"/",experimentName,"_","dendogram_",Sys.Date(),".png"),width=1800,height=1000,res=160)
+  
+  plot(breast_pam50Full_pearsonMeanCentroid$commInfo$unPrunedDendogram)
+  
+  dev.off()
+  
+  finalNodeMatrix <-  breast_pam50Full_pearsonMeanCentroid$commInfo$attrDF
+  origEdgeMatrix <- breast_pam50Full_pearsonMeanCentroid$finalEdgeInfo$filterEdgeOutput$edgeMatrix
+  origEdgeWeightsMatrix <- breast_pam50Full_pearsonMeanCentroid$finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix
+  #right now these are igraph ids: will need to change that.
+  finalEdgeMatrix <- breast_pam50Full_pearsonMeanCentroid$commInfo$edgeDF[,c(1:2)]
+  clustIndexMatrix <- breast_pam50Full_pearsonMeanCentroid$CoINcIDE_computeEdgesObject$clustIndexMatrix
   
   
+  fractLeaveOutVector <- seq(0.1,0.9,by=.1)  
+  leaveXOutResults <- list()
+  numIter <- 100
+  
+  for(f in 1:length( fractLeaveOutVector)){
+    message("noiseLevel ",f)
+    leaveXOutResults[[f]] <- networkLeaveOutAnalysis(finalNodeMatrix=finalNodeMatrix, 
+                                                     origEdgeMatrix=origEdgeMatrix,
+                                                     origEdgeWeightsMatrix=origEdgeWeightsMatrix,
+                                                     finalEdgeMarix=finalEdgeMarix,fractLeaveOut=fractLeaveOutVector[f],
+                                                     numIter=numIter,commMethod="edgeBetween",
+                                                     findCommWithWeights=TRUE,clustIndexMatrix=clustIndexMatrix)
+    
+  }
+  
+  names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
+  saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
+  
+  LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
+                                       experimentName=experimentName,saveDir=saveDirPAM50)
   
   
+  #also look at when vary simil ranges
+  saveDir <- paste0("/home/ywrfc09/breast_analysis/PAM50_analyses/",experimentName,"_",Sys.Date())
+  varySimil <- networkVaryMinSimilAnalysis(finalNodeMatrix, origEdgeMatrix,
+                                          origEdgeWeightsMatrix,finalEdgeMarix,
+                                          minSimilThreshVector=c(0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0),
+                                          commMethod="edgeBetween",saveDir=saveDir,
+                                          findCommWithWeights=TRUE,clustIndexMatrix,
+                                          makePlots=TRUE,experimentName= experimentName)
+  
+  saveRDS(varySimil,file=paste0(saveDir,"/varySimilResults.rds"),compress=TRUE)
+    
   
   ######################## 
   ####have not run....

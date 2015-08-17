@@ -4,16 +4,22 @@ simTypes <- c("highQuality", "highQualityUnevenSize", "highQualityUnevenNumClust
               "highQualityUnevenNumClustMin1","highQualityUnevenSizeUnevenNumClustMin2",
               "highQualityUnevenSizeUnevenNumClustMin1", "mixedQualityClust")
 
-#run ROC curves for one simil level (later: hold noise level constant, do various mean simil levels)
-meanSimil <- 0.3
-
+#run ROC curves for one simil level 
+meanSimilVector <- c(0.0,0.3,0.5,0.7,0.9)
 saveDir <- "/home/ywrfc09/simulations/"
 
+meanFractMaxTissueType <- matrix(data=NA,ncol=length(simTypes),nrow=length(meanSimilVector),
+                                 dimnames=list(meanSimilVector,simTypes))
+
+for(m in 1:length(meanSimilVector)){
+  
+  meanSimil <- meanSimilVector[m]
 for(s in 1:length(simTypes)){
   
   message(paste0(saveDir,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
   data <- readRDS(paste0(saveDir,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
-                  
+  meanFractMaxTissueType[m,s] <- mean(data$commMeanMaxTissueType,na.rm=TRUE)
+  
   if(s==1){
     
     masterDF <- data.frame(data$ROC_matrixFull,rep(simTypes[s],nrow(data$ROC_matrixFull)));
@@ -36,7 +42,9 @@ for(s in 1:length(simTypes)){
   
 }
 
-
+#to make all same y limits
+#+coord_cartesian(ylim=c(0,plotStackedYLimit)
+#+scale_y_continuous(breaks=seq(0,1,0.25))
 
 library("ggplot2")
 #masterDF$sim_type <- as.factor(masterDF$sim_type);
@@ -57,7 +65,7 @@ TPR_plot_color <- ggplot(data =masterDF,aes(x=sd_noise,y=TPR,group=sim_type, col
         axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
         plot.title=element_text(colour="black",size=22,vjust=1,hjust=.4))+
   theme(legend.title=element_text(colour="black",size=12),legend.text=element_text(colour="black",size=10))+
-  labs(colour="simulation\ntype");
+  labs(colour="simulation\ntype")+coord_cartesian(ylim=c(-0.05,1.05))
 
 options(bitmapType="cairo")
 png(filename=paste0(saveDir,"/TPR_plot_color_",meanSimil,"_",Sys.Date(),".png"),width=1400,height=1600,res=200);
@@ -84,7 +92,9 @@ plot(FPR_plot_color);
 
 dev.off();
 
-
+#NOTE: get a warning here:
+#basically, the 13 rows removed are just the rows that are
+#plotted without a point and just a straight line.
 TPR_plot_point <- ggplot(data =masterDF,aes(x=sd_noise,y=TPR,group=sim_type))  + geom_line(size=.4)+ geom_point(aes(shape=factor(sim_type)),size=5)+
   labs(title = "",y="True positive rate",x="Noise level")+
   scale_color_manual(values=colorCodes)+
@@ -93,7 +103,7 @@ TPR_plot_point <- ggplot(data =masterDF,aes(x=sd_noise,y=TPR,group=sim_type))  +
         axis.text.y = element_text(colour = "black",size=18),axis.title.y = element_text(colour = "black",size=20,vjust=1),
         plot.title=element_text(colour="black",size=22,vjust=1,hjust=.4))+
   theme(legend.title=element_text(colour="black",size=18),legend.text=element_text(colour="black",size=10))+
-  labs(shape="simulation\ntype")
+  labs(shape="simulation\ntype")+coord_cartesian(ylim=c(-0.05,1.05))
 
 
 options(bitmapType="cairo")
@@ -125,8 +135,13 @@ plot(FPR_plot_point);
 dev.off();
 
 
+#end of loop m
+}
 
-
+#no tissue clusters ever mis-assigned? Looks like this is perhaps because the
+#meta-clusters were too small and thresholded out.
+write.table(meanFractMaxTissueType,file=paste0(saveDir,"/meanFractMaxTissueType.txt"),
+            quote=FALSE,row.names=TRUE,col.names=TRUE)
 ###old code
 
 ###first: representative heatmap pictures for each of the 3 cases
