@@ -13,7 +13,7 @@
 computeAdjMatrices <- function(dataMatrixList,clustSampleIndexList,clustFeatureIndexList,
 edgeMethod=c("spearman","pearson","kendall","Euclidean","cosine",
                       "Manhattan","Minkowski","Mahalanobis"),
-numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c("mean","median"),seedNum=rnorm(1),
+numSims=500,outputFile="./CoINcIDE_messages.txt",checkNA=FALSE,centroidMethod=c("mean","median"),seedNum=as.numeric(Sys.time()),
 memorySave=FALSE){
   
   
@@ -317,8 +317,9 @@ memorySave=FALSE){
   threshStats <- computeThreshParam(clustIndexMatrix,
                                     dataMatrixList,clustSampleIndexList,clustFeatureIndexList)
   
-  
+  #don't need this object anymore- remove to save space
   rm(list="dataMatrixList")
+  
   threshStats$meanMetricMatrix <- meanMetricMatrix
   threshStats$trueFractNNmatrix <- trueFractNNmatrix
   

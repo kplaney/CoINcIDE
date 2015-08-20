@@ -8,7 +8,11 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-advancedNetworkPlots(communityMembership, clustIndexMatrix, brewPal = c("Set3", "Paired", "Spectral", "BrBG", "PiYG", "RdYlGn", "RdYlBu", "RdBu", "PiYG", "Set2"), saveDir = "/home/kplaney/ISMB/", experimentName = "networks", colorCodes, plotToScreen = FALSE, nodePlotSize = 10, nodeFontSize = 0.7,   plotEdgeWeight=FALSE,edgeWeightsColName="simil")
+advancedNetworkPlots(communityMembership,clustIndexMatrix,
+                                  brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
+                                  saveDir="/home/kplaney/ISMB/",experimentName="networks",colorCodes,
+                                 plotToScreen=FALSE,nodePlotSize=10,nodeFontSize=.7,plotEdgeWeight = TRUE,
+                                 edgeWeightsColName="simil")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

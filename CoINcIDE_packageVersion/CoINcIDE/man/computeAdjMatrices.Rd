@@ -8,7 +8,7 @@ TEST
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-computeAdjMatrices(dataMatrixList, clustSampleIndexList, clustFeatureIndexList, edgeMethod = c("spearman", "pearson", "kendall", "Euclidean", "cosine", "Manhattan", "Minkowski", "Mahalanobis"), numSims = 500, outputFile = "./CoINcIDE_messages.txt", checkNA = FALSE, centroidMethod = c("mean", "median"))
+computeAdjMatrices(dataMatrixList, clustSampleIndexList, clustFeatureIndexList, edgeMethod = c("spearman", "pearson", "kendall", "Euclidean", "cosine", "Manhattan", "Minkowski", "Mahalanobis"), numSims = 500, outputFile = "./CoINcIDE_messages.txt", checkNA = FALSE, centroidMethod = c("mean", "median"),seedNum=as.numeric(Sys.time()),memorySave=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -36,6 +36,12 @@ computeAdjMatrices(dataMatrixList, clustSampleIndexList, clustFeatureIndexList, 
 }
   \item{centroidMethod}{
 %%     ~~Describe \code{centroidMethod} here~~
+}
+  \item{memorySave}{
+Boolean for whether to save and re-load a (potentially large) data matrix list as needed to avoid memory issues (this saving and re-loading may slow down the code.)
+}
+  \item{seedNum}{
+Number to set the random seed. Used if memorySave=TRUE. A unique random tag is used to save and reload the dataMatrixList to avoid issues if multiple computeAdjmatrices() calls are made in a parallel fashion or say in separate screen sessions, to avoid each run overwriting the other runs' saved dataMatrixList objects.
 }
 }
 \details{
