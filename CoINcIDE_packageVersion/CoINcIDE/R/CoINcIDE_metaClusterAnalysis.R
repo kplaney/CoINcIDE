@@ -1063,7 +1063,7 @@ fractEdgesInVsOutEdge=0
     commInfo <- findCommunities(edgeMatrix=finalEdgeInfo$filterEdgeOutput$edgeMatrix,edgeWeightMatrix=finalEdgeInfo$filterEdgeOutput$edgeWeightMatrix,
                               clustIndexMatrix=CoINcIDE_output$clustIndexMatrix,fileTag=experimentName,
                               saveDir=saveDir,minNumUniqueStudiesPerCommunity=minNumUniqueStudiesPerCommunity,experimentName=experimentName,
-                              commMethod=commMethod,
+                              commMethod=commMethod,plotSimilEdgeWeight = FALSE,
                               makePlots=FALSE,saveGraphData=FALSE,plotToScreen=FALSE,findCommWithWeights=findCommWithWeights,
                               fractEdgesInVsOutComm=fractEdgesInVsOutComm,fractEdgesInVsOutEdge=fractEdgesInVsOutEdge)
   
