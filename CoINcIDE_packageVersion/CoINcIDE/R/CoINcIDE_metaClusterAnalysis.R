@@ -994,8 +994,7 @@ centroidMethod=c("mean","median")){
     nullMatrixList <- createNullDataMatrixList(dataMatrixList)
     CoINcIDE_NullOutputList[[i]] <- computeAdjMatrices(dataMatrixList=nullMatrixList,clustSampleIndexList=clustSampleIndexList,
                                                             clustFeatureIndexList=clustFeatureIndexList,
-    edgeMethod=edgeMethod,minTrueSimilThresh=-Inf,maxTrueSimilThresh=Inf,numSims=numSims,
-    outputFile=outputFile,checkNA=FALSE,centroidMethod=centroidMethod,fractFeatIntersectThresh=0,numFeatIntersectThresh=0,clustSizeThresh=0, clustSizeFractThresh=0)
+    edgeMethod=edgeMethod,numSims=numSims, outputFile=outputFile,checkNA=FALSE,centroidMethod=centroidMethod)
     meanMetric <- append(meanMetric, as.vector(CoINcIDE_NullOutputList[[i]]$computeTrueSimilOutput$meanMetricMatrix))
     indPvalues <- append(indPvalues,as.vector(CoINcIDE_NullOutputList[[i]]$pvalueMatrix))
     indFractNN <- append(indFractNN,as.vector(CoINcIDE_NullOutputList[[i]]$computeTrueSimilOutput$trueFractNNmatrix))
