@@ -698,6 +698,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         linearModelsSumm[["RFS_logitAlone"]] <- summary(linearModels[["RFS_logitAlone"]] ) 
         textOut <- capture.output( linearModelsSumm [["RFS_logitAlone"]]$coefficients)
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+        textOut <- capture.output( linearModelsSumm [["RFS_logitAlone"]])
+        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         linearModelsSumm[["RFS_numPatients"]] <- nrow(dataMatrix)
         cat("\nNumber_of_patients_for_RFS__model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
         linearModelsSumm[["RFS_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
@@ -735,7 +737,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                       }
         )
         
-        
+        #no community
+        reducedModel <- tryCatch(glm(RFS~chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+           
+     
         #now try with  grade.    
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -766,6 +776,14 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                       }
                                                       
         )
+        
+               #no community
+        reducedModel <- tryCatch(glm(RFS~chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
         
         #now try with  grade.    
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
@@ -798,6 +816,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                       
         )
         
+                   #no community
+        reducedModel <- tryCatch(glm(RFS~chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+        
+ 
         
         #now try with  grade.    
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
@@ -830,7 +857,13 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                       
         )
         
-        
+                           #no community
+        reducedModel <- tryCatch(glm(RFS~anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
         #now try with  grade.    
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -863,7 +896,13 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                       }
                                                       
         )
-        
+         reducedModel <- tryCatch(glm(RFS~chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+    
         
         #now try with  grade.    
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
@@ -895,6 +934,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         linearModelsSumm[["RFS_logitWithRx"]] <- summary( linearModels[["RFS_logitWithRx"]])
         textOut <- capture.output( linearModelsSumm[["RFS_logitWithRx"]]$coefficients)
+        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+        textOut <- capture.output( linearModelsSumm [["RFS_logitWithRx"]])
+        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+        cat(gsub(" ","_",paste0("\nLinear analysis with RFS and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
+        textOut <- capture.output(summary(linearModels[["RFS_logitWith_ANOVA"]]))
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         
         linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",") 
@@ -970,6 +1014,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       linearModelsSumm[["DFS_logitAlone"]] <- summary( linearModels[["DFS_logitAlone"]] ) 
       textOut <- capture.output( linearModelsSumm[["DFS_logitAlone"]]$coefficients)
       cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+      textOut <- capture.output( linearModelsSumm[["DFS_logitAlone"]])
+      cat(textOut,sep="\n",append=TRUE,file=summaryFile)
       linearModelsSumm[["DFS_numPatients"]] <- nrow(dataMatrix)
       cat("\nNumber of patients: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
       linearModelsSumm[["DFS_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
@@ -993,6 +1039,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrix$community),"\n")),append=TRUE,file=summaryFile)
       
       linearModelsSumm[["DFS_withRx_numPatients"]] <- nrow(dataMatrix)
+      cat("\nNumber_of_patients_for_DFS_with_Rx_model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
       
       if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 && 
          length(unique(dataMatrix$anti_HER2))>1 ){
@@ -1003,6 +1050,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                       }
         )
         
+        #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(DFS~chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+    
+    
         #now try with grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -1032,7 +1088,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+                #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(DFS~chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+    
+
         #now try with grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -1063,7 +1127,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+                    #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(DFS~chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+    
+
         #now try with grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -1094,7 +1166,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+                          #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(DFS~anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+    
+
         #now try with grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -1126,7 +1206,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+                               #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(DFS~chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+    
+
         #now try with grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -1164,6 +1252,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         
         linearModelsSumm[["DFS_logitWithRx"]] <- summary( linearModels[["DFS_logitWithRx"]])
         textOut <- capture.output( linearModelsSumm[["DFS_logitWithRx"]]$coefficients)
+        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+                textOut <- capture.output( linearModelsSumm[["DFS_logitWithRx"]])
+        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+        cat(gsub(" ","_",paste0("\nLinear analysis with DFS and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
+        textOut <- capture.output(summary(linearModels[["DFS_logitWith_ANOVA"]]))
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
         
@@ -1228,8 +1321,10 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
       linearModelsSumm[["pCR_logitAlone"]] <- summary(  linearModels[["pCR_logitAlone"]] ) 
       textOut <- capture.output( linearModelsSumm[["pCR_logitAlone"]]$coefficients)
       cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+        textOut <- capture.output( linearModelsSumm[["pCR_logitAlone"]])
+      cat(textOut,sep="\n",append=TRUE,file=summaryFile)
       linearModelsSumm[["pCR_numPatients"]] <- nrow(dataMatrix)
-      cat("\nNumber_of_patients_for_pCR__model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
+      cat("\nNumber_of_patients_for_pCR_model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
       linearModelsSumm[["pCR_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
       ##with therapies
       #interesting: community becomes insignificant if add in therapies now: this could be
@@ -1261,7 +1356,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                       }
         )
         
-        
+                                    #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(pCR~chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+    
+
         #now try with grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
@@ -1288,7 +1391,13 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+                                            #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(pCR~chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
         #now try with stage, grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
@@ -1316,7 +1425,14 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+                                                  #remove communities for ANOVA
+           reducedModel <- tryCatch(glm(pCR~chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+
         #now try with stage, grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
@@ -1348,7 +1464,15 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+   #remove community for ANOVA
+        reducedModel <- tryCatch(glm(pCR~anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+
+ 
         #now try with stage, grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
@@ -1381,7 +1505,16 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-        
+
+   #remove community for ANOVA
+        reducedModel <- tryCatch(glm(pCR~chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
+                                                      error = function(e) {
+                                                        return(NA)
+                                                      }
+        )
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+
+
         #now try with stage, grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
@@ -1413,6 +1546,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         textOut <- capture.output( linearModelsSumm[["pCR_logitWithRx"]]$coefficients)
         cat(textOut,sep="\n",append=TRUE,file=summaryFile) 
         linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
+                textOut <- capture.output( linearModelsSumm [["pCR_logitWithRx"]])
+        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
+        cat(gsub(" ","_",paste0("\nLinear analysis with pCR and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
+        textOut <- capture.output( summary(linearModels[["pCR_logitWith_ANOVA"]]))
+        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         
         predictor <- predict(linearModels[["pCR_logitWithRx"]],type="response")
         png(filename=paste0(saveDir,"/",experimentName,"_pCR_withRx_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
