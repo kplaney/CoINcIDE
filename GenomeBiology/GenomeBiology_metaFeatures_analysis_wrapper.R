@@ -743,7 +743,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
            
      
         #now try with  grade.    
@@ -783,7 +783,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
         
         #now try with  grade.    
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
@@ -822,7 +822,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
         
  
         
@@ -863,7 +863,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
         #now try with  grade.    
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
@@ -901,7 +901,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]])
+         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
     
         
         #now try with  grade.    
@@ -938,7 +938,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         textOut <- capture.output( linearModelsSumm [["RFS_logitWithRx"]])
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         cat(gsub(" ","_",paste0("\nLinear analysis with RFS and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
-        textOut <- capture.output(summary(linearModels[["RFS_logitWith_ANOVA"]]))
+        textOut <- capture.output(linearModels[["RFS_logitWithRx_ANOVA"]])
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         
         linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",") 
@@ -947,7 +947,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
         roc_data <- roc(response=dataMatrix$RFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
         dev.off()
         textOut <- capture.output(roc_data)
-        cat("roc_info:",textOut,sep="\n",append=TRUE,file=summaryFile)
+        cat("\n roc_info:",textOut,sep="\n",append=TRUE,file=summaryFile)
         cat("\nAUC : ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
         
         linearModelsSumm[["RFS_logitWithRx"]] <- summary( linearModels[["RFS_logitWithRx"]])
@@ -1056,7 +1056,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
     
     
         #now try with grade.
@@ -1094,7 +1094,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
     
 
         #now try with grade.
@@ -1133,7 +1133,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
     
 
         #now try with grade.
@@ -1172,7 +1172,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
     
 
         #now try with grade.
@@ -1212,7 +1212,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]])
+         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
     
 
         #now try with grade.
@@ -1256,7 +1256,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                 textOut <- capture.output( linearModelsSumm[["DFS_logitWithRx"]])
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         cat(gsub(" ","_",paste0("\nLinear analysis with DFS and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
-        textOut <- capture.output(summary(linearModels[["DFS_logitWith_ANOVA"]]))
+        textOut <- capture.output(linearModels[["DFS_logitWithRx_ANOVA"]])
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
         
@@ -1362,7 +1362,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
     
 
         #now try with grade.
@@ -1397,7 +1397,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
         #now try with stage, grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
         dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
@@ -1431,7 +1431,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
 
         #now try with stage, grade.
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
@@ -1470,7 +1470,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
 
  
         #now try with stage, grade.
@@ -1512,7 +1512,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                                                         return(NA)
                                                       }
         )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]])
+         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
 
 
         #now try with stage, grade.
@@ -1549,7 +1549,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
                 textOut <- capture.output( linearModelsSumm [["pCR_logitWithRx"]])
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         cat(gsub(" ","_",paste0("\nLinear analysis with pCR and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
-        textOut <- capture.output( summary(linearModels[["pCR_logitWith_ANOVA"]]))
+        textOut <- capture.output(linearModels[["pCR_logitWithRx_ANOVA"]])
         cat(textOut,sep="\n",append=TRUE,file=summaryFile)
         
         predictor <- predict(linearModels[["pCR_logitWithRx"]],type="response")
