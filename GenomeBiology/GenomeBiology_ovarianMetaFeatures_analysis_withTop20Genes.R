@@ -33,7 +33,7 @@ fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence
 
 #looks like simil thresh of .5 appropriate
 densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDir,
-                                     experimentName=experimentName,savePlot=TRUE)
+                                     experimentName=experimentName,savePlot=TRUE,yLimit=2.5)
 
 
 
@@ -112,7 +112,7 @@ varySimil <- networkVaryMinSimilAnalysis(finalNodeMatrix, origEdgeMatrix,
 saveRDS(varySimil,file=paste0(saveDir,"/varySimilResults.rds"),compress=TRUE)
 
 
-#2000
+#2014
 library("CoINcIDE")
 source("/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/GenomeBiology_metaFeatures_analysis_wrapper.R")   
 outputFile <- "~/CoINcIDE_messages.txt"
@@ -145,7 +145,7 @@ fisherTestVariableTitleNames <- c("histological type","tumor stage", "recurrence
 
 #looks like .5 or .7 appropriate
 densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDir,
-                                     experimentName=experimentName,savePlot=TRUE)
+                                     experimentName=experimentName,savePlot=TRUE,yLimit=2.5)
 
 
 

@@ -29,7 +29,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
   clusterCoINcIDE_output$clustFeatureIndexList_PACR <- clusterCoINcIDE_output$clustFeatureIndexList
   
   CoINcIDE_output = readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/CoINcIDE_results_PAM50centroidCluster_pearson_edgeMethod_mean_centroidMethod2015-07-08.rds")
-  experimentName <- "pam50Centroid_pear_meanCent_MM3"
+  experimentName <- "pam50Centroid_pear_meanCent_MM13"
   eset_featureDataFieldName="gene_symbol"
   networkColors = "Set3"
   outcomesVarBinary=NA
@@ -54,20 +54,22 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                     "pretreatment HER2 status","histological grade","chemotherapy","anti-HER2 treatment",
                                     "anti-ER treatment")
   
+  #want a y limit so that axes for all experiments are the same.
   densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDirPAM50,
-                                       experimentName=experimentName,savePlot=TRUE)
+                                       experimentName=experimentName,savePlot=TRUE,yLimit=2.5)
+  
   
   
   #options(device=NULL)
   breast_pam50FullCentroidsOut <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
-                                                              meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .3, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                              meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .13, maxTrueSimilThresh = Inf,minFractNN=.8,
                                                               clustSizeThresh = 0,saveDir =saveDirPAM50,experimentName = experimentName,networkColors = networkColors,
                                                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
                                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
                                                               GSEAanalysis=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
-                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,clinVarPlots=TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0,
+                                                              findCommWithWeights=TRUE, plotSimilEdgeWeight = FALSE,clinVarPlots=TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0,
                                                               minNumEdgesForCluster=1)
   
   
@@ -173,7 +175,8 @@ clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/
      densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir=saveDirPAM50,
                                           experimentName=experimentName,savePlot=TRUE)
      
-     
+     densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir="~/",
+                                          experimentName=experimentName,savePlot=TRUE,yLimit=2.5)
      #need 2000 axis y limit to compare with merged analyses. make extra plot directory just for this one.
      breast_pam50Short_pearson_centroidMean <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                             meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .3, maxTrueSimilThresh = Inf,minFractNN=.8,
@@ -243,7 +246,7 @@ breast_pam50Short_pearson_centroidMean <- metaFeaturesAnalysisWrapper(metaFeatur
                                                                                      findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, 
                                                                       fractEdgesInVsOutComm=0,minNumEdgesForCluster=1,plotStackedYLimit=2000)
 
-
+#for publication :actually no difference between MM25 and MM3 for final meta-cluster assignments.
 ###PAM50 full
 library("CoINcIDE")
 saveDirPAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses"
@@ -304,7 +307,8 @@ outputFile <- "~/CoINcIDE_messages.txt"
                                           experimentName=experimentName,savePlot=TRUE)
      
      
-     
+     densityPlot <- meanMetricDensityPlot(CoINcIDE_output$meanMetricMatrix,saveDir="~/",
+                                          experimentName=experimentName,savePlot=TRUE,yLimit=2.5)
   breast_pam50Full_pearsonMeanCentroid <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                                          meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .25, maxTrueSimilThresh = Inf,minFractNN=.8,
                                                                          clustSizeThresh = 0,saveDir =saveDirPAM50,experimentName = experimentName,networkColors = networkColors,

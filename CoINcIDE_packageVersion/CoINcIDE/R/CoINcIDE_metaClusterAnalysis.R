@@ -1112,6 +1112,7 @@ fractEdgesInVsOutEdge=0
   FDR_edgesAfterAllThresh <- numFalseEdges_afterThresh/totalPossibleEdges
   FDR_edgesAfterGN <- numFalseEdges_afterGN/totalPossibleEdges
 
+  message("FDR returned is a fraction, not a percentage.")
   
   FDR_results <- list(numFalseIndPvaluesBeforeOtherThresh=numFalseIndPvaluesBeforeOtherThresh,numFalseEdges_ind =numFalseEdges_ind,
                       numFalseEdges_afterThres=numFalseEdges_afterThresh,numFalseEdges_afterGN=numFalseEdges_afterGN,

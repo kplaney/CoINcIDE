@@ -1218,21 +1218,41 @@ merged_communitySubtypeBreakdown_plots <- function(mergedMatrixData,experimentNa
    
 }
 
-meanMetricDensityPlot <- function(meanMetricMatrix,saveDir="./",savePlot=TRUE,experimentName="expr"){
+meanMetricDensityPlot <- function(meanMetricMatrix,saveDir="./",savePlot=TRUE,experimentName="expr",
+                                  yLimit){
 
-  dataF <- as.vector(meanMetricMatrix)
-  masterDF <- dataF[-which(is.na(dataF))]
-  dens <- density(masterDF)
-  masterDF <- as.data.frame(masterDF,stringsAsFactors=FALSE)
-  densityPlot <- ggplot(data = masterDF, aes(x=masterDF))+
-    #alpha in geom_density. controls transparency of color, if used fill= above.
-    #if want transparent fill: geom_density(alpha=0). but different lines
-    #are better for a black and white publication.
-    geom_density() +labs(title = "Density curves ")+
-    labs(title = "Density curve for \nCoINcIDE edge mean metric",
-         y="Density",x="Mean metric")+
+  if(missing(yLimit)){
     
-    theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    dataF <- as.vector(meanMetricMatrix)
+    masterDF <- dataF[-which(is.na(dataF))]
+    dens <- density(masterDF)
+    masterDF <- as.data.frame(masterDF,stringsAsFactors=FALSE)
+    densityPlot <- ggplot(data = masterDF, aes(x=masterDF))+
+      #alpha in geom_density. controls transparency of color, if used fill= above.
+      #if want transparent fill: geom_density(alpha=0). but different lines
+      #are better for a black and white publication.
+      geom_density() +labs(title = "Density curves ")+
+      labs(title = "Density curve for \nCoINcIDE edge mean metric",
+           y="Density",x="Mean metric")+
+      
+      theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  }else{
+    
+    dataF <- as.vector(meanMetricMatrix)
+    masterDF <- dataF[-which(is.na(dataF))]
+    dens <- density(masterDF)
+    masterDF <- as.data.frame(masterDF,stringsAsFactors=FALSE)
+    densityPlot <- ggplot(data = masterDF, aes(x=masterDF))+
+      #alpha in geom_density. controls transparency of color, if used fill= above.
+      #if want transparent fill: geom_density(alpha=0). but different lines
+      #are better for a black and white publication.
+      geom_density() +labs(title = "Density curves ")+
+      labs(title = "Density curve for \nCoINcIDE edge mean metric",
+           y="Density",x="Mean metric")+
+      theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+       ylim(c(0, yLimit))
+  }
   
   if(savePlot){
     
