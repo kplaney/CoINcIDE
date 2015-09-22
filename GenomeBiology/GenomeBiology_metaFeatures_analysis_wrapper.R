@@ -3,7 +3,7 @@ library("survival")
 library("CoINcIDE")
 
 
-metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clusterCoINcIDE_output,
+metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output , clusterCoINcIDE_output,
                                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
                                         clustSizeThresh = 5,saveDir = "/home/kplaney/ovarian_analysis/",experimentName = "ovarian_2000F",networkColors = "Set3",
                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, minMedianNumEdgesPerNodeInCommunity=3,nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName="gene",
@@ -53,6 +53,8 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   pvalueMatrix = CoINcIDE_output$pvalueMatrix
   clustIndexMatrix = CoINcIDE_output$clustIndexMatrix
   
+  if(!is.null(esets)){
+    
   #now format just as a list of data matrices.
   dataMatrixList <- exprSetListToMatrixList(esets,featureDataFieldName=eset_featureDataFieldName)
   
@@ -65,7 +67,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     
   }
   
-  
+  }
   cat(gsub(" ","_",paste0("\nStarted with  ",length(dataMatrixList), " datasets\n:")),
       append=TRUE,file=outputFile)
   textOut <- capture.output(names(dataMatrixList))
@@ -237,7 +239,9 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
     
   }
   ###now on to plotting
-  
+   
+  if(clinVarPlots || survivalAnalysis){
+    
   clinicalTables <- list()
   
   #already have esets loaded:
@@ -269,7 +273,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets,CoINcIDE_output , clu
   
   cat(gsub(" ", "_",paste0("\n",length(groupings), " patients included across all final meta-clusters.\n")),
       append=TRUE,file=summaryFile)
-  
+  }
   expName <- gsub("_"," ",experimentName)
   
   if(clinVarPlots){
