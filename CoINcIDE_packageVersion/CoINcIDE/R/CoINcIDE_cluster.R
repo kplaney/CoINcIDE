@@ -609,7 +609,8 @@ outputFile="./consensusOut.txt",minClustConsensus=.7,maxPAC=.15,studyName="test"
 
   #remember: we're clustering pItem*ncol(dataset) each time...so
   #our max K is NOT ncol(dataset), but rather pItem*ncol(dataset)
-  if(floor(ncol(dataset)*pItem)<maxNumClusters){
+  #add the -1 for rounding...consensus cluster plus appears to do that?
+  if((floor(ncol(dataset)*pItem)-1)<maxNumClusters){
     #hclust usually returns NA gap test if K.max = pItem*ncol(dataset) as opposed to pItem*ncol(dataset)-1
     #will also mest up maxSE calculations
     K.max <- floor(ncol(dataset)*pItem)-1
