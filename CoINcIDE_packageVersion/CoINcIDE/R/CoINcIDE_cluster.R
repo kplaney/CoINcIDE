@@ -612,7 +612,8 @@ outputFile="./consensusOut.txt",minClustConsensus=.7,maxPAC=.15,studyName="test"
   if(floor(ncol(dataset)*pItem)<maxNumClusters){
     #hclust usually returns NA gap test if K.max = pItem*ncol(dataset) as opposed to pItem*ncol(dataset)-1
     #will also mest up maxSE calculations
-    K.max <- floor(pItem*ncol(dataset))-1
+    #minus one to be on the safe side
+    K.max <- ncol(dataset)-round(pItem*ncol(dataset))-1
     
   }else{
     

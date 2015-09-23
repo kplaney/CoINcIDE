@@ -257,6 +257,9 @@ This is usually due to sample or feature names not matching up across
 assay, pheno and feature slots.\n Proceed through data analysis with caution!")
     
   }
+  
+  #expand if multiple symbols on a single line
+ # expand_multGeneSymbols(dataMatrix=exprSet@assayData$exprs, keys =fData(exprSet)[[2]], keys.sep = " /// ",checkForMissedMultSymbols=checkForMissedMultSymbols)
   #collapse duplicated probes (really gene symbols here)
    tmp <-  collapseDupProbes(expr=exprSet@assayData$exprs,
             sampleColNames=colnames(exprSet@assayData$exprs),
@@ -1454,3 +1457,102 @@ mergeDatasetList <- function(datasetList,minNumGenes = 10000, minNumPatients = 4
   return(output);
   
 }
+
+expand_multGeneSymbols <-function (dataMatrix=NULL, keys, keys.sep = " /// ",checkForMissedMultSymbols=TRUE){
+
+  keys <- as.character(keys);
+  
+  if(is.null(dataMatrix)){
+    
+    #just make a dummy expr list then.
+    dataMatrix <- matrix(rep.int(1,times=length(keys)));
+    
+  }
+  
+  #print(df$probes[1:10])
+  print("old number of gene symbols is:");
+  print(length(keys));
+  #gsub("///", ",", keys);
+  skey <- strsplit(keys, split = keys.sep);
+  times <- sapply(skey,length);
+  #need a 1 where times = 0...want to replicate this gene symbol still once!
+  zeroIndices <- which(times==0, arr.ind=TRUE);
+  times[zeroIndices] <- 1;
+  #remove indices that are only "" i.e. blank.
+  #look for empty values! otherwise "unlist" will remove these
+  #empty does not equal NULL or NA in R.
+  #can't assign NULL values, use NA.
+  skey[zeroIndices]<-NA;
+  #print(skey[1:30]);
+  #string out the symbols
+  skeyList <-unlist(skey);
+  
+  #pass over Gene Symbol check...already did this!
+  keys <-as.character(as.matrix(skeyList));
+  print("new number of gene symbols is:");
+  print(length(keys));
+  #just print some out to gut-check
+  #print(keys[1:30])
+  #print(keys[1000:1020])
+  
+  #we need more rows to string out the duplicate probes.
+  numRow <- length(keys);
+  #still have same number of samples
+  numCol <- ncol(dataMatrix);
+  expr <-matrix(data=NA, nrow = numRow, ncol = numCol);
+  #error check: any weird symbols in your probe table?? stop then!
+  #margin must =2 (2 is for columns)
+  keysWithPunct<- grep("[[:punct:]]",keys);
+  #now take this subset. will still have "-" and this is accepted.
+  #why unique: sometimes have symbols like "RP11-35N6.1" with punctuation marks
+  #want unique indices - could still mean some actual symbols are duplicated
+  keysWithPunct <- unique(keysWithPunct);
+  keysWithPunct <- keys[keysWithPunct];
+  keysWithPunctPeriod <- grep("\\.",keysWithPunct);
+  
+  if(length( keysWithPunctPeriod )>0){
+    
+    warning("your gene symbols have . version tags on them.\nThis could mean distinct gene types (common for lncRNAs) or actually just versions.\nLook into this.")
+    
+  }
+  
+  #don't run this if you KNOW that your code has a few different mult symbols - like / and ///. Then just run this function twice.
+  if(checkForMissedMultSymbols){
+  #hopefully all the probes with punctation were all the probes with "-" or "@"...
+  #(yes, a double gene symbol that is say HEXA-AS1///HLA-F won't be caught...but that would be an extreme outlier)
+  #why a union:  sometimes have symbols like "RP11-35N6.1" with two punctuation marks.
+  #don't want to count this twice
+    #look for standard punctuation found in gene symbols that doesn't link to mult symbls on one line.
+    keysWithPunctHyphen <- grep("-",keysWithPunct);
+    keysWithPunctAt <- grep("@",keysWithPunct);
+    keysWithPunctUnder <- grep("_",keysWithPunct);
+    keysWithPunctQuote <- grep("\\'",keysWithPunct);
+    
+  if( length(keysWithPunct)!=length(union(keysWithPunctHyphen,union(keysWithPunctAt,union( keysWithPunctUnder,union(keysWithPunctQuote,keysWithPunctPeriod))))) ){
+    
+    stop("Error: your gene symbols contain extra punctuation beyond the standard -, @, and your keys.sep you entered. check this!")
+    
+  }
+  
+  }
+  dataMatrix <- as.matrix(dataMatrix)
+  for(i in 1:numCol){    
+    #rep(x, time): replicates values in x
+    #times: number of times to repeat each element of x
+    #perfect for replicating gene expression rows based on
+    #replicated Gene Symbols.
+    #want 1:nrow(expr) becuase we want to repeat all columns at once
+    #sapply(skey, lenght): produces a vector, and each unit
+    #is the number of duplicate probes for a row (because strplit parses
+    #the probes into separate columns)  
+    expr[,i]   <- rep(dataMatrix[,i], times)
+    
+  }
+  row.names(expr)<-keys;
+  colnames(expr) <-colnames(dataMatrix)
+  
+
+  return(expr)
+}
+
+

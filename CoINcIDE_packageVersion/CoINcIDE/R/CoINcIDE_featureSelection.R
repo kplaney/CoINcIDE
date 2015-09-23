@@ -66,6 +66,11 @@ computeFeatureRanks <- function(dataMatrixList,method=c("sd,mad")){
     }
   rankList <- lapply(dataMatrixList,FUN=function(dataMatrix,method){
     
+    if(any(duplicated(rownames(dataMatrix)))){
+      
+      stop("Error: You have duplicated gene names. Please correct this before running this function.")
+      
+    }
     if(method=="sd"){
       
       output <- rowSds(dataMatrix,na.rm=TRUE)
