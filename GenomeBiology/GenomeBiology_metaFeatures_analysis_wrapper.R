@@ -4,7 +4,7 @@ library("CoINcIDE")
 
 
 metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output , clusterCoINcIDE_output,
-                                        meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,
+                                        meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,nodeSizeScaleFactor=1,
                                         clustSizeThresh = 5,saveDir = "/home/kplaney/ovarian_analysis/",experimentName = "ovarian_2000F",networkColors = "Set3",
                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, minMedianNumEdgesPerNodeInCommunity=3,nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName="gene",
                                         survivalAnalysis=TRUE,GSEAanalysis=TRUE,clinVarPlots=TRUE,outcomesVarBinary="vital_status",outcomesVarCont = "days_to_death",
@@ -153,7 +153,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
                                        brewPal = networkColors,
                                        saveDir=saveDir,clustIndexMatrix=clustIndexMatrix,
                                        plotToScreen=plotToScreen,experimentName=experimentName,
-                                       plotEdgeWeight=plotSimilEdgeWeight)$network_stats
+                                       plotEdgeWeight=plotSimilEdgeWeight,nodeSizeScaleFactor=nodeSizeScaleFactor)$network_stats
   
   
   write.table(networkStats,quote=FALSE,file=paste0(saveDir,"/",experimentName,"_networkStats_",Sys.Date(),".txt"))

@@ -115,7 +115,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
                                   brewPal = c("Set3","Paired","Spectral","BrBG","PiYG","RdYlGn","RdYlBu","RdBu","PiYG","Set2"),
                                   saveDir="/home/kplaney/ISMB/",experimentName="networks",colorCodes,
                                  plotToScreen=FALSE,nodePlotSize=10,nodeFontSize=.7,plotEdgeWeight = TRUE,
-                                 edgeWeightsColName="simil"){
+                                 edgeWeightsColName="simil",nodeSizeScaleFactor=1){
   
 
 
@@ -196,7 +196,7 @@ advancedNetworkPlots <- function(communityMembership,clustIndexMatrix,
   if(!is.null(communityMembership$attrDF$size)){
     
 
-    V(undirGraph)$size <- communityMembership$attrDF$size;
+    V(undirGraph)$size <- communityMembership$attrDF$size*nodeSizeScaleFactor;
     
     if(!plotToScreen){
       
