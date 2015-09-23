@@ -281,7 +281,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
   
   cat(gsub(" ", "_",paste0("\n",length(groupings), " patients included across all final meta-clusters.\n")),
       append=TRUE,file=summaryFile)
+  
+  }else{
+    
+    sampleClustCommPhenoDataOrig <- NULL
   }
+  
   expName <- gsub("_"," ",experimentName)
   
   if(clinVarPlots){
@@ -1608,7 +1613,12 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
     }
     #end of if survival analysis.
     
+  }else{
+    
+    clinicalTables <- NULL
+    
   }
+  
   output <- list(sampleClustCommPhenoData=sampleClustCommPhenoDataOrig,aggregateData=aggregateData,commInfo=commInfo,finalEdgeInfo=finalEdgeInfo,CoINcIDE_computeEdgesObject=CoINcIDE_output,
                  networkStats=networkStats,sigGenes=sigGenes,GSEA_out_unique=GSEA_out_unique,survivalResults=result,
                  linearModelSummaries=linearModelsSumm,linearSurvModels=linearModels,
