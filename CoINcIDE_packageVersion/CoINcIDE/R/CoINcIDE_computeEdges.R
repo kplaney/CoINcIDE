@@ -301,7 +301,7 @@ memorySave=FALSE){
   #}
 
 #end of looping through all datasets
-         rm(list="nullCentroidList")
+         #rm(list="nullCentroidList")
 }
 
     rm(list="nullCentroidListOrig")
