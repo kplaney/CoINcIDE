@@ -1,7 +1,7 @@
 Package: CoINcIDE
 Type: Package
 Title: CoINcIDE: Clustering INtra and Inter DatasEts
-Version: 0.99.1
+Version: 0.99.2
 Date: 2015-06-28
 Author: Katie Planey
 Maintainer: Katie Planey <katie.planey@gmail.com>
