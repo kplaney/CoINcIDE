@@ -1132,7 +1132,7 @@ fractEdgesInVsOutEdge=0
 networkLeaveOutAnalysis <- function(finalNodeMatrix, origEdgeMatrix,
                                     origEdgeWeightsMatrix,finalEdgeMarix,fractLeaveOut=0.1,
                                     numIter=100,commMethod="edgeBetween",
-                                    findCommWithWeights=TRUE,clustIndexMatrix){
+                                    findCommWithWeights=TRUE,clustIndexMatrix,messageSaveDir="./"){
   
   
   #commMethod=c("edgeBetween","fastGreedy","walktrap","eigenvector","optimal","spinglass","multilevel")
@@ -1270,7 +1270,7 @@ networkLeaveOutAnalysis <- function(finalNodeMatrix, origEdgeMatrix,
     rm(list="tmp")
 
     commInfo <- findCommunities(edgeMatrix=tmp_origEdgeMatrix,edgeWeightMatrix= tmp_origEdgeWeightsMatrix ,clustIndexMatrix=clustIndexMatrix,fileTag="CoINcIDE_LeaveXOut_",
-                                            saveDir="./",minNumUniqueStudiesPerCommunity=1,experimentName="exp",
+                                            saveDir=messageSaveDir,minNumUniqueStudiesPerCommunity=1,experimentName="exp",
                                             commMethod=commMethod,
                                             makePlots=FALSE,plotToScreen=FALSE,saveGraphData=TRUE,nodeFontSize=.7,nodePlotSize=10,
                                             findCommWithWeights=findCommWithWeights, plotSimilEdgeWeight = FALSE,fractEdgesInVsOutComm=0,
