@@ -606,21 +606,19 @@ outputFile="./consensusOut.txt",minClustConsensus=.7,maxPAC=.15,studyName="test"
       clustDataset <- dataset
     }
 
- 
+
   #remember: we're clustering pItem*ncol(dataset) each time...so
   #our max K is NOT ncol(dataset), but rather pItem*ncol(dataset)
   if(floor(ncol(dataset)*pItem)<maxNumClusters){
     #hclust usually returns NA gap test if K.max = pItem*ncol(dataset) as opposed to pItem*ncol(dataset)-1
     #will also mest up maxSE calculations
-    #minus one to be on the safe side
-    K.max <- ncol(dataset)-round(pItem*ncol(dataset))-1
+    K.max <- floor(ncol(dataset)*pItem)-1
     
   }else{
     
     K.max <- maxNumClusters
     
   }
-
 
  #   if(nstart==1 && iter.max==10){
 #  library("ConsensusClusterPlus")  
