@@ -67,7 +67,7 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
     
   }
   
-  }
+
   cat(gsub(" ","_",paste0("\nStarted with  ",length(dataMatrixList), " datasets\n:")),
       append=TRUE,file=outputFile)
   textOut <- capture.output(names(dataMatrixList))
@@ -78,10 +78,18 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
     
     stop("old to new indexing for esets and data matrixlist not matching up.")
   }
+  
   origToNewIndexMap <- cbind(1:length(dataMatrixList),na.omit(match(names(dataMatrixList),names(esets))),names(esets)[na.omit(match(names(dataMatrixList),names(esets)))])
   tmp <- origToNewIndexMap[ ,c(1,3)]
+  
+  }else{
+    
+    tmp <- cbind(c(1:length(dataMatrixList)),names(dataMatrixList))
+    
+  }
   colnames(tmp) <- c("datasetNumber","datasetName")
   write.table(tmp,file=paste0(saveDir,"/",experimentName,"_datasetNameNumberKey.txt"),quote=FALSE,row.names=TRUE,col.names=FALSE)
+  
   cat(gsub(" ","_",paste0("\nAssuming we're using k-means consensus PACR to choose K\n.")),file=outputFile,append=TRUE)
   textOut <- capture.output(tmp)
   cat(textOut,sep="\n",append=TRUE,file=summaryFile)
