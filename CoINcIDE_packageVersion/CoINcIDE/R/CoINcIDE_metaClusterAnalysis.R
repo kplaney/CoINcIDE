@@ -582,8 +582,9 @@ selectMetaclustSigGenes <- function(computeMetaclustEffectSizesOutput,includeWil
     
     }
     
+    #negative: reverse ESthresh sign.
     sigMetaclustGenesES_neg[[commNames[c]]] <- rownames(computeMetaclustEffectSizesOutput$summHedgeG_ES[
-      which(computeMetaclustEffectSizesOutput$summHedgeG_ES[,commNames[c]]<=ESthresh),commNames[c],drop=FALSE])
+      which(computeMetaclustEffectSizesOutput$summHedgeG_ES[,commNames[c]] <= -ESthresh),commNames[c],drop=FALSE])
     
     if(includeWilcoxon){
       
@@ -622,6 +623,40 @@ summarizePosESMetaclustGenes <- function(selectMetaclustSigGenesOut,computeMetac
     
     ESMatrix[selectMetaclustSigGenesOut$sigMetaclustGenesES_pos[[commNames[c]]],commNames[c]] <-
       computeMetaclustEffectSizesOutput$summHedgeG_ES[selectMetaclustSigGenesOut$sigMetaclustGenesES_pos[[commNames[c]]], commNames[c]]
+    
+  }
+  
+  if(any(is.na(rowMeans(ESMatrix,na.rm=TRUE)))){
+    
+    stop("Not computing ESMatrix correctly; getting all NAs in some rows.")
+  }
+  
+  #now add # datsets per gene
+  ESMatrix <- cbind(ESMatrix,computeMetaclustEffectSizesOutput$numDatasetsPerGene[featureNames, ])
+  #now can do a heatmap of these genes by effect size.
+  return(ESMatrix)
+  
+}
+
+summarizeNegESMetaclustGenes <- function(selectMetaclustSigGenesOut,computeMetaclustEffectSizesOutput){
+  
+  featureNames <- c()
+  commNames <- colnames(computeMetaclustEffectSizesOutput$summHedgeG_ES)
+  
+  for(c in 1:length(commNames)){
+    
+    featureNames <- append(featureNames,selectMetaclustSigGenesOut$sigMetaclustGenesES_neg[[commNames[c]]])
+    
+  }
+  
+  featureNames <- unique(featureNames)
+  ESMatrix <- matrix(data=NA,ncol=length(commNames),nrow=length(featureNames),dimnames=list(featureNames,commNames))
+  
+  #all featureNames will be in this matrix, even if NA.
+  for(c in 1:length(commNames)){
+    
+    ESMatrix[selectMetaclustSigGenesOut$sigMetaclustGenesES_neg[[commNames[c]]],commNames[c]] <-
+      computeMetaclustEffectSizesOutput$summHedgeG_ES[selectMetaclustSigGenesOut$sigMetaclustGenesES_neg[[commNames[c]]], commNames[c]]
     
   }
   

@@ -173,15 +173,20 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
                                         ESthresh=ES_thresh,includeWilcoxon=FALSE)
     
     summaryESPos <- summarizePosESMetaclustGenes(selectMetaclustSigGenesOut=sigGenes,computeMetaclustEffectSizesOutput=ES_out)
+    
+    summaryESNeg <- summarizeNegESMetaclustGenes(selectMetaclustSigGenesOut=sigGenes,computeMetaclustEffectSizesOutput=ES_out)
     #write to table:
     write.table(summaryESPos,file=paste0(saveDir,"/",experimentName,"_summaryGenes_ESpos_thresh_",ES_thresh,"_",Sys.Date(),".txt"),row.names=TRUE,quote=FALSE,col.names=TRUE)
     
-    for(g in 1:length(sigGenes$sigMetaclustGenesES_pos)){
+    write.table(summaryESNeg,file=paste0(saveDir,"/",experimentName,"_summaryGenes_ESNeg_thresh_-",ES_thresh,"_",Sys.Date(),".txt"),row.names=TRUE,quote=FALSE,col.names=TRUE)
+   
+   # for(g in 1:length(sigGenes$sigMetaclustGenesES_pos)){
       #what can't remove indices??
-      tmp <- as.matrix(unlist(sigGenes$sigMetaclustGenesES_pos[[g]]))
-      write.table(tmp,file=paste0(saveDir,"/",experimentName,"_genesESpos_thresh_",ES_thresh,"_community_",g,".txt"),row.names=FALSE,col.names=FALSE,quote=FALSE)
+    #  tmp <- as.matrix(unlist(sigGenes$sigMetaclustGenesES_pos[[g]]))
+    #  write.table(tmp,file=paste0(saveDir,"/",experimentName,"_genesESpos_thresh_",ES_thresh,"_community_",g,".txt"),row.names=FALSE,col.names=FALSE,quote=FALSE)
       
-    }
+    #}
+    
     
     save(summaryESPos,file=paste0(saveDir,"/",experimentName,"_ES_genesWithThresh_ES_",ES_thresh,".RData.gzip"),compress="gzip")
     message("running GSEA")
