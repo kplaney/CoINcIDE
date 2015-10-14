@@ -29,7 +29,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
   clusterCoINcIDE_output$clustFeatureIndexList_PACR <- clusterCoINcIDE_output$clustFeatureIndexList
   
   CoINcIDE_output = readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/CoINcIDE_results_PAM50centroidCluster_pearson_edgeMethod_mean_centroidMethod2015-07-08.rds")
-  experimentName <- "pam50Centroid_pear_meanCent_MM13"
+  experimentName <- "pam50Centroid_pear_meanCent_MM15"
   eset_featureDataFieldName="gene_symbol"
   networkColors = "Set3"
   outcomesVarBinary=NA
@@ -116,7 +116,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
   
   names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
   saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
-  
+  source('~/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R')
   LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
                                     experimentName=experimentName,saveDir=saveDirPAM50)
   
@@ -231,7 +231,7 @@ clusterCoINcIDE_output <- readRDS("/home/ywrfc09/breast_analysis/PAM50_analyses/
      
      names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
      saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
-     
+     source('~/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R')
      LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
                                           experimentName=experimentName,saveDir=saveDirPAM50)
      
@@ -366,7 +366,7 @@ outputFile <- "~/CoINcIDE_messages.txt"
   
   names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
   saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
-  
+  source('~/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R')
   LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
                                        experimentName=experimentName,saveDir=saveDirPAM50)
   

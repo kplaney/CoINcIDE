@@ -1415,7 +1415,42 @@ plotLeaveXOutAnalysis <- function(leaveXOutResults,
     
     
   }
-LO_plot <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + geom_line(size=.4)+ geom_point(aes(shape=factor(comm),size=5))+
+  
+  for(i in 1:length(leaveXOutResults)){
+    
+    tmp <- data.frame(cbind(leaveXOutResults[[i]]$output_fractMisMatches,rep.int(names(leaveXOutResults)[i],times=nrow(leaveXOutResults[[i]]$output_fractMisMatches))))
+
+    
+    colnames(tmp) <- c(colnames(leaveXOutResults[[i]]$output_fractMisMatches),"fractLO")
+    
+    
+    if(i ==1){
+      
+      fullMasterDF <- tmp
+      
+    }else{
+      
+      fullMasterDF <- rbind(fullMasterDF,tmp)
+      
+    }
+ 
+  }
+  
+
+  #melt: want one column for community id
+  #NEED reshape 2 library
+  #number of levels are different bc different communities: may get a warning
+  #http://stackoverflow.com/questions/25688897/reshape2-melt-warning-messages
+  fullMasterDF <- melt(fullMasterDF,id.vars=c("fractLO"))
+  colnames(fullMasterDF)[2] <- "comm"
+  colnames(fullMasterDF)[3] <- "fractMisMatch"
+  #make "Total" in caps
+  levels(fullMasterDF[,2])[which( levels(fullMasterDF[,2])=="total")] <- "Total"
+  #remove NAs - means all members of that meta-cluster were removed
+  fullMasterDF <- fullMasterDF[-which(is.na(fullMasterDF[,3])), ]
+  fullMasterDF[,3] <- round(as.numeric(fullMasterDF[,3]),digits=2)
+  
+LO_plot_average <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + geom_line(size=.4)+ geom_point(aes(shape=factor(comm),size=5))+
     labs(title = "",y="Mismatch Fraction",x="Fraction Left Out")+
     theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
     theme(axis.text.x = element_text(colour = "black",size=18),axis.title.x = element_text(colour = "black",size=20,vjust=0),
@@ -1428,9 +1463,34 @@ LO_plot <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + g
   options(bitmapType="cairo")
   png(filename=paste0(saveDir,"/LO_plot_",experimentName,"_",Sys.Date(),".png"),width=1500,height=1600,res=200);
   
-  plot(LO_plot);
+  plot(LO_plot_average);
   
   dev.off();
+
+  #quartile function taken from here: http://stackoverflow.com/questions/17319487/median-and-quartile-on-violin-plots-in-ggplot2
+  median.quartile <- function(x){
+    out <- quantile(x, probs = c(0.25,0.5,0.75))
+    names(out) <- c("ymin","y","ymax")
+    return(out) 
+  }
+  
+  
+  LO_plot_violin <- ggplot(data =  fullMasterDF ,aes(x=fractLO,y=fractMisMatch))  +
+    geom_violin()+facet_grid(comm~.)+stat_summary(fun.y=median.quartile,geom='point')+
+    labs(title = "",y="Mismatch Fraction",x="Fraction Left Out")+
+   # theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+   theme(axis.text.x = element_text(colour = "black",size=16),axis.title.x = element_text(colour = "black",size=20,vjust=0),
+          axis.text.y = element_text(colour = "black",size=16),axis.title.y = element_text(colour = "black",size=20,vjust=1))
+
+  
+  options(bitmapType="cairo")
+  png(filename=paste0(saveDir,"/LO_plot_violin_",experimentName,"_",Sys.Date(),".png"),width=1500,height=1600,res=200);
+  
+  plot(LO_plot_violin);
+  
+  dev.off();
+  
+
 #  dodge <- position_dodge(width=0.9)
 #  limits <- aes(ymax = masterDF$fractMisMatch + masterDF$sd_fractMM, ymin=masterDF$fractMisMatch - masterDF$sd_fractMM)
   
@@ -1446,7 +1506,7 @@ LO_plot <- ggplot(data =masterDF,aes(x=fractLO,y=fractMisMatch,group=comm))  + g
 #     labs(shape="Fraction Left Out")+ 
 #     geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25)
   
-  return(list(masterDF=masterDF,LO_plot=LO_plot))
+  return(list(masterDF=masterDF,fullMasterDF=fullMasterDF,LO_plot_average=LO_plot_average,LO_plot_violin=LO_plot_violin))
 }
 
 #edge output is edgeDF in findCommunities

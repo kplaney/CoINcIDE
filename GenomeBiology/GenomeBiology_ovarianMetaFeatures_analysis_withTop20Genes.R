@@ -95,8 +95,9 @@ for(f in 1:length( fractLeaveOutVector)){
 
 names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
 saveDir <- paste0(saveDir,"/",experimentName,"_",Sys.Date())
+#date was 2015-08-16
 saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
-
+source('~/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R')
 LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
                                      experimentName=experimentName,saveDir=saveDir)
 
@@ -175,8 +176,68 @@ globalFDR_results <- globalFDR(CoINcIDE_outputList=CoINcIDE_nullOutput$CoINcIDE_
 
 saveRDS(globalFDR_results,file=paste0(saveDir,"/CoINcIDE_globalFDRresults_",experimentName,"_",edgeMethod,"edgeMethod_",centroidMethod,"_centroidMethod_minTrueSimil",minTrueSimilThresh,"_",Sys.Date(),".rds"),compress=TRUE)
 
+####Julia's feedback: remove TCGA, only keep serous samples.
+table(ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData$histological_type,ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData$studyNum)
+#we see that the studies below are 100% serous:
+#NO #23
+#serousDataset <- c(1,2,3,5,6,12,14,15,20,21,22,23)
+#so what cluster numbers does this translate to?
+# serousClusters <- c()
+# 
+# for(s in 1:length(serousDataset)){
+#   
+# tmp <- ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData$globalClustNum[
+#   which(ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData$studyNum==serousDataset[s])]
+# serousClusters  <- append(tmp,serousClusters )
+# }
+#serousClusters <- unique(serousClusters)
 
-#also try with 0.7 (other global max)
+TCGA_clust <- ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData$globalClustNum[
+     which(ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData$studyNum==23)]
+
+TCGA_clust <- unique(TCGA_clust)
+#subset:
+tmp_CoINcIDE_output=CoINcIDE_output
+#set to NA
+tmp_CoINcIDE_output$pvalueMatrix[TCGA_clust,] <- NA
+tmp_CoINcIDE_output$pvalueMatrix[,TCGA_clust] <- NA
+noTCGA_ovarian_2014genes_pearson_meanCentroid_analysis <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=tmp_CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
+                                                                               meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .5, maxTrueSimilThresh = Inf,minFractNN=.8,
+                                                                               clustSizeThresh = 0,saveDir =saveDir,experimentName = experimentName,networkColors = networkColors,
+                                                                               commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName=eset_featureDataFieldName,
+                                                                               survivalAnalysis=TRUE,outcomesVarBinary=outcomesVarBinary,outcomesVarCont = outcomesVarCont,
+                                                                               CutoffPointYears=5, eset_uniquePatientID=eset_uniquePatientID, fisherTestVariables = fisherTestVariables,
+                                                                               ovarian=ovarian,fisherTestVariableLegendNames=fisherTestVariableLegendNames,fisherTestVariableTitleNames=fisherTestVariableTitleNames,
+                                                                               GSEAanalysis=FALSE,clinVarPlots=TRUE, fractFeatIntersectThresh=.6,numFeatIntersectThresh =0,clustSizeFractThresh =0,
+                                                                               findCommWithWeights=TRUE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,fractEdgesInVsOutEdge=0, fractEdgesInVsOutComm=0,minNumEdgesForCluster=1)
+
+
+
+#how did meta-cluster status of serous clusters change?
+noTCGA_membership <- noTCGA_ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData[,c("sampleName","globalClustNum","community","studyNum")]
+noTCGA_membership <- noTCGA_membership[-which(noTCGA_membership$community==4),]
+noTCGA_membership <- noTCGA_membership[-which(noTCGA_membership$community==5),]
+noTCGA_membership <- noTCGA_membership[-which(noTCGA_membership$community==6),]
+noTCGA_membership <- noTCGA_membership[-which(is.na(noTCGA_membership$community)),]
+
+yesTCGA_membership <- ovarian_2014genes_pearson_meanCentroid_analysis$sampleClustCommPhenoData[,c("sampleName","globalClustNum","community","studyNum")]
+yesTCGA_membership <- yesTCGA_membership[-which(yesTCGA_membership$community==4),]
+yesTCGA_membership <- yesTCGA_membership[-which(yesTCGA_membership$community==5),]
+yesTCGA_membership <- yesTCGA_membership[-which(yesTCGA_membership$community==6),]
+yesTCGA_membership <- yesTCGA_membership[-which(is.na(yesTCGA_membership$community)),]
+yesTCGA_membership <- yesTCGA_membership[-which(yesTCGA_membership$studyNum==23),]
+
+if(any(is.na(match(noTCGA_membership$sampleName,yesTCGA_membership$sampleName)))){
+  
+  stop("Error - some clusters are not in both datasets")
+}
+
+noTCGA_membership <- noTCGA_membership[match(noTCGA_membership$sampleName,yesTCGA_membership$sampleName), ]
+all(noTCGA_membership$sampleName==yesTCGA_membership$sampleName)
+#yay - all the same!
+which(noTCGA_membership$community!=yesTCGA_membership$community)
+
+#also try full set with 0.7 (other global max)
 experimentName <- "2014F_pear_meanCent_MM7"
 ovarian_2014genes_pearson_meanCentroid_analysis7 <- metaFeaturesAnalysisWrapper(metaFeatures=metaFeatures,esets=esets,CoINcIDE_output=CoINcIDE_output , clusterCoINcIDE_output=clusterCoINcIDE_output,
                                                                                meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .01, minTrueSimilThresh = .7, maxTrueSimilThresh = Inf,minFractNN=.8,
@@ -228,7 +289,7 @@ names(leaveXOutResults) <- as.character(  fractLeaveOutVector)
 
 saveDir <- paste0(saveDir,"/",experimentName,"_",Sys.Date())
 saveRDS(leaveXOutResults,file=paste0(saveDir,"/CoINcIDE_LeaveXOutAnalysis_",experimentName,"_",Sys.Date(),".rds"),compress=TRUE)
-
+source('~/CoINcIDE/coincide/CoINcIDE_packageVersion/CoINcIDE/R/CoINcIDE_metaClusterAnalysis.R')
 LO_analysis <- plotLeaveXOutAnalysis(leaveXOutResults,
                                      experimentName=experimentName,saveDir=saveDir)
 

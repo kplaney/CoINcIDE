@@ -600,9 +600,11 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
       coxfit=coxph(OverallSurvival~groupings, data=Survival)
       #message("coxfit summary for overall survival.")
       sumCoxfit_overall <- summary(coxfit)
-      result$cox_overall_logTestPvalue <- sumCoxfit_overall$logtest["pvalue"]
+      result$cox_overall_likelihoodPvalue <- sumCoxfit_overall$logtest["pvalue"]
       result$cox_overall_nevent <- sumCoxfit_overall$nevent
-      result$cox_overall_sctestPvalue <- sumCoxfit_overall$sctest["pvalue"]
+      #see page 7 - helps clarify that $logtest is NOT the logrank test - sctest is:
+      #https://cran.r-project.org/web/packages/HSAUR/vignettes/Ch_survival_analysis.pdf
+      result$cox_overall_logRankTestPvalue <- sumCoxfit_overall$sctest["pvalue"]
       result$cox_overall_rsq <- sumCoxfit_overall$rsq["rsq"]
       result$cox_overall_waldPvalue <- sumCoxfit_overall$waldtest["pvalue"]
       #plot(cox.zph(coxfit))
@@ -663,13 +665,13 @@ metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output 
         
       }
       coxfit=coxph(OverallSurvivalCutoff~groupings, data= SurvivalCutoff)
-      message("coxfit summary for survival cutoff at ",CutoffPointYears,"years:")
+     # message("coxfit summary for survival cutoff at ",CutoffPointYears,"years:")
       
       #plot(cox.zph(coxfit))
       sumCoxfit_cut  <- summary(coxfit)
-      result$cox_cut_logTestPvalue <- sumCoxfit_cut$logtest["pvalue"]
+      result$cox_cut_likelihoodPvalue <- sumCoxfit_cut$logtest["pvalue"]
       result$cox_cut_nevent <- sumCoxfit_cut$nevent
-      result$cox_cut_sctestPvalue <- sumCoxfit_cut$sctest["pvalue"]
+      result$cox_cut_logRankTestPvalue <- sumCoxfit_cut$sctest["pvalue"]
       result$cox_cut_rsq <- sumCoxfit_cut$rsq["rsq"]
       result$cox_cut_waldPvalue <- sumCoxfit_cut$waldtest["pvalue"]
       
