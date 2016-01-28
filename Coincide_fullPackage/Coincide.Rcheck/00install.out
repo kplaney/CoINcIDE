@@ -1,0 +1,19 @@
+* installing *source* package ‘Coincide’ ...
+** R
+** preparing package for lazy loading
+Warning: replacing previous import by ‘matrixStats::anyMissing’ when loading ‘Coincide’
+Warning: replacing previous import by ‘matrixStats::rowMedians’ when loading ‘Coincide’
+** help
+Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:6: unknown macro '\packageTitle'
+Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:9: unknown macro '\packageDescription'
+Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:14: unknown macro '\packageDESCRIPTION'
+Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:15: unknown macro '\packageIndices'
+Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:20: unknown macro '\packageAuthor'
+Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:22: unknown macro '\packageMaintainer'
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+Warning: replacing previous import by ‘matrixStats::anyMissing’ when loading ‘Coincide’
+Warning: replacing previous import by ‘matrixStats::rowMedians’ when loading ‘Coincide’
+* DONE (Coincide)

@@ -1,0 +1,12 @@
+exportPattern("^[[:alpha:]]+")
+export(createExpressionSetList,
+       procExprSet, procExprSetList, mergeDatasetList, collapseDupProbes,filterAndImputeSamples,
+       filterGenesByVariance,removeDupPatients)
+
+import(Biobase, BiocStyle, RColorBrewer, cluster, fdrtool, grid, igraph, proxy, rmeta, s4vd, sva)
+importFrom(ggplot2, ggplot, geom_histogram, geom_bar, facet_grid, aes,labs)
+importFrom(impute, impute.knn)
+importFrom(matrixStats, anyMissing, rowMedians)
+importFrom(plyr, count)
+importFrom(limma, strsplit2)
+#importFrom(reshape2, melt)

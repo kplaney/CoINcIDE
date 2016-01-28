@@ -1,0 +1,58 @@
+CDF_CoINcIDE            TEST
+Coincide-package        \packageTitleCoincide
+ConsensusClusterPlus_CoINcIDE
+                        TEST
+GSEA                    TEST
+addClinicalVarToNodeAttributes
+                        TEST
+advancedNetworkPlots    TEST
+assignCentroidSubtype   TEST
+assignFinalEdges        TEST
+batchNormalization      TEST
+binarizeMetaclustStudyStatus
+                        TEST
+clustMatrixListWrapper
+                        TEST
+collapseDupProbes       Collapse/handle duplicated probes (genes) in a
+                        dataset
+computeAdjMatrices      TEST
+computeAdjMatricesNullMatrixList
+                        TEST
+computeMetaclustEffectSizes
+                        TEST
+createExpressionSetList
+                        TEST
+createNullDataMatrixList
+                        TEST
+createPhenoMasterTableFromMatrixList
+                        TEST
+createS4exprSet         TEST
+createTissueSimDatasets
+                        TEST
+exprSetListToMatrixList
+                        TEST
+filterAndImputeSamples
+                        Filter and Impute Samples
+filterGenesByVariance   Filter genes by variance
+findCommunities         TEST
+globalFDR               TEST
+global_FDR              TEST
+meanMetricDensityPlot   TEST
+mergeDatasetList        TEST
+merge_datasetList       TEST
+procExprSet             Post-process a normalized assayData in an
+                        ExpressionSet object
+procExprSetList         Process a list of S4 expressionSet objects.
+removeDupPatients       Remove duplicated patient samples (samples from
+                        the same patient/column ID)
+returnSampleMemberMatrix
+                        TEST
+selectFeaturesMetaVariance
+                        TEST
+selectFeaturesMetaVariance_wrapper
+                        TEST
+selectMetaclustSigGenes
+                        TEST
+simulateClusterData     TEST
+summarizePosESMetaclustGenes
+                        TEST

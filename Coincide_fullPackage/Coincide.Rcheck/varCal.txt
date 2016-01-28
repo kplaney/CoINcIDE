@@ -1,0 +1,3 @@
+calculating variance across all genes for plotting 
+finished calculating variance 
+found  0 genes with NA variance. Removing them. 

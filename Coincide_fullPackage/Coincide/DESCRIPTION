@@ -1,0 +1,12 @@
+Package: Coincide
+Type: Package
+Title: CoINcIDE: Clustering INtra and Inter DatasEts
+Version: 0.99.2
+Date: 2015-06-28
+Author: Katie Planey
+Maintainer: Katie Planey <katie.planey@gmail.com>
+Depends: R (>= 3.0.0), ggplot2, impute, Biobase, BiocStyle, plyr, fdrtool, rmeta, limma, s4vd, sva, matrixStats, igraph, RColorBrewer, proxy, grid, cluster
+Suggests: testthat, curatedBreastData
+biocViews: GeneExpression, Clustering
+Description: Meta-cluster method to establish reproducible clusters across datasets.
+License: GPL (>= 2)

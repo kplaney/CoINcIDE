@@ -1,0 +1,7 @@
+there were  22898 genes that passed your max 0.01 NA filter out of a total of  22898 genes 
+there were  155 patients that passed your max 0.005 NA filter out of a total of  155 patients 
+there are  3 genes with at least one NA value 
+the average absolute error for imputation for study  study  is  0.1136878  with an average absolute difference of log-fold
+          change expression of  0.3882268 
+ 
+getting the re-ordered and trimmed down class labels.finished imputing study  study 

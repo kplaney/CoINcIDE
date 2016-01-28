@@ -1,0 +1,14 @@
+there were  22898 genes that passed your max 0.01 NA filter out of a total of  22898 genes 
+there were  155 patients that passed your max 0.005 NA filter out of a total of  155 patients 
+there are  3 genes with at least one NA value 
+error rate not specified to be calculated or 
+      there are no missing genes in study  study  so imputation error rate not calculated. 
+getting the re-ordered and trimmed down class labels.finished imputing study  study 
+
+Starting with  155 patients. 
+
+found no multiple samples from the same patient(s) 
+
+calculating variance across all genes for plotting 
+finished calculating variance 
+found  0 genes with NA variance. Removing them. 

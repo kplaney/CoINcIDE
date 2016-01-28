@@ -1,0 +1,671 @@
+* using log directory ‘/Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide.Rcheck’
+* using R version 3.1.3 (2015-03-09)
+* using platform: x86_64-apple-darwin10.8.0 (64-bit)
+* using session charset: UTF-8
+* checking for file ‘Coincide/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘Coincide’ version ‘0.99.2’
+* checking package namespace information ... OK
+* checking package dependencies ... NOTE
+Depends: includes the non-default packages:
+  ‘ggplot2’ ‘impute’ ‘Biobase’ ‘BiocStyle’ ‘plyr’ ‘fdrtool’ ‘rmeta’
+  ‘limma’ ‘s4vd’ ‘sva’ ‘matrixStats’ ‘igraph’ ‘RColorBrewer’ ‘proxy’
+  ‘grid’ ‘cluster’
+Adding so many packages to the search path is excessive and importing
+selectively is preferable.
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... WARNING
+Found the following executable files:
+  .git/objects/03/18ab592f2e43cfb040168c1d33ecd6b1709c08
+  .git/objects/04/3d316a8729323e322180481a433b5845dc8df8
+  .git/objects/04/b46d1bfb141a7187117f3267eeca8762c366d4
+  .git/objects/09/6023a2a39c7911d1c6043aac80dba1c4b89327
+  .git/objects/0a/b3740e7dd9fb5d63a590224456255a71377acb
+  .git/objects/0e/81ec8b75a7ca7e96806aaa8803dc9f661b4210
+  .git/objects/10/f79a96f1fbd18787d580ab38b29b7a6a92e32e
+  .git/objects/13/2045eb06ce30916d31f3e052410a0e9421e623
+  .git/objects/13/c05381e4b2664a6024f002869f347b89d410b7
+  .git/objects/14/89185e87437580413c93e685949487f3d3df2a
+  .git/objects/1a/967200b7984c590568466133859521e466e886
+  .git/objects/1e/279edc8b531cadf7529d710929ee2f9bf7a391
+  .git/objects/20/c4e52b89536f832ab1fe3a15f5a064e3251ab1
+  .git/objects/21/a4da087e1c026c953a49de88caea1247cd1f1b
+  .git/objects/23/3f4028f4a2076598cf4a9870bcf93598636a40
+  .git/objects/25/33e979cd495d4eaeffdcd0b4e80c70aa1ef9c5
+  .git/objects/2a/6dd85ddf1dee4616d40c62c1a22c4db12fb79e
+  .git/objects/3d/a0b12eb9e353a246b84295e731cf68a043d298
+  .git/objects/3f/12f4953d34e5e6871e0ed06b5404eec39a25c7
+  .git/objects/40/eebd303e33e8730bdf3618e1c539915b0dd113
+  .git/objects/42/489438173e4a2c856a00e106d5122d490d151a
+  .git/objects/43/6878ac3238cc7737276e533284e897d03fc30f
+  .git/objects/47/ce7457ccb33ceb68fd258d7a3a2e242f2b3ab4
+  .git/objects/4c/a83401b9e6b2f85cf9136c6d38e2cf512137c1
+  .git/objects/51/8443ca1297dbea97b45a6fd11f616bc0da3f8d
+  .git/objects/51/e5cf87a4979dd167ccd75c633813f378bcd93e
+  .git/objects/52/5e0703baa48c0cd98d94f7ed832a0bd67ff0b0
+  .git/objects/5c/d6e1a54a2fad035c5caad0a8af49e0dfb55930
+  .git/objects/67/6bd34b8a5a13f4ff7497a3b7fd5529386b02f1
+  .git/objects/68/d7086a23fd307992eb5a93106cca3438d76906
+  .git/objects/6c/68236610838bab3a64ff7d4da154079486b7cc
+  .git/objects/72/6ec051f4ef5ee40f009701f65b2cbce662f7a9
+  .git/objects/73/42b7a3e46496d06dab7bc146becd976e9ed0ed
+  .git/objects/7e/80c217ef448a02351a290dc7a15f66777a7df5
+  .git/objects/8a/90202c797c8684f2cd296f90f259b775ff99cc
+  .git/objects/9d/3f4b851366fd27f8d4a916913abc7e8a91f054
+  .git/objects/9e/fb51b8a1909bd877dd72ae8a1c4625f8307e36
+  .git/objects/a0/bf0a43c89d7978c4aebe47cc092c8830094e27
+  .git/objects/a1/22270831e9b7448457c55b3f7406a2a62e60b1
+  .git/objects/ac/45630436ebf012c313142945bdf021e2409c96
+  .git/objects/ae/dcb3f6d23ebc12eb15bd0f59f736b8c3f22f28
+  .git/objects/b1/57ac706d8a7a7707e347c16e9634bdb3bce8e5
+  .git/objects/b3/d504773d50094f6be2ec9ccdf389999cc24d04
+  .git/objects/b4/63ea2013ef8e0b72616138f247f96f9bd2a959
+  .git/objects/b9/c2e440ab48e835c686b1f16f73f6aa5fb4af29
+  .git/objects/b9/fb41aed6ecdabe05927a8b192c92a7c824a378
+  .git/objects/be/104a80eb8f3620925268d56acc47721c45e485
+  .git/objects/be/415179a2c7925e8dbc83984230eaf4035e9e10
+  .git/objects/c1/4209f8ddfaee375d917cb58a3356f61c3836d9
+  .git/objects/c4/ae770fb747f2f7e43fc96aa0503a1da2a7f2cc
+  .git/objects/c5/3d54d4f2674d5f5a81f22a30b98dfbd4ee23c3
+  .git/objects/c8/fbe4d68a6d9fce6d858219dd82be80d963d0ec
+  .git/objects/ca/7d14486812702ba5221132e6ba50033617d28f
+  .git/objects/cb/65540daae3504d0530a20b628fef3534f97ddc
+  .git/objects/d0/621152e31be49005e4f87f68ad8a04c3883594
+  .git/objects/d0/e7c03223ed6364ae1ae1780568290acfdb2853
+  .git/objects/d5/cce76e40af6e2eb431f439692ed099483cfe42
+  .git/objects/e0/a9eff91cb09477db8a42289d26b01a34054f6d
+  .git/objects/e2/ef3423047be6d68752a3b322342eef6089bb97
+  .git/objects/e4/240362d25a2d0da2a8192f6e7dc8a48fc00825
+  .git/objects/e6/9de29bb2d1d6434b8b29ae775ad8c2e48c5391
+  .git/objects/e7/b5ffdaef1aa373ce2c9c942e7e8df88a02147a
+  .git/objects/e7/bd1d6b7ff5b0108f8b2580f09d152c90add9c0
+  .git/objects/e8/3ede8eeeefc1f8c58c547c7e580c0588381ac8
+  .git/objects/e9/82ad92d1ad7a3aba6a5ad3d3b0e791825f6218
+  .git/objects/ed/4f4be7d2b5a5a84df37b02456a521d6877452f
+  .git/objects/f2/02fef117d79c24867b564609e624d1f22de64b
+  .git/objects/f7/e39dce5cf63ccb454e1d9561b9a8dd319583f7
+  .git/objects/fc/d69337d5367779039842d26895befa86f824d5
+  .git/objects/fc/eb8bf917c814bd491722569a7405878578ccb4
+Source packages should not contain undeclared executable files.
+See section ‘Package structure’ in the ‘Writing R Extensions’ manual.
+* checking for hidden files and directories ... NOTE
+Found the following hidden files and directories:
+  .DS_Store
+  .gitignore
+  .Rproj.user
+  .git
+These were most likely included in error. See section ‘Package
+structure’ in the ‘Writing R Extensions’ manual.
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘Coincide’ can be installed ... WARNING
+Found the following significant warnings:
+  Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:6: unknown macro '\packageTitle'
+  Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:9: unknown macro '\packageDescription'
+  Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:14: unknown macro '\packageDESCRIPTION'
+  Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:15: unknown macro '\packageIndices'
+  Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:20: unknown macro '\packageAuthor'
+  Warning: /Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide/man/CoINcIDE-package.Rd:22: unknown macro '\packageMaintainer'
+  Warning: replacing previous import by ‘matrixStats::anyMissing’ when loading ‘Coincide’
+  Warning: replacing previous import by ‘matrixStats::rowMedians’ when loading ‘Coincide’
+See ‘/Users/catherineplanay/Dropbox/github/Coincide/Coincide_fullPackage/Coincide.Rcheck/00install.out’ for details.
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking R files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking loading without being on the library search path ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+computeMetaclustEffectSizes : fishersMethod: warning in pchisq(-2 *
+  sum(log(x)), df = 2 * length(x), lower = FALSE): partial argument
+  match of 'lower' to 'lower.tail'
+plotConsensusHeatmap_CoINcIDE: warning in heatmap(pc, Colv =
+  as.dendrogram(hc), Rowv = NA, symm = FALSE, scale = "none", col =
+  tmyPal, na.rm = TRUE, labRow = F, labCol = F, mar = c(5, 5), main =
+  paste("consensus matrix k=", k, sep = ""), ColSideCol =
+  colorList[[1]]): partial argument match of 'mar' to 'margins'
+plotConsensusHeatmap_CoINcIDE: warning in heatmap(pc, Colv =
+  as.dendrogram(hc), Rowv = NA, symm = FALSE, scale = "none", col =
+  tmyPal, na.rm = TRUE, labRow = F, labCol = F, mar = c(5, 5), main =
+  paste("consensus matrix k=", k, sep = ""), ColSideCol =
+  colorList[[1]]): partial argument match of 'ColSideCol' to
+  'ColSideColors'
+BatchCorrection: no visible global function definition for ‘rowVars’
+GSEA: no visible binding for global variable
+  ‘GSEA_base_MSigDB_lists_merged’
+GSEA_DAVID: no visible binding for global variable ‘DAVIDWebService’
+GSEA_DAVID: no visible global function definition for ‘connect’
+GSEA_DAVID: no visible global function definition for ‘getIdTypes’
+GSEA_DAVID: no visible global function definition for ‘addList’
+GSEA_DAVID: no visible global function definition for
+  ‘getClusterReport’
+GSEA_DAVID: no visible global function definition for
+  ‘getClusterReportFile’
+GSEA_DAVID: no visible global function definition for
+  ‘getFunctionalAnnotationChart’
+GSEA_DAVID: no visible global function definition for
+  ‘getFunctionalAnnotationChartFile’
+GSEA_DAVID: no visible global function definition for ‘categories’
+GSEA_posMetaclustGenes: possible error in GSEA(testGeneVector =
+  selectMetaclustSigGenesOut[[selectMetaclustSigGenesOutIndexName]][[commNames[c]]],
+  method = c("hypergeometric"), genomeSize = genomeSize, refGeneListDir
+  = refGeneListDir, refGeneLists = refGeneLists): unused argument
+  (genomeSize = genomeSize)
+addClinicalVarToNodeAttributes: no visible global function definition
+  for ‘join’
+assignCentroidSubtype: no visible binding for global variable
+  ‘centroidMatrix’
+computeAdjMatrices: no visible binding for global variable
+  ‘computeClusterPairAssignFract_dcor’
+computeAdjMatrices: no visible binding for global variable ‘saveDir’
+computeFeatureRanks : <anonymous>: no visible global function
+  definition for ‘rowSds’
+computeFeatureRanks : <anonymous>: no visible global function
+  definition for ‘rowMads’
+consensusClusterMatrix: possible error in as.dist((1 - cor(dataset, use
+  = corUse, method = distMethod)), method = algorithm): unused argument
+  (method = algorithm)
+createLungMatrixList: no visible binding for global variable ‘lung200’
+createPhenoMasterTableFromMatrixList: no visible global function
+  definition for ‘join’
+filterGenesByVariance: no visible global function definition for
+  ‘ggsave’
+mapGeneIDs: no visible global function definition for ‘useMart’
+mapGeneIDs: no visible global function definition for ‘getBM’
+meanMetricDensityPlot: no visible global function definition for
+  ‘geom_density’
+meanMetricDensityPlot: no visible global function definition for
+  ‘theme’
+meanMetricDensityPlot: no visible global function definition for
+  ‘element_rect’
+meanMetricDensityPlot: no visible global function definition for
+  ‘element_blank’
+meanMetricDensityPlot: no visible global function definition for ‘ylim’
+merged_communitySubtypeBreakdown_plots: no visible binding for global
+  variable ‘community’
+merged_communitySubtypeBreakdown_plots: no visible binding for global
+  variable ‘subtype’
+merged_communitySubtypeBreakdown_plots: no visible global function
+  definition for ‘scale_fill_manual’
+merged_communitySubtypeBreakdown_plots: no visible global function
+  definition for ‘element_blank’
+merged_communitySubtypeBreakdown_plots: no visible global function
+  definition for ‘theme_bw’
+merged_communitySubtypeBreakdown_plots: no visible global function
+  definition for ‘theme’
+merged_communitySubtypeBreakdown_plots: no visible global function
+  definition for ‘element_text’
+merged_communitySubtypeBreakdown_plots: no visible global function
+  definition for ‘element_rect’
+merged_communitySubtypeBreakdown_plots: no visible global function
+  definition for ‘element_line’
+networkVaryMinSimilAnalysis: no visible binding for global variable
+  ‘minSimil’
+networkVaryMinSimilAnalysis: no visible binding for global variable
+  ‘fractMisMatch’
+networkVaryMinSimilAnalysis: no visible binding for global variable
+  ‘comm’
+networkVaryMinSimilAnalysis: no visible global function definition for
+  ‘geom_line’
+networkVaryMinSimilAnalysis: no visible global function definition for
+  ‘geom_point’
+networkVaryMinSimilAnalysis: no visible global function definition for
+  ‘theme’
+networkVaryMinSimilAnalysis: no visible global function definition for
+  ‘element_rect’
+networkVaryMinSimilAnalysis: no visible global function definition for
+  ‘element_blank’
+networkVaryMinSimilAnalysis: no visible global function definition for
+  ‘element_text’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘community_membership’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘biclustMasterList’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘scale_fill_manual’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘theme’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘element_text’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘element_blank’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘studyNum’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘subtype_fract’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘subtype_dfMaster’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘community’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘theme_bw’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘element_rect’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘element_line’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘subtypeBreakdowns’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘phenoVarBreakdownsphenoVarBreakdowns’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘fract’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘subtype’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘guides’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘guide_legend’
+phenoVarCommunityBreakdownPlots: no visible global function definition
+  for ‘coord_polar’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘phenoVar_plot_stacked’
+phenoVarCommunityBreakdownPlots: no visible binding for global variable
+  ‘phenoVar_plot’
+plotConsensusHeatmap_CoINcIDE: no visible binding for global variable
+  ‘plotSaveDir’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘colSds’
+plotLeaveXOutAnalysis: no visible global function definition for ‘melt’
+plotLeaveXOutAnalysis: no visible binding for global variable ‘fractLO’
+plotLeaveXOutAnalysis: no visible binding for global variable
+  ‘fractMisMatch’
+plotLeaveXOutAnalysis: no visible binding for global variable ‘comm’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘geom_line’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘geom_point’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘theme’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘element_rect’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘element_blank’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘element_text’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘geom_violin’
+plotLeaveXOutAnalysis: no visible global function definition for
+  ‘stat_summary’
+plotMetaFeatureES: no visible global function definition for
+  ‘heatmap.2’
+plotMetaFeatureRank: no visible global function definition for
+  ‘heatmap.2’
+plot_communitiesWithSubtypes: no visible binding for global variable
+  ‘experimentName’
+plot_subtypes_network: no visible global function definition for
+  ‘new_communitySubtypeBreakdown_plots’
+plot_subtypes_network: no visible global function definition for
+  ‘advanced_networkPlots’
+runTissueClusterSimROC : <anonymous>: no visible global function
+  definition for ‘colSds’
+runTissueClusterSimROC: no visible binding for global variable
+  ‘sd_noise’
+runTissueClusterSimROC: no visible binding for global variable ‘TPR’
+runTissueClusterSimROC: no visible global function definition for
+  ‘geom_line’
+runTissueClusterSimROC: no visible global function definition for
+  ‘theme’
+runTissueClusterSimROC: no visible global function definition for
+  ‘element_rect’
+runTissueClusterSimROC: no visible global function definition for
+  ‘element_blank’
+runTissueClusterSimROC: no visible global function definition for
+  ‘element_text’
+runTissueClusterSimROC: no visible global function definition for ‘rel’
+* checking Rd files ... WARNING
+prepare_Rd: CDF_CoINcIDE.Rd:7-9: Dropping empty section \description
+prepare_Rd: CDF_CoINcIDE.Rd:31-33: Dropping empty section \details
+prepare_Rd: CDF_CoINcIDE.Rd:34-40: Dropping empty section \value
+prepare_Rd: CDF_CoINcIDE.Rd:47-49: Dropping empty section \note
+prepare_Rd: CDF_CoINcIDE.Rd:44-46: Dropping empty section \author
+prepare_Rd: CDF_CoINcIDE.Rd:41-43: Dropping empty section \references
+prepare_Rd: CDF_CoINcIDE.Rd:53-55: Dropping empty section \seealso
+checkRd: (5) CDF_CoINcIDE.Rd:0-66: Must have a \description
+prepare_Rd: CoINcIDE-package.Rd:6: unknown macro '\packageTitle'
+prepare_Rd: CoINcIDE-package.Rd:9: unknown macro '\packageDescription'
+prepare_Rd: CoINcIDE-package.Rd:14: unknown macro '\packageDESCRIPTION'
+prepare_Rd: CoINcIDE-package.Rd:15: unknown macro '\packageIndices'
+prepare_Rd: CoINcIDE-package.Rd:20: unknown macro '\packageAuthor'
+prepare_Rd: CoINcIDE-package.Rd:22: unknown macro '\packageMaintainer'
+prepare_Rd: ConsensusClusterPlus_CoINcIDE.Rd:7-9: Dropping empty section \description
+prepare_Rd: ConsensusClusterPlus_CoINcIDE.Rd:79-81: Dropping empty section \details
+prepare_Rd: ConsensusClusterPlus_CoINcIDE.Rd:82-88: Dropping empty section \value
+prepare_Rd: ConsensusClusterPlus_CoINcIDE.Rd:95-97: Dropping empty section \note
+prepare_Rd: ConsensusClusterPlus_CoINcIDE.Rd:92-94: Dropping empty section \author
+prepare_Rd: ConsensusClusterPlus_CoINcIDE.Rd:89-91: Dropping empty section \references
+prepare_Rd: ConsensusClusterPlus_CoINcIDE.Rd:101-103: Dropping empty section \seealso
+checkRd: (5) ConsensusClusterPlus_CoINcIDE.Rd:0-114: Must have a \description
+prepare_Rd: GSEA.Rd:7-9: Dropping empty section \description
+prepare_Rd: GSEA.Rd:28-30: Dropping empty section \details
+prepare_Rd: GSEA.Rd:31-37: Dropping empty section \value
+prepare_Rd: GSEA.Rd:44-46: Dropping empty section \note
+prepare_Rd: GSEA.Rd:41-43: Dropping empty section \author
+prepare_Rd: GSEA.Rd:38-40: Dropping empty section \references
+prepare_Rd: GSEA.Rd:50-52: Dropping empty section \seealso
+checkRd: (5) GSEA.Rd:0-63: Must have a \description
+prepare_Rd: addClinicalVarToNodeAttributes.Rd:7-9: Dropping empty section \description
+prepare_Rd: addClinicalVarToNodeAttributes.Rd:22-24: Dropping empty section \details
+prepare_Rd: addClinicalVarToNodeAttributes.Rd:25-31: Dropping empty section \value
+prepare_Rd: addClinicalVarToNodeAttributes.Rd:38-40: Dropping empty section \note
+prepare_Rd: addClinicalVarToNodeAttributes.Rd:35-37: Dropping empty section \author
+prepare_Rd: addClinicalVarToNodeAttributes.Rd:32-34: Dropping empty section \references
+prepare_Rd: addClinicalVarToNodeAttributes.Rd:44-46: Dropping empty section \seealso
+checkRd: (5) addClinicalVarToNodeAttributes.Rd:0-58: Must have a \description
+prepare_Rd: advancedNetworkPlots.Rd:7-9: Dropping empty section \description
+prepare_Rd: advancedNetworkPlots.Rd:54-56: Dropping empty section \details
+prepare_Rd: advancedNetworkPlots.Rd:57-63: Dropping empty section \value
+prepare_Rd: advancedNetworkPlots.Rd:70-72: Dropping empty section \note
+prepare_Rd: advancedNetworkPlots.Rd:67-69: Dropping empty section \author
+prepare_Rd: advancedNetworkPlots.Rd:64-66: Dropping empty section \references
+prepare_Rd: advancedNetworkPlots.Rd:76-78: Dropping empty section \seealso
+checkRd: (5) advancedNetworkPlots.Rd:0-88: Must have a \description
+prepare_Rd: assignCentroidSubtype.Rd:7-9: Dropping empty section \description
+prepare_Rd: assignCentroidSubtype.Rd:25-27: Dropping empty section \details
+prepare_Rd: assignCentroidSubtype.Rd:28-34: Dropping empty section \value
+prepare_Rd: assignCentroidSubtype.Rd:41-43: Dropping empty section \note
+prepare_Rd: assignCentroidSubtype.Rd:38-40: Dropping empty section \author
+prepare_Rd: assignCentroidSubtype.Rd:35-37: Dropping empty section \references
+prepare_Rd: assignCentroidSubtype.Rd:47-49: Dropping empty section \seealso
+checkRd: (5) assignCentroidSubtype.Rd:0-60: Must have a \description
+prepare_Rd: assignFinalEdges.Rd:7-9: Dropping empty section \description
+prepare_Rd: assignFinalEdges.Rd:63-65: Dropping empty section \details
+prepare_Rd: assignFinalEdges.Rd:66-72: Dropping empty section \value
+prepare_Rd: assignFinalEdges.Rd:79-81: Dropping empty section \note
+prepare_Rd: assignFinalEdges.Rd:76-78: Dropping empty section \author
+prepare_Rd: assignFinalEdges.Rd:73-75: Dropping empty section \references
+prepare_Rd: assignFinalEdges.Rd:85-87: Dropping empty section \seealso
+checkRd: (5) assignFinalEdges.Rd:0-98: Must have a \description
+prepare_Rd: batchNormalization.Rd:7-9: Dropping empty section \description
+prepare_Rd: batchNormalization.Rd:37-39: Dropping empty section \details
+prepare_Rd: batchNormalization.Rd:40-46: Dropping empty section \value
+prepare_Rd: batchNormalization.Rd:53-55: Dropping empty section \note
+prepare_Rd: batchNormalization.Rd:50-52: Dropping empty section \author
+prepare_Rd: batchNormalization.Rd:47-49: Dropping empty section \references
+prepare_Rd: batchNormalization.Rd:59-61: Dropping empty section \seealso
+checkRd: (5) batchNormalization.Rd:0-72: Must have a \description
+prepare_Rd: binarizeMetaclustStudyStatus.Rd:7-9: Dropping empty section \description
+prepare_Rd: binarizeMetaclustStudyStatus.Rd:20-22: Dropping empty section \details
+prepare_Rd: binarizeMetaclustStudyStatus.Rd:23-29: Dropping empty section \value
+prepare_Rd: binarizeMetaclustStudyStatus.Rd:36-38: Dropping empty section \note
+prepare_Rd: binarizeMetaclustStudyStatus.Rd:33-35: Dropping empty section \author
+prepare_Rd: binarizeMetaclustStudyStatus.Rd:30-32: Dropping empty section \references
+prepare_Rd: binarizeMetaclustStudyStatus.Rd:42-44: Dropping empty section \seealso
+checkRd: (5) binarizeMetaclustStudyStatus.Rd:0-55: Must have a \description
+prepare_Rd: clustMatrixListWrapper.Rd:7-9: Dropping empty section \description
+prepare_Rd: clustMatrixListWrapper.Rd:67-69: Dropping empty section \details
+prepare_Rd: clustMatrixListWrapper.Rd:70-76: Dropping empty section \value
+prepare_Rd: clustMatrixListWrapper.Rd:83-85: Dropping empty section \note
+prepare_Rd: clustMatrixListWrapper.Rd:80-82: Dropping empty section \author
+prepare_Rd: clustMatrixListWrapper.Rd:77-79: Dropping empty section \references
+prepare_Rd: clustMatrixListWrapper.Rd:89-91: Dropping empty section \seealso
+checkRd: (5) clustMatrixListWrapper.Rd:0-103: Must have a \description
+prepare_Rd: computeAdjMatrices.Rd:7-9: Dropping empty section \description
+prepare_Rd: computeAdjMatrices.Rd:47-49: Dropping empty section \details
+prepare_Rd: computeAdjMatrices.Rd:50-56: Dropping empty section \value
+prepare_Rd: computeAdjMatrices.Rd:63-65: Dropping empty section \note
+prepare_Rd: computeAdjMatrices.Rd:60-62: Dropping empty section \author
+prepare_Rd: computeAdjMatrices.Rd:57-59: Dropping empty section \references
+prepare_Rd: computeAdjMatrices.Rd:69-71: Dropping empty section \seealso
+checkRd: (5) computeAdjMatrices.Rd:0-82: Must have a \description
+prepare_Rd: computeAdjMatricesNullMatrixList.Rd:7-9: Dropping empty section \description
+prepare_Rd: computeAdjMatricesNullMatrixList.Rd:49-51: Dropping empty section \details
+prepare_Rd: computeAdjMatricesNullMatrixList.Rd:52-58: Dropping empty section \value
+prepare_Rd: computeAdjMatricesNullMatrixList.Rd:65-67: Dropping empty section \note
+prepare_Rd: computeAdjMatricesNullMatrixList.Rd:62-64: Dropping empty section \author
+prepare_Rd: computeAdjMatricesNullMatrixList.Rd:59-61: Dropping empty section \references
+prepare_Rd: computeAdjMatricesNullMatrixList.Rd:71-73: Dropping empty section \seealso
+checkRd: (5) computeAdjMatricesNullMatrixList.Rd:0-85: Must have a \description
+prepare_Rd: computeMetaclustEffectSizes.Rd:7-9: Dropping empty section \description
+prepare_Rd: computeMetaclustEffectSizes.Rd:31-33: Dropping empty section \details
+prepare_Rd: computeMetaclustEffectSizes.Rd:34-40: Dropping empty section \value
+prepare_Rd: computeMetaclustEffectSizes.Rd:47-49: Dropping empty section \note
+prepare_Rd: computeMetaclustEffectSizes.Rd:44-46: Dropping empty section \author
+prepare_Rd: computeMetaclustEffectSizes.Rd:41-43: Dropping empty section \references
+prepare_Rd: computeMetaclustEffectSizes.Rd:53-55: Dropping empty section \seealso
+checkRd: (5) computeMetaclustEffectSizes.Rd:0-66: Must have a \description
+prepare_Rd: createExpressionSetList.Rd:7-9: Dropping empty section \description
+prepare_Rd: createExpressionSetList.Rd:28-30: Dropping empty section \details
+prepare_Rd: createExpressionSetList.Rd:31-37: Dropping empty section \value
+prepare_Rd: createExpressionSetList.Rd:44-46: Dropping empty section \note
+prepare_Rd: createExpressionSetList.Rd:41-43: Dropping empty section \author
+prepare_Rd: createExpressionSetList.Rd:38-40: Dropping empty section \references
+prepare_Rd: createExpressionSetList.Rd:50-52: Dropping empty section \seealso
+checkRd: (5) createExpressionSetList.Rd:0-63: Must have a \description
+prepare_Rd: createNullDataMatrixList.Rd:7-9: Dropping empty section \description
+prepare_Rd: createNullDataMatrixList.Rd:19-21: Dropping empty section \details
+prepare_Rd: createNullDataMatrixList.Rd:22-28: Dropping empty section \value
+prepare_Rd: createNullDataMatrixList.Rd:35-37: Dropping empty section \note
+prepare_Rd: createNullDataMatrixList.Rd:32-34: Dropping empty section \author
+prepare_Rd: createNullDataMatrixList.Rd:29-31: Dropping empty section \references
+prepare_Rd: createNullDataMatrixList.Rd:41-43: Dropping empty section \seealso
+checkRd: (5) createNullDataMatrixList.Rd:0-55: Must have a \description
+prepare_Rd: createPhenoMasterTableFromMatrixList.Rd:7-9: Dropping empty section \description
+prepare_Rd: createPhenoMasterTableFromMatrixList.Rd:25-27: Dropping empty section \details
+prepare_Rd: createPhenoMasterTableFromMatrixList.Rd:28-34: Dropping empty section \value
+prepare_Rd: createPhenoMasterTableFromMatrixList.Rd:41-43: Dropping empty section \note
+prepare_Rd: createPhenoMasterTableFromMatrixList.Rd:38-40: Dropping empty section \author
+prepare_Rd: createPhenoMasterTableFromMatrixList.Rd:35-37: Dropping empty section \references
+prepare_Rd: createPhenoMasterTableFromMatrixList.Rd:47-49: Dropping empty section \seealso
+checkRd: (5) createPhenoMasterTableFromMatrixList.Rd:0-60: Must have a \description
+prepare_Rd: createS4exprSet.Rd:7-9: Dropping empty section \description
+prepare_Rd: createS4exprSet.Rd:28-30: Dropping empty section \details
+prepare_Rd: createS4exprSet.Rd:31-37: Dropping empty section \value
+prepare_Rd: createS4exprSet.Rd:44-46: Dropping empty section \note
+prepare_Rd: createS4exprSet.Rd:41-43: Dropping empty section \author
+prepare_Rd: createS4exprSet.Rd:38-40: Dropping empty section \references
+prepare_Rd: createS4exprSet.Rd:50-52: Dropping empty section \seealso
+checkRd: (5) createS4exprSet.Rd:0-63: Must have a \description
+prepare_Rd: createTissueSimDatasets.Rd:7-9: Dropping empty section \description
+prepare_Rd: createTissueSimDatasets.Rd:52-54: Dropping empty section \details
+prepare_Rd: createTissueSimDatasets.Rd:55-61: Dropping empty section \value
+prepare_Rd: createTissueSimDatasets.Rd:68-70: Dropping empty section \note
+prepare_Rd: createTissueSimDatasets.Rd:65-67: Dropping empty section \author
+prepare_Rd: createTissueSimDatasets.Rd:62-64: Dropping empty section \references
+prepare_Rd: createTissueSimDatasets.Rd:74-76: Dropping empty section \seealso
+checkRd: (5) createTissueSimDatasets.Rd:0-88: Must have a \description
+prepare_Rd: exprSetListToMatrixList.Rd:7-9: Dropping empty section \description
+prepare_Rd: exprSetListToMatrixList.Rd:22-24: Dropping empty section \details
+prepare_Rd: exprSetListToMatrixList.Rd:25-31: Dropping empty section \value
+prepare_Rd: exprSetListToMatrixList.Rd:38-40: Dropping empty section \note
+prepare_Rd: exprSetListToMatrixList.Rd:35-37: Dropping empty section \author
+prepare_Rd: exprSetListToMatrixList.Rd:32-34: Dropping empty section \references
+prepare_Rd: exprSetListToMatrixList.Rd:44-46: Dropping empty section \seealso
+checkRd: (5) exprSetListToMatrixList.Rd:0-57: Must have a \description
+prepare_Rd: findCommunities.Rd:7-9: Dropping empty section \description
+prepare_Rd: findCommunities.Rd:70-72: Dropping empty section \details
+prepare_Rd: findCommunities.Rd:73-79: Dropping empty section \value
+prepare_Rd: findCommunities.Rd:86-88: Dropping empty section \note
+prepare_Rd: findCommunities.Rd:83-85: Dropping empty section \author
+prepare_Rd: findCommunities.Rd:80-82: Dropping empty section \references
+prepare_Rd: findCommunities.Rd:92-94: Dropping empty section \seealso
+checkRd: (5) findCommunities.Rd:0-105: Must have a \description
+prepare_Rd: globalFDR.Rd:7-9: Dropping empty section \description
+prepare_Rd: globalFDR.Rd:81-83: Dropping empty section \details
+prepare_Rd: globalFDR.Rd:84-90: Dropping empty section \value
+prepare_Rd: globalFDR.Rd:97-99: Dropping empty section \note
+prepare_Rd: globalFDR.Rd:94-96: Dropping empty section \author
+prepare_Rd: globalFDR.Rd:91-93: Dropping empty section \references
+prepare_Rd: globalFDR.Rd:103-105: Dropping empty section \seealso
+checkRd: (5) globalFDR.Rd:0-116: Must have a \description
+prepare_Rd: global_FDR.Rd:7-9: Dropping empty section \description
+prepare_Rd: global_FDR.Rd:71-73: Dropping empty section \details
+prepare_Rd: global_FDR.Rd:74-80: Dropping empty section \value
+prepare_Rd: global_FDR.Rd:87-89: Dropping empty section \note
+prepare_Rd: global_FDR.Rd:84-86: Dropping empty section \author
+prepare_Rd: global_FDR.Rd:81-83: Dropping empty section \references
+prepare_Rd: global_FDR.Rd:93-95: Dropping empty section \seealso
+checkRd: (5) global_FDR.Rd:0-106: Must have a \description
+prepare_Rd: meanMetricDensityPlot.Rd:7-9: Dropping empty section \description
+prepare_Rd: meanMetricDensityPlot.Rd:28-30: Dropping empty section \details
+prepare_Rd: meanMetricDensityPlot.Rd:31-37: Dropping empty section \value
+prepare_Rd: meanMetricDensityPlot.Rd:44-46: Dropping empty section \note
+prepare_Rd: meanMetricDensityPlot.Rd:41-43: Dropping empty section \author
+prepare_Rd: meanMetricDensityPlot.Rd:38-40: Dropping empty section \references
+prepare_Rd: meanMetricDensityPlot.Rd:50-52: Dropping empty section \seealso
+checkRd: (5) meanMetricDensityPlot.Rd:0-63: Must have a \description
+prepare_Rd: mergeDatasetList.Rd:7-9: Dropping empty section \description
+prepare_Rd: mergeDatasetList.Rd:37-39: Dropping empty section \details
+prepare_Rd: mergeDatasetList.Rd:40-46: Dropping empty section \value
+prepare_Rd: mergeDatasetList.Rd:53-55: Dropping empty section \note
+prepare_Rd: mergeDatasetList.Rd:50-52: Dropping empty section \author
+prepare_Rd: mergeDatasetList.Rd:47-49: Dropping empty section \references
+prepare_Rd: mergeDatasetList.Rd:59-61: Dropping empty section \seealso
+checkRd: (5) mergeDatasetList.Rd:0-72: Must have a \description
+prepare_Rd: merge_datasetList.Rd:7-9: Dropping empty section \description
+prepare_Rd: merge_datasetList.Rd:37-39: Dropping empty section \details
+prepare_Rd: merge_datasetList.Rd:40-46: Dropping empty section \value
+prepare_Rd: merge_datasetList.Rd:53-55: Dropping empty section \note
+prepare_Rd: merge_datasetList.Rd:50-52: Dropping empty section \author
+prepare_Rd: merge_datasetList.Rd:47-49: Dropping empty section \references
+prepare_Rd: merge_datasetList.Rd:59-61: Dropping empty section \seealso
+checkRd: (5) merge_datasetList.Rd:0-72: Must have a \description
+checkRd: (5) procExprSet.Rd:0-68: Must have a \description
+checkRd: (5) procExprSetList.Rd:0-74: multiple sections named '\name' are not allowed
+prepare_Rd: returnSampleMemberMatrix.Rd:7-9: Dropping empty section \description
+prepare_Rd: returnSampleMemberMatrix.Rd:28-30: Dropping empty section \details
+prepare_Rd: returnSampleMemberMatrix.Rd:31-37: Dropping empty section \value
+prepare_Rd: returnSampleMemberMatrix.Rd:44-46: Dropping empty section \note
+prepare_Rd: returnSampleMemberMatrix.Rd:41-43: Dropping empty section \author
+prepare_Rd: returnSampleMemberMatrix.Rd:38-40: Dropping empty section \references
+prepare_Rd: returnSampleMemberMatrix.Rd:50-52: Dropping empty section \seealso
+checkRd: (5) returnSampleMemberMatrix.Rd:0-63: Must have a \description
+prepare_Rd: selectFeaturesMetaVariance.Rd:7-9: Dropping empty section \description
+prepare_Rd: selectFeaturesMetaVariance.Rd:40-42: Dropping empty section \details
+prepare_Rd: selectFeaturesMetaVariance.Rd:43-49: Dropping empty section \value
+prepare_Rd: selectFeaturesMetaVariance.Rd:56-58: Dropping empty section \note
+prepare_Rd: selectFeaturesMetaVariance.Rd:53-55: Dropping empty section \author
+prepare_Rd: selectFeaturesMetaVariance.Rd:50-52: Dropping empty section \references
+prepare_Rd: selectFeaturesMetaVariance.Rd:62-64: Dropping empty section \seealso
+checkRd: (5) selectFeaturesMetaVariance.Rd:0-75: Must have a \description
+prepare_Rd: selectFeaturesMetaVariance_wrapper.Rd:7-9: Dropping empty section \description
+prepare_Rd: selectFeaturesMetaVariance_wrapper.Rd:40-42: Dropping empty section \details
+prepare_Rd: selectFeaturesMetaVariance_wrapper.Rd:43-49: Dropping empty section \value
+prepare_Rd: selectFeaturesMetaVariance_wrapper.Rd:56-58: Dropping empty section \note
+prepare_Rd: selectFeaturesMetaVariance_wrapper.Rd:53-55: Dropping empty section \author
+prepare_Rd: selectFeaturesMetaVariance_wrapper.Rd:50-52: Dropping empty section \references
+prepare_Rd: selectFeaturesMetaVariance_wrapper.Rd:62-64: Dropping empty section \seealso
+checkRd: (5) selectFeaturesMetaVariance_wrapper.Rd:0-75: Must have a \description
+prepare_Rd: selectMetaclustSigGenes.Rd:7-9: Dropping empty section \description
+prepare_Rd: selectMetaclustSigGenes.Rd:28-30: Dropping empty section \details
+prepare_Rd: selectMetaclustSigGenes.Rd:31-37: Dropping empty section \value
+prepare_Rd: selectMetaclustSigGenes.Rd:44-46: Dropping empty section \note
+prepare_Rd: selectMetaclustSigGenes.Rd:41-43: Dropping empty section \author
+prepare_Rd: selectMetaclustSigGenes.Rd:38-40: Dropping empty section \references
+prepare_Rd: selectMetaclustSigGenes.Rd:50-52: Dropping empty section \seealso
+checkRd: (5) selectMetaclustSigGenes.Rd:0-63: Must have a \description
+prepare_Rd: simulateClusterData.Rd:7-9: Dropping empty section \description
+prepare_Rd: simulateClusterData.Rd:37-39: Dropping empty section \details
+prepare_Rd: simulateClusterData.Rd:40-46: Dropping empty section \value
+prepare_Rd: simulateClusterData.Rd:53-55: Dropping empty section \note
+prepare_Rd: simulateClusterData.Rd:50-52: Dropping empty section \author
+prepare_Rd: simulateClusterData.Rd:47-49: Dropping empty section \references
+prepare_Rd: simulateClusterData.Rd:59-61: Dropping empty section \seealso
+checkRd: (5) simulateClusterData.Rd:0-71: Must have a \description
+prepare_Rd: summarizePosESMetaclustGenes.Rd:7-9: Dropping empty section \description
+prepare_Rd: summarizePosESMetaclustGenes.Rd:22-24: Dropping empty section \details
+prepare_Rd: summarizePosESMetaclustGenes.Rd:25-31: Dropping empty section \value
+prepare_Rd: summarizePosESMetaclustGenes.Rd:38-40: Dropping empty section \note
+prepare_Rd: summarizePosESMetaclustGenes.Rd:35-37: Dropping empty section \author
+prepare_Rd: summarizePosESMetaclustGenes.Rd:32-34: Dropping empty section \references
+prepare_Rd: summarizePosESMetaclustGenes.Rd:44-46: Dropping empty section \seealso
+checkRd: (5) summarizePosESMetaclustGenes.Rd:0-57: Must have a \description
+* checking Rd metadata ... OK
+* checking Rd cross-references ... WARNING
+Unknown package ‘<pkg>’ in Rd xrefs
+Missing link or links in documentation object 'procExprSetList.Rd':
+  ‘processExpressionSet’
+
+See section 'Cross-references' in the 'Writing R Extensions' manual.
+
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘BatchCorrection’ ‘CDF’ ‘CheckBatchEffect’ ‘GSEA_DAVID’
+  ‘GSEA_posMetaclustGenes’ ‘batchCorrection_MolecularData’
+  ‘calcCorMeanMatrix’ ‘calcICL’ ‘ccRun’ ‘clustMatrixListKmeansGap’
+  ‘clusterMatrixHclustGap’ ‘clusterMatrixKmeansGap’
+  ‘clusterMatrixListHclustGap’ ‘clusterTrackingPlot’
+  ‘combineFeatureRanks’ ‘commMedianRank’
+  ‘computeClusterPairAssignFract_cor’
+  ‘computeClusterPairAssignFract_matrixStatsDist’
+  ‘computeClusterPairAssignFract_matrixStatsSimil’
+  ‘computeFeaturePvalues’ ‘computeFeatureRanks’ ‘computeRankMatrix’
+  ‘computeThreshParam’ ‘compute_edge_ROC_metrics’ ‘connectivityMatrix’
+  ‘consensusClusterMatrix’ ‘consensusClusterMatrixList’
+  ‘createLungMatrixList’ ‘createNullCentroidMatrixList’
+  ‘createSimGeneData’ ‘createTestVarianceDataMatrixList’
+  ‘createTrueEdges’ ‘expand_multGeneSymbols’ ‘filterEdges’ ‘mapGeneIDs’
+  ‘merged_communitySubtypeBreakdown_plots’ ‘myPal’
+  ‘networkLeaveOutAnalysis’ ‘networkVaryMinSimilAnalysis’ ‘permuteCol’
+  ‘phenoVarCommunityBreakdownPlots’ ‘plotConsensusHeatmap_CoINcIDE’
+  ‘plotLeaveXOutAnalysis’ ‘plotMetaFeatureES’ ‘plotMetaFeatureRank’
+  ‘plot_communitiesWithSubtypes’ ‘plot_subtypes_network’
+  ‘runTissueClusterSimROC’ ‘sampleCols’ ‘setClusterColors’
+  ‘summarizeChooseK’ ‘summarizeNegESMetaclustGenes’ ‘triangle’
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... WARNING
+Functions or methods with usage in documentation object 'global_FDR' but not in code:
+  global_FDR
+
+Functions or methods with usage in documentation object 'merge_datasetList' but not in code:
+  merge_datasetList
+
+Functions or methods with usage in documentation object 'procExprSet' but not in code:
+  procExpressionSet
+
+Codoc mismatches from documentation object 'advancedNetworkPlots':
+advancedNetworkPlots
+  Code: function(communityMembership, clustIndexMatrix, brewPal =
+                 c("Set3", "Paired", "Spectral", "BrBG", "PiYG",
+                 "RdYlGn", "RdYlBu", "RdBu", "PiYG", "Set2"), saveDir =
+                 "/home/kplaney/ISMB/", experimentName = "networks",
+                 colorCodes, plotToScreen = FALSE, nodePlotSize = 10,
+                 nodeFontSize = 0.7, plotEdgeWeight = TRUE,
+                 edgeWeightsColName = "simil", nodeSizeScaleFactor = 1)
+  Docs: function(communityMembership, clustIndexMatrix, brewPal =
+                 c("Set3", "Paired", "Spectral", "BrBG", "PiYG",
+                 "RdYlGn", "RdYlBu", "RdBu", "PiYG", "Set2"), saveDir =
+                 "/home/kplaney/ISMB/", experimentName = "networks",
+                 colorCodes, plotToScreen = FALSE, nodePlotSize = 10,
+                 nodeFontSize = 0.7, plotEdgeWeight = TRUE,
+                 edgeWeightsColName = "simil")
+  Argument names in code not in docs:
+    nodeSizeScaleFactor
+
+Codoc mismatches from documentation object 'meanMetricDensityPlot':
+meanMetricDensityPlot
+  Code: function(meanMetricMatrix, saveDir = "./", savePlot = TRUE,
+                 experimentName = "expr", yLimit)
+  Docs: function(meanMetricMatrix, saveDir = "./", savePlot = TRUE,
+                 experimentName = "expr")
+  Argument names in code not in docs:
+    yLimit
+
+* checking Rd \usage sections ... WARNING
+Objects in \usage without \alias in documentation object 'procExprSet':
+  ‘procExpressionSet’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking files in ‘vignettes’ ... OK
+* checking examples ...
