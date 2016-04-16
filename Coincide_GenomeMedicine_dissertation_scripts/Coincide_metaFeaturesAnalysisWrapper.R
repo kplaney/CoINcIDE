@@ -1,13 +1,19 @@
 library("pROC")
 library("survival")
-library("CoINcIDE")
+library("Coincide")
 
+##wrapper function that analyzes a wide range of stats after run Coincide on the 
+#curatedBreast or Ovarian data.  This is very tailored to producing outputs for the 
+#Genome Medicine publication, and will not immediately translate to analyzing any 
+#type of dataset, as the survival analyses are very data-specific..
 
+#also: note that an path to reference gene lists for GSEA is needed, unless you set 
+#GSEAanalysis=FALSE
 metaFeaturesAnalysisWrapper <- function(metaFeatures,esets=NULL,CoINcIDE_output , clusterCoINcIDE_output,
                                         meanEdgePairPvalueThresh = .01,indEdgePvalueThresh = .05, minTrueSimilThresh = .4, maxTrueSimilThresh = Inf,nodeSizeScaleFactor=1,
                                         clustSizeThresh = 5,saveDir = "/home/kplaney/ovarian_analysis/",experimentName = "ovarian_2000F",networkColors = "Set3",
                                         commMethod = "edgeBetween", minNumUniqueStudiesPerCommunity=3, minMedianNumEdgesPerNodeInCommunity=3,nodePlotSize=10,nodeFontSize=.7,ES_thresh = .5,eset_featureDataFieldName="gene",
-                                        survivalAnalysis=TRUE,GSEAanalysis=TRUE,clinVarPlots=TRUE,outcomesVarBinary="vital_status",outcomesVarCont = "days_to_death",
+                                        survivalAnalysis=TRUE,GSEAanalysis=FALSE,clinVarPlots=TRUE,outcomesVarBinary="vital_status",outcomesVarCont = "days_to_death",
                                         CutoffPointYears=5, eset_uniquePatientID="unique_patient_ID", ovarian=TRUE, fisherTestVariables = c("histological_type","tumorstage","recurrence_status","grade"),
                                         fisherTestVariableLegendNames=fisherTestVariables,fisherTestVariableTitleNames=fisherTestVariables,plotStackedYLimit=NA,minFractNN =.7,
                                         fractFeatIntersectThresh=.5,numFeatIntersectThresh =0,clustSizeFractThresh =0, findCommWithWeights=FALSE, plotSimilEdgeWeight = TRUE,plotToScreen=FALSE,
@@ -2595,3 +2601,5 @@ runBreastCancerBinarySurvModels <- function(sampleClustCommPhenoData,expName="te
                  linearModelSummaries=linearModelsSumm,linearSurvModels=linearModels)
   return(output)
 }
+
+

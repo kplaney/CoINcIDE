@@ -10,8 +10,14 @@
 #but I do have the final output from here saved.
 library("GSA");
 library("limma");
-setwd("/home/data/MSigDB/");
 
+#NOTE: need to change the paths here to where you'd like to save these lists.
+MSigDBPath <- "/home/data/MSigDB/"
+
+#set to directory where downloaded files:
+setwd(MSigDBPath);
+
+#look for .gmt files:
 gmtFiles_symb <- list.files("./",pattern="symbols.gmt");
 gmtNames_symb <- strsplit2(gmtFiles_symb,split="\\.")[,1];
 gmtFiles_entrez <- list.files("./",pattern="entrez.gmt");
@@ -57,9 +63,10 @@ for(e in 1:length(GSEA_base_MSigDB_lists_symb)){
   }
 }
 
-save(MSigDB_lists_symb,file="/home/data/MSigDB/MSigDB_lists_symb.RData.gzip",compress="gzip");
-save(GSEA_base_MSigDB_lists_symb,file="/home/data/MSigDB/GSEA_base_MSigDB_lists_symb.RData.gzip",compress="gzip");
-save(MSigDB_lists_entrez,file="/home/data/MSigDB/MSigDB_lists_entrez.RData.gzip",compress="gzip");
-save(MSigDB_lists_merged_entrez,file="/home/data/MSigDB/MSigDB_lists_merged_entrez.RData.gzip",compress="gzip");
-save(MSigDB_lists_merged_symb,file="/home/data/MSigDB/MSigDB_lists_merged_symb.RData.gzip",compress="gzip");
-save(GSEA_base_MSigDB_lists_merged,file="/home/data/MSigDB/GSEA_base_MSigDB_lists_merged.RData.gzip",compress="gzip");
+
+save(MSigDB_lists_symb,file=paste0(MSigDBPath ,"/MSigDB_lists_symb.RData.gzip"),compress="gzip");
+save(GSEA_base_MSigDB_lists_symb,file=paste0(MSigDBPath ,"/GSEA_base_MSigDB_lists_symb.RData.gzip",)compress="gzip");
+save(MSigDB_lists_entrez,file=paste0(MSigDBPath ,"/MSigDB_lists_entrez.RData.gzip"),compress="gzip");
+save(MSigDB_lists_merged_entrez,file=paste0(MSigDBPath ,"/MSigDB_lists_merged_entrez.RData.gzip"),compress="gzip");
+save(MSigDB_lists_merged_symb,file=paste0(MSigDBPath ,"/MSigDB_lists_merged_symb.RData.gzip"),compress="gzip");
+save(GSEA_base_MSigDB_lists_merged,file=paste0(MSigDBPath ,"/GSEA_base_MSigDB_lists_merged.RData.gzip"),compress="gzip");

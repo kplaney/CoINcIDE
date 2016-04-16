@@ -1,20 +1,22 @@
 
-#NEW package with easier spelling. main difference is a tweak
-#in how calculate total number of possible edges for simulations.
-#rest of code chunks did not change.
+###script to simulate gene expression clusters and then run Coincide on them.
+#the Coincide package under "Coincide_fullPackage" includes all the functions 
+#need to simulate the cluster data (see the supplemental methods in the Genome Medicine 
+#paper to connect the code with the statistical methods), run Coincide on it and 
+#then conduct an ROC analysis, using the wrapper function runTissueClusterSimROC.
+#NOTE: these sims can take a few days if you are running lots of iterations like 
+#I did (50 iterations or numWrapperSims = 50)
 library("Coincide")
-
-#source("~/Dropbox/github/Coincide/R/CoINcIDE_simulation.R")
 
 
 minTrueSimilVector <- seq(from=0,to=1,by=.1)
-saveDir <- "/home/ywrfc09/simulations/"
-outputFile <- paste0(saveDir,"/_",Sys.Date(),"_simMessages.txt")
+saveDirSims <- "/home/ywrfc09/simulations/"
+outputFile <- paste0(saveDirSims,"/_",Sys.Date(),"_simMessages.txt")
 
 cat("working on high quality sims ",append=TRUE,file=outputFile)
 for(m in 1:length(minTrueSimilVector)){
 #this is NOT for communities - just for edges.
-highQuality <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
+highQuality <- runTissueClusterSimROC(saveDirSims="./",numSimDatasets=10,
                                    eigenValueMin = -.001,simType=c("highQualityClust"),
                                    noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                                    numWrapperSims=50,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -24,13 +26,13 @@ highQuality <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                    minFractNN=.8,minRandNumClust=2,randNumClust=FALSE,minRandSize=1,maxRandSize=100
 )
 
-saveRDS(highQuality,file=paste0(saveDir,"/highQuality_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
+saveRDS(highQuality,file=paste0(saveDirSims,"/highQuality_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
 }
 
 cat("working on high quality uneven size sims ",append=TRUE,file=outputFile)
 for(m in 1:length(minTrueSimilVector)){
-highQualityUnevenSize <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
+highQualityUnevenSize <- runTissueClusterSimROC(saveDirSims="./",numSimDatasets=10,
                                               eigenValueMin = -.001,simType=c("unevenSizeClust"),
                                               noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                                               numWrapperSims=50,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -40,14 +42,14 @@ highQualityUnevenSize <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                               minFractNN=.8,minRandNumClust=2,randNumClust=FALSE,minRandSize=1,maxRandSize=100
 )
 
-saveRDS(highQualityUnevenSize,file=paste0(saveDir,"/highQualityUnevenSize_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
+saveRDS(highQualityUnevenSize,file=paste0(saveDirSims,"/highQualityUnevenSize_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
 }
 
 cat("working on high quality uneven num clust min num clust 2 sims ",append=TRUE,file=outputFile)
 for(m in 1:length(minTrueSimilVector)){
   
-highQualityUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
+highQualityUnevenNumClustMin2 <- runTissueClusterSimROC(saveDirSims="./",numSimDatasets=10,
                                       eigenValueMin = -.001,simType=c("highQualityClust"),
                                       noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                                       numWrapperSims=50,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -57,7 +59,7 @@ highQualityUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",numSimDatas
                                       minFractNN=.8,minRandNumClust=2,randNumClust=TRUE,minRandSize=1,maxRandSize=100
 )
 
-saveRDS(highQualityUnevenNumClustMin2,file=paste0(saveDir,"/highQualityUnevenNumClustMin2_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
+saveRDS(highQualityUnevenNumClustMin2,file=paste0(saveDirSims,"/highQualityUnevenNumClustMin2_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
 }
 
@@ -65,7 +67,7 @@ saveRDS(highQualityUnevenNumClustMin2,file=paste0(saveDir,"/highQualityUnevenNum
 cat("working on high quality uneven num clust min num clust 1 sims ",append=TRUE,file=outputFile)
 for(m in 1:length(minTrueSimilVector)){
   
-highQualityUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
+highQualityUnevenNumClustMin1 <- runTissueClusterSimROC(saveDirSims="./",numSimDatasets=10,
                                                         eigenValueMin = -.001,simType=c("highQualityClust"),
                                                         noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                                                         numWrapperSims=50,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -75,14 +77,14 @@ highQualityUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",numSimDatas
                                                         minFractNN=.8,minRandNumClust=1,randNumClust=TRUE,minRandSize=1,maxRandSize=100
 )
 
-saveRDS(highQualityUnevenNumClustMin1,file=paste0(saveDir,"/highQualityUnevenNumClustMin1_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
+saveRDS(highQualityUnevenNumClustMin1,file=paste0(saveDirSims,"/highQualityUnevenNumClustMin1_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
 }
 
 cat("working on high quality uneven size uneven num clust min num clust 2 sims ",append=TRUE,file=outputFile)
 for(m in 1:length(minTrueSimilVector)){
 
-highQualityUnevenSizeUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
+highQualityUnevenSizeUnevenNumClustMin2 <- runTissueClusterSimROC(saveDirSims="./",numSimDatasets=10,
                                                         eigenValueMin = -.001,simType=c("unevenSizeClust"),
                                                         noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                                                         numWrapperSims=50,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -93,14 +95,14 @@ highQualityUnevenSizeUnevenNumClustMin2 <- runTissueClusterSimROC(saveDir="./",n
 )
 
 
-saveRDS(highQualityUnevenSizeUnevenNumClustMin2,file=paste0(saveDir,"/highQualityUnevenSizeUnevenNumClustMin2_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
+saveRDS(highQualityUnevenSizeUnevenNumClustMin2,file=paste0(saveDirSims,"/highQualityUnevenSizeUnevenNumClustMin2_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
 }
 
 cat("working on high quality uneven size uneven num clust min num clust 1 sims ",append=TRUE,file=outputFile)
 for(m in 1:length(minTrueSimilVector)){
 
-highQualityUnevenSizeUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
+highQualityUnevenSizeUnevenNumClustMin1 <- runTissueClusterSimROC(saveDirSims="./",numSimDatasets=10,
                                                                           eigenValueMin = -.001,simType=c("unevenSizeClust"),
                                                                           noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                                                                           numWrapperSims=50,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -110,14 +112,14 @@ highQualityUnevenSizeUnevenNumClustMin1 <- runTissueClusterSimROC(saveDir="./",n
                                                                           minFractNN=.8,minRandNumClust=1,randNumClust=TRUE,minRandSize=1,maxRandSize=100
 )
 
-saveRDS(highQualityUnevenSizeUnevenNumClustMin1,file=paste0(saveDir,"/highQualityUnevenSizeUnevenNumClustMin1_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
+saveRDS(highQualityUnevenSizeUnevenNumClustMin1,file=paste0(saveDirSims,"/highQualityUnevenSizeUnevenNumClustMin1_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
 }
 
 cat("working on mixed quality clust ",append=TRUE,file=outputFile)
 for(m in 1:length(minTrueSimilVector)){
   
-mixedQualityClust <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
+mixedQualityClust <- runTissueClusterSimROC(saveDirSims="./",numSimDatasets=10,
                                             eigenValueMin = -.001,simType=c("mixedClustQualityClust"),
                                             noiseVector = seq(from=0,to=2.5,by=.2),numPerClust = c(50,50,50,50),
                                             numWrapperSims=50,numSims=500,fractFeatIntersectThresh=.7,numFeatIntersectThresh=190,
@@ -127,7 +129,7 @@ mixedQualityClust <- runTissueClusterSimROC(saveDir="./",numSimDatasets=10,
                                             minFractNN=.8,minRandNumClust=1,randNumClust=TRUE,minRandSize=1,maxRandSize=100
 )
 
-saveRDS(mixedQualityClust,file=paste0(saveDir,"/mixedQualityClust_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
+saveRDS(mixedQualityClust,file=paste0(saveDirSims,"/mixedQualityClust_minSimil_",minTrueSimilVector[m],".rds"),compress=TRUE)
 
 }
 

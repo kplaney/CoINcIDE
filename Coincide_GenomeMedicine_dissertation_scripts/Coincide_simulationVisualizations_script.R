@@ -1,19 +1,28 @@
 
+##code to analyze the output from Coincide run on simulated datasets from the 
+#Coincide_tissueSimulation_script.R
+
 ####
 simTypes <- c("highQuality", "highQualityUnevenSize", "highQualityUnevenNumClustMin2",
               "highQualityUnevenNumClustMin1","highQualityUnevenSizeUnevenNumClustMin2",
               "highQualityUnevenSizeUnevenNumClustMin1", "mixedQualityClust")
 
 #run ROC curves for one simil level 
-#hmmm...want a REVERSE order for the ROC curves?
 #usually zero above 0.7 
 meanSimilVector <- c(0.0, 0.3, 0.5, 0.7)
 
-#meanFractMaxTissueType <- matrix(data=NA,ncol=length(simTypes),nrow=length(meanSimilVector),
- #                                dimnames=list(meanSimilVector,simTypes))
 
-saveDir <- "/home/ywrfc09/simulations/"
-saveDirPlots <-"/home/ywrfc09/simulations/plots" 
+
+#set theis path to where you saved the simulated data in the preceding 
+#Coincide tissueSimulation script.
+
+saveDirSims <-"/home/ywrfc09/simulations" 
+library("RColorBrewer")
+library("grid")
+library("ggplot2")
+
+
+#######mamking TPR, FPR pltos:
 TPR_plot<- list()
 FPR_plot <- list()
 
@@ -23,8 +32,8 @@ for(m in 1:length(meanSimilVector)){
   
   meanSimil <- meanSimilVector[m]
   
- message(paste0(saveDir,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
-  data <- readRDS(paste0(saveDir,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
+ message(paste0(saveDirSims,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
+  data <- readRDS(paste0(saveDirSims,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
   #meanFractMaxTissueType[m,s] <- mean(data$commMeanMaxTissueType,na.rm=TRUE)
 
   
@@ -47,7 +56,6 @@ for(m in 1:length(meanSimilVector)){
 
 #dataFrames[[s]] <- masterDF
 
-library("ggplot2")
 #make error bars:
 TPR_limits <- aes(ymax = TPR + sd_TPR, ymin=TPR - sd_TPR)
 FPR_limits <- aes(ymax = FPR + sd_FPR, ymin=FPR - sd_FPR)
@@ -77,7 +85,7 @@ FPR_limits <- aes(ymax = FPR + sd_FPR, ymin=FPR - sd_FPR)
   
 #}
 
-library("grid")
+
 TPR_plot[[s]] <- ggplot(data =masterDF,aes(x=sd_noise,y=TPR))  + geom_line(size=.7)+ 
   labs(y="TPR",x="Noise level")+
   theme(panel.background = element_rect(fill='white', colour='black')) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
@@ -93,8 +101,8 @@ TPR_plot[[s]] <- ggplot(data =masterDF,aes(x=sd_noise,y=TPR))  + geom_line(size=
 #legend.text=element_text(colour="black",size=10))+
 #  labs(colour="simulation\ntype")
 options(bitmapType="cairo")
-png(filename=paste0(saveDirPlots,"/TPR_plot_",simTypes[s],"_",Sys.Date(),".png"),width=1400,height=1600,res=200);
-#pdf(file=paste0(saveDirPlots,"/TPR_plot_",simTypes[s],"_",Sys.Date(),".pdf"),width=6,height=9,paper="letter");
+png(filename=paste0(saveDirSims,"/TPR_plot_",simTypes[s],"_",Sys.Date(),".png"),width=1400,height=1600,res=200);
+#pdf(file=paste0(saveDirSims,"/TPR_plot_",simTypes[s],"_",Sys.Date(),".pdf"),width=6,height=9,paper="letter");
 plot(TPR_plot[[s]]);
 
 dev.off();
@@ -114,8 +122,8 @@ FPR_plot[[s]] <- ggplot(data =masterDF,aes(x=sd_noise,y=FPR))  + geom_line(size=
 
 
 options(bitmapType="cairo")
-png(filename=paste0(saveDirPlots,"/FPR_plot_",simTypes[s],"_",Sys.Date(),".png"),width=1400,height=1600,res=200);
-#pdf(file=paste0(saveDir,"/FPR_plot_",simTypes[s],"_",Sys.Date(),".pdf"),width=6,height=9,paper="letter");
+png(filename=paste0(saveDirSims,"/FPR_plot_",simTypes[s],"_",Sys.Date(),".png"),width=1400,height=1600,res=200);
+#pdf(file=paste0(saveDirSims,"/FPR_plot_",simTypes[s],"_",Sys.Date(),".pdf"),width=6,height=9,paper="letter");
 plot(FPR_plot[[s]]);
 
 dev.off();
@@ -130,9 +138,8 @@ meanFractMaxTissueType <- matrix(data=NA,ncol=length(simTypes),nrow=length(meanS
 
 #meanSimilVector <- seq(0, 1, length.out = 11)
 meanSimilVector <- seq(1, 0, length.out = 11)
-saveDir <- "/home/ywrfc09/simulations/"
 
-library("RColorBrewer")
+
 colorCodes <- brewer.pal(length(meanSimilVector),"Paired");
 names(colorCodes) <- meanSimilVector
 ROC_plot <- list()
@@ -144,8 +151,8 @@ for(m in 1:length(meanSimilVector)){
   
   meanSimil <- meanSimilVector[m]
   
- message(paste0(saveDir,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
-  data <- readRDS(paste0(saveDir,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
+ message(paste0(saveDirSims,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
+  data <- readRDS(paste0(saveDirSims,"/",simTypes[s],"_minSimil_",meanSimil,".rds"))
  # meanFractMaxTissueType[m,s] <- mean(data$commMeanMaxTissueType,na.rm=TRUE)
 
   
@@ -213,8 +220,8 @@ ROC_plot[[s]] <- ggplot(data =masterDF,aes(x=FPR,y=TPR))  + geom_point(aes(color
 
 
 options(bitmapType="cairo")
-png(filename=paste0(saveDirPlots,"/ROC_plot_",simTypes[s],"_",Sys.Date(),".png"),width=1900,height=1700,res=200);
-#pdf(file=paste0(saveDirPlots,"/ROC_plot_",simTypes[s],"_",Sys.Date(),".pdf"),width=6,height=6,paper="letter");
+png(filename=paste0(saveDirSims,"/ROC_plot_",simTypes[s],"_",Sys.Date(),".png"),width=1900,height=1700,res=200);
+#pdf(file=paste0(saveDirSims,"/ROC_plot_",simTypes[s],"_",Sys.Date(),".pdf"),width=6,height=6,paper="letter");
 plot(ROC_plot[[s]]);
 
 dev.off();
@@ -228,6 +235,6 @@ names(dataFrames) <- simTypes
 names(TPR_plot) <- simTypes
 names(ROC_plot) <- simTypes
 names(FPR_plot) <- simTypes
-saveRDS(dataFrames[[s]],paste0(saveDirPlots,"/dataFramesForPlotting_only4NoiseLevels.rds"),compress=TRUE)
+saveRDS(dataFrames[[s]],paste0(saveDirSims,"/dataFramesForPlotting_only4NoiseLevels.rds"),compress=TRUE)
 
 

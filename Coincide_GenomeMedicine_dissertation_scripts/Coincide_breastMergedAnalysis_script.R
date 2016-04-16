@@ -1,5 +1,3 @@
-###look at Pam50 breakdown
-library("Coincide")
 
 #this script follows from: breastProcessAndGeneFeature_script.R
 #It analyses the breast data using concatenated clustering on a merged 
@@ -8,7 +6,7 @@ library("Coincide")
 #it assumes you have these files in your path (they are in the same folder 
 #as this script in the github repo):
 #pam50_centroids_updatedSymbols.RData
-#pam50FullAndShort_subtypeDF.RData.gzip
+#pam50Short_genes.RData
 
 #and note the libraries called later down: plyr, ggplot2
 
@@ -16,21 +14,143 @@ library("Coincide")
 #feed into this one
 saveDirGlobal <- "/home/ywrfc09/breast_analysis"
 saveDirMerged <- "/home/ywrfc09/breast_analysis/mergedMatrix/"
-
-#Script that pre-processes the curatedBreastData, filters out small datasets,
-#and then picks meta-rank gene sets of varying length.
-
-#CHANGE THESE PATHS to your own user directories
-saveDirGlobal <- "/home/ywrfc09/breast_analysis"
-saveDir_20 <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes"
-saveDir_no20 <-  "/home/ywrfc09/breast_analysis/metaRankNoTop20Genes"
-outputFile <- "/home/kplaney/breast_analysis/breast_proc_outMessages.txt"
-saveDirGlobal <- "/home/ywrfc09/breast_analysis/"
-saveDirGlobal_ovarian <- "/home/ywrfc09/ovarian_analysis/"
-saveDir_PAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses/"
-saveDir_20 <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes"
-saveDir_20_ovarian <-  "/home/ywrfc09/ovarian_analysis/metaRankNoTop20Genes"
 outputFile <- "/home/kplaney/breast_analysis/clust_test_outMessages.txt"
+library("Coincide")
+#need to source a function tailored to analyzing specifically the curatedBreastData
+#binary survival outcomes:
+source("Coincide_metaFeaturesAnalysisWrapper.R")
+
+
+####concatenated/merged clustering on no normalization, BMC and ComBat normalization:
+
+dataMatrixList <- readRDS(paste0(saveDirGlobal,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.rds"))
+##this code was already run in GenomeBiology_breastCluster_script.R to help with selection of final datasets.
+output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('none'));
+saveRDS(output,file=paste0(saveDirMerged, "/mergedExprMatrix_minVar001_17_studies_no_norm.rds",compress=TRUE))
+
+load("pam50Short_genes.RData")
+
+#now our data matrix "list" is just one gigantic matrix
+dataMatrixList <- list(mergedNoNorm=output$mergedExprMatrix)
+
+clustFeaturesList <- list(pam50Short=pam50Short)
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <-  clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                             pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                             numSims=500,maxNumClusters=20,
+                                             outputFile=outputFile,distMethod=c("euclidean"),
+                                             hclustAlgorithm=c("average"),
+                                             consensusHclustAlgorithm=c("average"),
+                                             minClustConsensus=.7, minMeanClustConsensus=.85,
+                                             corUse="everything",pItem=.9,maxPAC=.15)
+
+
+saveRDS(kmeansConsensus,file=paste0(saveDirMerged,"/curatedBreastData_kmeansConsensus_mergedNoNorm_pam50Short_nstart1",".rds"),compress=TRUE)
+
+#how do the centroids look?
+
+# combat must be run on intersecting genes only; so limited pam50 gene set is a confounding factor.
+#but still, if subtypes changes between no norm and combat with limited pam50 gene set, this is still an issue:
+mergedNoNorm <- output$mergedExprMatrix
+Pam50_subtypes_noNorm <- assignCentroidSubtype(t(mergedNoNorm),minNumGenes=30,centroidRData="pam50_centroids_updatedSymbols.RData");
+
+
+#ooof..these are really mixed up!
+table(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]] ,"subtypeLabels"])
+table(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]] ,"subtypeLabels"])
+#and this cluster is super tiny!
+table(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]] ,"subtypeLabels"])
+
+attrDF <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])),
+                       rep.int(2,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]])),
+                       rep.int(3,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]))
+                       ),
+                     c(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]] ,"subtypeLabels"],
+                       Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]] ,"subtypeLabels"],
+                       Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]] ,"subtypeLabels"]))
+library("ggplot2")
+colnames(attrDF) <- c("clustNum","subtype")
+#....not good
+ggplot(data=attrDF,aes(subtype))+geom_bar() + facet_grid(.~clustNum)
+
+#try with the full pam50 subtypes, too?
+#we made this in the breast processing script:
+load(paste0(saveDirGlobal, "/pam50Full_subtypeDF.RData.gzip"))
+subtypes <- subtypeDF$subtype[na.omit(match(colnames(mergedNoNorm),subtypeDF$sampleName))]
+
+
+table(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]]])
+table(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]]])
+table(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]])
+
+attrDF_pam50Full <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])),
+                       rep.int(2,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]])),
+                       rep.int(3,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]))
+),
+c(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]]],
+  subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]]],
+  subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]]))
+library("ggplot2")
+colnames(attrDF_pam50Full) <- c("clustNum","subtype")
+ggplot(data=attrDF_pam50Full,aes(subtype))+geom_bar() + facet_grid(.~clustNum)
+
+#########
+#now with BMC normalization
+dataMatrixList <- readRDS(paste0(saveDirGlobal,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.rds"))
+output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC'));
+saveRDS(output,file=paste0(saveDirMerged,"/mergedExprMatrix_minVar001_17_studies_BMC_norm.rds"),compress=TRUE)
+
+
+load("pam50Short_genes.RData")
+
+dataMatrixList <- list(mergedBMC=output$mergedExprMatrix)
+
+clustFeaturesList <- list(pam50Short=pam50Short)
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <-  clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                           pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                           numSims=500,maxNumClusters=20,
+                                           outputFile=outputFile,distMethod=c("euclidean"),
+                                           hclustAlgorithm=c("average"),
+                                           consensusHclustAlgorithm=c("average"),
+                                           minClustConsensus=.7, minMeanClustConsensus=.85,
+                                           corUse="everything",pItem=.9,maxPAC=.15)
+
+
+saveRDS(kmeansConsensus,file=paste0(saveDirMerged, "/curatedBreastData_kmeansConsensus_mergedBMCNorm_pam50Short_nstart1",".rds"),compress=TRUE)
+
+#########
+#combat
+###did not detect a batch effect!! p-value was .055....so try .1:
+output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('combat'),combatPvalueThresh=.1);
+save(output,file=paste0(saveDirMerged, "/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_combat_norm.rds",compress=TRUE)
+message("Done with Combat")
+
+load("pam50Short_genes.RData")
+
+dataMatrixList <- list(mergedCombat=output$mergedExprMatrix)
+
+clustFeaturesList <- list(pam50Short=pam50Short)
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <-  clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                           pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                           numSims=500,maxNumClusters=20,
+                                           outputFile=outputFile,distMethod=c("euclidean"),
+                                           hclustAlgorithm=c("average"),
+                                           consensusHclustAlgorithm=c("average"),
+                                           minClustConsensus=.7, minMeanClustConsensus=.85,
+                                           corUse="everything",pItem=.9,maxPAC=.15)
+
+
+saveRDS(kmeansConsensus,file=paste0(saveDirMerged, "/curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart1",".rds"),compress=TRUE)
+
+
+####Analyses/inspections:
+##first off, let's just see how the actual PAM50 subtypings differ when we applied 
+#these batch normalizations:
 
 # combat must be run on intersecting genes only; so limited pam50 gene set is a confounding factor.
 #but still, if subtypes changes between no norm and combat with limited pam50 gene set, this is still an issue:
@@ -66,9 +186,8 @@ length(which(Pam50_subtypes_BMCNorm$subtypes[,"subtypeLabels"]!=Pam50_subtypes_n
 length(which(Pam50_subtypes_BMCNorm$subtypes[,"subtypeLabels"]!=Pam50_subtypes_combatNorm$subtypes[,"subtypeLabels"]))
 
 
-
 #load up original full subtypes with unrestricted gene set too.
-load("pam50FullAndShort_subtypeDF.RData.gzip")
+load(paste0(saveDirGlobal, ("pam50FullAndShort_subtypeDF.RData.gzip"))
 #short vs full difference? 309
 length(which(subtypeDF_master$subtype!=Pam50_subtypes_noNorm$subtypes[,"subtypeLabels"]))
 #vs combat? 723 have changed now
@@ -108,8 +227,9 @@ textOut <- capture.output(table(Pam50_subtypes_combatNorm$subtypes[,"subtypeLabe
 cat(textOut,sep="\n",file=paste0(saveDirMerged,"/mergedcombatNormPam50Short_subtypeTable.txt"))
 ####
 
-####supervised centroid analyses for all 3 methods PLUS version that isn't shortened.
-
+####now: semi-supervised centroid analyses for all 3 batch methods PLUS version that isn't shortened.
+###i.e. if we treated the post-batch normalized PAM50 subtypes as clusters, 
+#how well would this split patients by survival?
 ###not shortened.
 #indices do match up
 patientIndices <- data.frame(as.numeric(subtypeDF_master$subtypeNum),
@@ -118,7 +238,7 @@ patientIndices <- data.frame(as.numeric(subtypeDF_master$subtypeNum),
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.rds"))
 
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
@@ -143,7 +263,7 @@ patientIndices <- data.frame(as.numeric(Pam50_subtypes_noNorm$subtypes[,"subtype
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.rds"))
 
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
@@ -167,7 +287,7 @@ patientIndices <- data.frame(as.numeric(Pam50_subtypes_BMCNorm$subtypes[,"subtyp
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -189,7 +309,7 @@ patientIndices <- data.frame(as.numeric(Pam50_subtypes_combatNorm$subtypes[,"sub
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 
@@ -204,8 +324,8 @@ expName <- "Combat_PAM50centroids_survival"
 ROC_output <- runBreastCancerBinarySurvModels(sampleClustCommPhenoData,expName,saveDirMerged)
 saveRDS(ROC_output,compress=TRUE,file=paste0(saveDirMerged,"/",expName,"_ROC_stats.rds"))
 
-########noNorm plotting for clustering results
-load("/home/ywrfc09/breast_analysis/mergedMatrix/curatedBreastData_kmeansConsensus_mergedNoNorm_pam50Short_nstart12015-05-04.RData.gzip")
+########noNorm plotting for merged consensus clustering results
+kmeansConsensus <- readRDS(paste0(saveDirMerged, "/curatedBreastData_kmeansConsensus_mergedNoNorm_pam50Short_nstart1.rds"))
 
 table(Pam50_subtypes_noNorm$subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]] ,"subtypeLabels"])
 table(Pam50_subtypes_noNorm$subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]] ,"subtypeLabels"])
@@ -238,7 +358,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
-png(filename=paste0(saveDirMerged,"/mergedNoNorm_subtype_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedNoNorm_subtype_breakdowns_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -258,7 +378,7 @@ plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="fre
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
-png(filename=paste0(saveDirMerged,"/mergedNoNorm_subtype_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedNoNorm_subtype_breakdowns_stacked_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -274,7 +394,7 @@ patientIndices <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndex
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -291,7 +411,7 @@ saveRDS(ROC_output,compress=TRUE,file=paste0(saveDirMerged,"/",expName,"_ROC_sta
 
 
 ########combat plotting
-load("/home/ywrfc09/breast_analysis/mergedMatrix/curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart12015-05-04.RData.gzip")
+kmeansConsensus <- readRDS(paste0(saveDirMerged, "/curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart1.rds"))
 
 
 attrDF <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])),
@@ -319,7 +439,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
-png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -338,13 +458,13 @@ plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="fre
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 
-png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_stacked_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
 dev.off()
 ###ALSO: with original non-transformed PAM50 statuses
-load("/home/ywrfc09/breast_analysis/mergedMatrix/curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart12015-05-04.RData.gzip")
+kmeansConsensus <- readRDS(paste0(saveDirMerged, "/curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart1.rds")
 #do patient names all match up? yup
 all(colnames(mergedCombat)==colnames(mergedNoNorm))
 
@@ -373,7 +493,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
-png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_assignedBEFOREcombat_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_assignedBEFOREcombat_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -392,7 +512,7 @@ plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="fre
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 
-png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_assignedBEFOREcombat_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedCombat_subtype_breakdowns_assignedBEFOREcombat_stacked_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -410,7 +530,7 @@ patientIndices <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndex
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -426,7 +546,7 @@ ROC_output <- runBreastCancerBinarySurvModels(sampleClustCommPhenoData,expName,s
 saveRDS(ROC_output,compress=TRUE,file=paste0(saveDirMerged,"/",expName,"_ROC_stats.rds"))
 
 ####BMC norm plotting
-load("/home/ywrfc09/breast_analysis/mergedMatrix//curatedBreastData_kmeansConsensus_mergedBMCNorm_pam50Short_nstart12015-05-04.RData.gzip")
+kmeansConsensus <- readRDS(paste0(saveDirMerged, "/curatedBreastData_kmeansConsensus_mergedBMCNorm_pam50Short_nstart1.rds")
 
 #cluster indices match up with merged mattrix; this is what we fed in the clustering algorithm
 #only 2 clusters!
@@ -454,7 +574,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
-png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -473,7 +593,7 @@ plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="fre
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 
-png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_stacked_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -482,8 +602,7 @@ dev.off()
 #do patient names name up? yup
 all(colnames(mergedBMC)==colnames(mergedNoNorm))
 
-
-load("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_mergedBMCNorm_pam50Short_nstart12015-05-04.RData.gzip")
+kmeansConsensus <- readRDS(paste0(saveDirMerged, "/curatedBreastData_kmeansConsensus_mergedBMCNorm_pam50Short_nstart1.rds"))
 
 #cluster indices match up with merged mattrix; this is what we fed in the clustering algorithm
 #only 2 clusters!
@@ -511,7 +630,7 @@ plotG <-    ggplot(attrDF,aes(factor(subtype),fill=factor(subtype)))+geom_bar() 
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) +coord_cartesian(ylim=c(0,2000))
 #above: font size needs to be smaller for subtypes
-png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_assignedBEFOREBMC_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_assignedBEFOREBMC_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -530,7 +649,7 @@ plotG <-    ggplot(attrDF,aes(factor(clustNum),fill=factor(subtype)),scales="fre
   theme(panel.grid.major = element_line(colour = 0),panel.grid.minor = element_line(colour = 0))+
   theme(plot.title=element_text(colour="black",size=12,vjust=1)) + coord_cartesian(ylim=c(0,2000))
 
-png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_assignedBEFOREBMC_stacked_",Sys.Date(),".png"),width=1000,height=1000,res=160)
+png(filename=paste0(saveDirMerged,"/mergedBMC_subtype_breakdowns_assignedBEFOREBMC_stacked_",".png"),width=1000,height=1000,res=160)
 
 plot( plotG)
 
@@ -559,7 +678,7 @@ patientIndices <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndex
 
 colnames(patientIndices) <- c("community","sampleName")
 
-esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -574,965 +693,3 @@ expName <- "BMC_survival"
 ROC_output <- runBreastCancerBinarySurvModels(sampleClustCommPhenoData,expName,saveDirMerged)
 saveRDS(ROC_output,compress=TRUE,file=paste0(saveDirMerged,"/",expName,"_ROC_stats.rds"))
 
-###survival/AUC
-runBreastCancerBinarySurvModels <- function(sampleClustCommPhenoData,expName="test",saveDirMerged="./"){
-  library("pROC")
-  saveDirMerged <- paste0(saveDirMerged,"/",expName,"_",Sys.Date(),"/")
-  system(paste0("mkdir ",saveDirMerged))
-  options(bitmapType="cairo")
-  plotToScreen <- FALSE
-  summaryFile <- paste0(saveDirMerged,"/",expName, "_",Sys.Date(),"_summary.txt")
-  experimentName <- expName
-  linearModels <- list()
-  linearModelsSumm <- list()
-  ROC_list <- list()
-   #message("running survival data on breast")
-      message("Running RFS models")
-      cat(gsub(" ","_",paste0("\nLinear analysis with only RFS:\n")),append=TRUE,file=summaryFile)
-      
-      dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$RFS))), ]
-      cat(gsub(" ","_",paste0("Studies used:\n",unique(dataMatrix$studyNum),"\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nMeta-clusters used:\n",unique(dataMatrix$community),"\n")),append=TRUE,file=summaryFile)
-      
-      dataMatrix <- data.frame(dataMatrix)
-      dataMatrix$community <- as.factor(dataMatrix$community)
-      dataMatrix$RFS <- as.factor(dataMatrix$RFS)
-      
-      linearModels[["RFS_logitAlone"]] <- tryCatch(glm(RFS~community,data=dataMatrix,family=binomial(link="logit")),
-                                                   error = function(e) {
-                                                     return(NA)
-                                                   }
-      )
-  
-      
-      if(any(!is.na(  linearModels[["RFS_logitAlone"]]))){
-        ##ROC curves
-        #above: font size needs to be smaller for subtypes
-        predictor <- predict(linearModels[["RFS_logitAlone"]],type="response")
-        
-        png(filename=paste0(saveDirMerged,"/",experimentName,"_RFS_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-        roc_data <- roc(response=dataMatrix$RFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-        dev.off()
-        textOut <- capture.output(roc_data)
-        cat("roc_info\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat("\nAUC : ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_logitAlone"]] <- summary(linearModels[["RFS_logitAlone"]] ) 
-        textOut <- capture.output( linearModelsSumm [["RFS_logitAlone"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        textOut <- capture.output( linearModelsSumm [["RFS_logitAlone"]])
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        linearModelsSumm[["RFS_numPatients"]] <- nrow(dataMatrix)
-        cat("\nNumber_of_patients_for_RFS__model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
-        linearModelsSumm[["RFS_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-        
-        ROC_list[["RFS_logitAlone"]] <- roc_data
-        
-      }else{
-        cat("\nRFS model alone returned NA.\n")
-        cat("\nRFS model alone returned NA.\n",append=TRUE,file=outputFile)
-      }
-      ##with therapies
-      #interesting: community becomes insignificant if add in therapies now: this could be
-      #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
-      #low Rsquared.
-      cat(gsub(" ","_",paste0("\nLinear analysis with RFS and treatment:\n")),append=TRUE,file=summaryFile)
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
-      dataMatrix <- data.frame(dataMatrix)
-      dataMatrix$community <- as.factor(dataMatrix$community)
-      dataMatrix$RFS <- as.factor(dataMatrix$RFS)
-      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
-      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
-      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
-      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
-      cat(gsub(" ","_",paste0("\nMeta-clusters used:\n",unique(dataMatrix$community),"\n")),append=TRUE,file=summaryFile)
-      
-      linearModelsSumm [["RFS_withRx_numPatients"]] <- nrow(dataMatrix)
-      cat("\nNumber_of_patients_for_RFS_with_Rx_model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
-      
-      if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 
-         && length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-        
-        #no community
-        reducedModel <- tryCatch(glm(RFS~chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
-           
-     
-        #now try with  grade.    
-        cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_RFS_with_grade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        
-        linearModels[["RFS_logitWithRxGrade"]] <- tryCatch( glm(RFS~community+chemotherapyClass+anti_estrogen+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 
-               && length(unique(dataMatrix$anti_HER2))==1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor RFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n")),
-            append=TRUE,file=summaryFile)
-        linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-                                                      
-        )
-        
-               #no community
-        reducedModel <- tryCatch(glm(RFS~chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
-        
-        #now try with  grade.    
-        cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_RFS_with_grade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["RFS_logitWithRxGrade"]] <- tryCatch( glm(RFS~community+chemotherapyClass+anti_estrogen+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
-               && length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        cat(gsub(" ","_",paste0("\nFor RFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n")),
-            append=TRUE,file=summaryFile)
-        
-        linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-                                                      
-        )
-        
-                   #no community
-        reducedModel <- tryCatch(glm(RFS~chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
-        
- 
-        
-        #now try with  grade.    
-        cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_RFS_with_grade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["RFS_logitWithRxGrade"]] <- tryCatch( glm(RFS~community+chemotherapyClass+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))==1 && length(unique(dataMatrix$anti_estrogen))>1 
-               && length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor RFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n")),
-            append=TRUE,file=summaryFile)
-        
-        linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-                                                      
-        )
-        
-                           #no community
-        reducedModel <- tryCatch(glm(RFS~anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
-        #now try with  grade.    
-        cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_RFS_with_grade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["RFS_logitWithRxGrade"]] <- tryCatch( glm(RFS~community+anti_estrogen+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
-               && length(unique(dataMatrix$anti_HER2))==1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor RFS analysis, the anti HER2 and estrogen variables have only one unique value each.\n")),append=TRUE,
-            file=summaryFile)
-        
-        
-        linearModels[["RFS_logitWithRx"]] <- tryCatch(glm(RFS~community+chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-                                                      
-        )
-         reducedModel <- tryCatch(glm(RFS~chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["RFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["RFS_logitWithRx"]],test="Chisq")
-    
-        
-        #now try with  grade.    
-        cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_RFS_with_grade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["RFS_logitWithRxGrade"]] <- tryCatch( glm(RFS~community+chemotherapyClass+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-        
-      }else{
-        
-        linearModels[["RFS_logitWithRx"]] <- NA
-        
-      }
-      
-      cat(gsub(" ","_",paste0("\nLinear analysis with RFS and treatment:\n")),append=TRUE,file=summaryFile)
-      if(any(!is.na(linearModels[["RFS_logitWithRx"]]))){
-        
-        linearModelsSumm[["RFS_logitWithRx"]] <- summary( linearModels[["RFS_logitWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["RFS_logitWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        textOut <- capture.output( linearModelsSumm [["RFS_logitWithRx"]])
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nLinear analysis with RFS and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
-        textOut <- capture.output(linearModels[["RFS_logitWithRx_ANOVA"]])
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",") 
-        predictor <- predict(linearModels[["RFS_logitWithRx"]],type="response")
-        png(filename=paste0(saveDirMerged,"/",experimentName,"_RFS_withRx_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-        roc_data <- roc(response=dataMatrix$RFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-        dev.off()
-        textOut <- capture.output(roc_data)   
-        ROC_list[["RFS_logitWithRx"]] <- roc_data
-        cat("\n roc_info:",textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat("\nAUC : ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_logitWithRx"]] <- summary( linearModels[["RFS_logitWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["RFS_logitWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-        
-      }else{
-        
-        cat(gsub(" ","_",paste0("\nRFS analysis with therapies returned NA.\n")),append=TRUE,file=summaryFile)
-      }
-      
-      #now record grade.
-      cat(gsub(" ","_",paste0("\nLinear analysis with RFS and histological grade :\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nUnique hist grade values :",unique(dataMatrixHist$hist_grade),"\n")),append=TRUE,file=summaryFile)
-      
-      
-      if(any(!is.na(linearModels[["RFS_logitWithRxGrade"]]))){
-        
-        predictor <- predict(linearModels[["RFS_logitWithRxGrade"]],type="response")
-        png(filename=paste0(saveDirMerged,"/",experimentName,"_RFS_withGrade_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-        roc_data <- roc(response=dataMatrixHist$RFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-        dev.off()
-          ROC_list[["RFS_logitWithRxGrade"]] <- roc_data
-        textOut <- capture.output(roc_data)
-        cat("roc_info:\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["RFS_logitWithRxGrade"]] <- summary( linearModels[["RFS_logitWithRxGrade"]])
-        textOut <- capture.output( linearModelsSumm[["RFS_logitWithRxGrade"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile) 
-        linearModelsSumm[["RFS_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrixHist$community),collapse=",")
-        
-      }else{
-        
-        cat(gsub(" ","_",paste0("\nHist grade with RFS analysis returned NA.\n")),append=TRUE,file=summaryFile)  
-      }
-      
-      
-      
-      message("Running DFS models")
-      ###DFS
-      cat(gsub(" ","_",paste0("\nLinear analysis with only DFS:\n")),append=TRUE,file=summaryFile)
-      
-      dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$DFS))), ]
-      dataMatrix$community <- as.factor(dataMatrix$community)
-      dataMatrix$DFS <- as.factor(dataMatrix$DFS)
-      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
-      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
-      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
-      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
-      cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrix$studyNum),"\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrix$community),"\n")),append=TRUE,file=summaryFile)
-      
-      #strongly predicts DFS.
-      linearModels[["DFS_logitAlone"]] <- glm(DFS~community,data=dataMatrix,family=binomial(link="logit"))
-      png(filename=paste0(saveDirMerged,"/",experimentName,"_DFS_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-      predictor <- predict(linearModels[["DFS_logitAlone"]],type="response")
-      roc_data <- roc(response=dataMatrix$DFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-      dev.off()
-     ROC_list[["DFS_logitAlone"]] <- roc_data
-      textOut <- capture.output(roc_data)
-      cat("roc_info\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-      cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-      linearModelsSumm[["DFS_logitAlone"]] <- summary( linearModels[["DFS_logitAlone"]] ) 
-      textOut <- capture.output( linearModelsSumm[["DFS_logitAlone"]]$coefficients)
-      cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-      textOut <- capture.output( linearModelsSumm[["DFS_logitAlone"]])
-      cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-      linearModelsSumm[["DFS_numPatients"]] <- nrow(dataMatrix)
-      cat("\nNumber of patients: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
-      linearModelsSumm[["DFS_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-      
-      ##with therapies
-      #interesting: community becomes insignificant if add in therapies now: this could be
-      #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
-      #low Rsquared.
-      cat(gsub(" ","_",paste0("\nLinear analysis with DFS and treatment:\n")),append=TRUE,file=summaryFile)
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
-      dataMatrix <- data.frame(dataMatrix)
-      dataMatrix$community <- as.factor(dataMatrix$community)
-      dataMatrix$DFS <- as.factor(dataMatrix$DFS)
-      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
-      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
-      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
-      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
-      cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrix$studyNum),"\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrix$community),"\n")),append=TRUE,file=summaryFile)
-      
-      linearModelsSumm[["DFS_withRx_numPatients"]] <- nrow(dataMatrix)
-      cat("\nNumber_of_patients_for_DFS_with_Rx_model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
-      
-      if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 && 
-         length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-        
-        #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(DFS~chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
-    
-    
-        #now try with grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["DFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_DFS_withGrade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["DFS_logitWithRxGrade"]] <- tryCatch( glm(DFS~community+chemotherapyClass+anti_estrogen+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 &&
-               length(unique(dataMatrix$anti_HER2))==1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor DFS analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n")),
-            append=TRUE,file=summaryFile)
-        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-                #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(DFS~chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
-    
-
-        #now try with grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["DFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_DFS_withGrade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["DFS_logitWithRxGrade"]] <- tryCatch( glm(DFS~community+chemotherapyClass+anti_estrogen+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
-               && length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        cat(gsub(" ","_",paste0("\nFor DFS analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n")),
-            append=TRUE,file=summaryFile)
-        
-        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-                    #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(DFS~chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
-    
-
-        #now try with grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["DFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_DFS_withGrade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["DFS_logitWithRxGrade"]] <- tryCatch( glm(DFS~community+chemotherapyClass+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))==1 && length(unique(dataMatrix$anti_estrogen))>1 
-               && length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor DFS analysis, all chemo values the same: ",unique(unique(dataMatrix$chemotherapyClass)),"\n")),
-            append=TRUE,file=summaryFile)
-        
-        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-                          #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(DFS~anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
-    
-
-        #now try with grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["DFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_DFS_withGrade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["DFS_logitWithRxGrade"]] <- tryCatch( glm(DFS~community+anti_estrogen+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
-               && length(unique(dataMatrix$anti_HER2))==1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor DFS analysis, the anti HER2 and estrogen variables have only one unique value each.\n")),append=TRUE,
-            file=summaryFile)
-        
-        
-        linearModels[["DFS_logitWithRx"]] <- tryCatch(glm(DFS~community+chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-                               #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(DFS~chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["DFS_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["DFS_logitWithRx"]],test="Chisq")
-    
-
-        #now try with grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na((dataMatrix$hist_grade))),]
- 
-        
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["DFS_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat("\nNumber_of_patients_for_DFS_withGrade_model: ",nrow(dataMatrixHist),"\n",append=TRUE,file=summaryFile)
-        linearModels[["DFS_logitWithRxGrade"]] <- tryCatch( glm(DFS~community+chemotherapyClass+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-      }else{
-        
-        # don't run models
-        
-      }
-      
-      cat(gsub(" ","_",paste0("\nLinear analysis with DFS and treatment:\n")),append=TRUE,file=summaryFile)
-      if(any(!is.na(linearModels[["DFS_logitWithRx"]]))){
-        
-        predictor <- predict(linearModels[["DFS_logitWithRx"]],type="response")
-        png(filename=paste0(saveDirMerged,"/",experimentName,"_DFS_withRx_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-        roc_data <- roc(response=dataMatrix$DFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-        dev.off()
-          ROC_list[["DFS_logitWithRx"]] <- roc_data
-        textOut <- capture.output(roc_data)
-        cat("roc_info\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["DFS_logitWithRx"]] <- summary( linearModels[["DFS_logitWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["DFS_logitWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-                textOut <- capture.output( linearModelsSumm[["DFS_logitWithRx"]])
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nLinear analysis with DFS and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
-        textOut <- capture.output(linearModels[["DFS_logitWithRx_ANOVA"]])
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        linearModelsSumm[["DFS_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-        
-      }else{
-        
-        cat(gsub(" ","_",paste0("\nRx with DFS analysis returned NA.\n")),append=TRUE,file=summaryFile)  
-      }
-      
-      
-      #now try with grade.
-      cat(gsub(" ","_",paste0("\nLinear analysis with DFS and histological grade :\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nUnique hist grade values :",unique(dataMatrixHist$hist_grade),"\n")),append=TRUE,file=summaryFile)
-      
-      
-      if(!is.na(linearModels[["DFS_logitWithRxGrade"]])){
-        
-        linearModelsSumm[["DFS_logitWithRxGrade"]] <- summary( linearModels[["DFS_logitWithRxGrade"]])
-        textOut <- capture.output( linearModelsSumm[["DFS_logitWithRxGrade"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile) 
-        linearModelsSumm[["DFS_WithGradeMetaClusters_used"]] <- paste(unique(dataMatrixHist$community),collapse=",")
-        
-        predictor <- predict(linearModels[["DFS_logitWithRxGrade"]],type="response")
-        png(filename=paste0(saveDirMerged,"/",experimentName,"_DFS_withGrade_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-        roc_data <- roc(response=dataMatrixHist$DFS,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-        dev.off()
-          ROC_list[["DFS_logitWithRxGrade"]] <- roc_data
-        textOut <- capture.output(roc_data)
-        cat("roc_info\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-        
-      }else{
-        
-        cat(gsub(" ","_",paste0("\nHist grade with DFS analysis returned NA\n.")),append=TRUE,file=summaryFile)  
-      }
-      
-      
-      message("Running pCR models")
-      #####pCR
-      cat(gsub(" ","_","\nLinear analysis with only pCR:\n"),append=TRUE,file=summaryFile)
-      
-      dataMatrix <- sampleClustCommPhenoData[which(!is.na((sampleClustCommPhenoData$pCR))), ]
-      dataMatrix$community <- as.factor(dataMatrix$community)
-      dataMatrix$pCR <- as.factor(dataMatrix$pCR)
-      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
-      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
-      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
-      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
-      cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrix$studyNum),"\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrix$community),"\n")),append=TRUE,file=summaryFile)
-      
-      #strongly predicts pCR.
-      
-  #hmm...turns out that sometimes only one meta-cluster has pCR values.
-      linearModels[["pCR_logitAlone"]] <- glm(pCR~community,data=dataMatrix,family=binomial(link="logit"))
-      if(!is.na(linearModelslinearModels[["pCR_logitAlone"]])){
-              
-      predictor <- predict(linearModels[["pCR_logitAlone"]],type="response")
-      png(filename=paste0(saveDirMerged,"/",experimentName,"_pCR_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-      roc_data <- roc(response=dataMatrix$pCR,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-      dev.off()
-      ROC_list[["pCR_logitAlone"]] <- roc_data
-      textOut <- capture.output(roc_data)
-      cat("roc_info\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-      cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-      
-      
-      linearModelsSumm[["pCR_logitAlone"]] <- summary(  linearModels[["pCR_logitAlone"]] ) 
-      textOut <- capture.output( linearModelsSumm[["pCR_logitAlone"]]$coefficients)
-      cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        textOut <- capture.output( linearModelsSumm[["pCR_logitAlone"]])
-      cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-      linearModelsSumm[["pCR_numPatients"]] <- nrow(dataMatrix)
-      cat("\nNumber_of_patients_for_pCR_model: ",nrow(dataMatrix),"\n",append=TRUE,file=summaryFile)
-      linearModelsSumm[["pCR_aloneMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-      
-      }else{
-        
-         cat(gsub(" ","_",paste0("\n pCR alone analysis returned NA\n.")),append=TRUE,file=summaryFile)  
-      }
-      ##with therapies
-      #interesting: community becomes insignificant if add in therapies now: this could be
-      #because community is most likely correlated with treatments; it's certainly correlated with pam50 status.
-      #low Rsquared.
-      cat(gsub(" ","_",paste0("\nLinear analysis with pCR and treatment:\n")),append=TRUE,file=summaryFile)
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$chemotherapyClass)), ]
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_estrogen)), ]
-      dataMatrix <- dataMatrix[which(!is.na(dataMatrix$anti_HER2)), ]
-      dataMatrix <- data.frame(dataMatrix)
-      dataMatrix$community <- as.factor(dataMatrix$community)
-      dataMatrix$pCR <- as.factor(dataMatrix$pCR)
-      dataMatrix$hist_grade <- as.factor(dataMatrix$hist_grade)
-      dataMatrix$chemotherapyClass <- as.factor(dataMatrix$chemotherapyClass)
-      dataMatrix$anti_estrogen <- as.factor(dataMatrix$anti_estrogen)
-      dataMatrix$anti_HER2 <- as.factor(dataMatrix$anti_HER2)
-      cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrix$studyNum),"\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrix$community),"\n")),append=TRUE,file=summaryFile)
-      
-      linearModelsSumm[["pCR_withRx_numPatients"]] <- nrow(dataMatrix)
-      cat(gsub(" ","_",paste0("\nNumber_of_patients_for_pCR_withRx_model: ",nrow(dataMatrix),"\n")),append=TRUE,file=summaryFile)
-      
-      if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 &&
-         length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-        
-                                    #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(pCR~chemotherapyClass+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
-    
-
-        #now try with grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat(gsub(" ","_",paste0("\nNumber_of_patients_for_pCR_withGrade_model: ",nrow(dataMatrixHist),"\n")),append=TRUE,file=summaryFile)
-        linearModels[["pCR_logitWithRxGrade"]] <- tryCatch( glm(pCR~community+chemotherapyClass+anti_estrogen+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))>1 
-               && length(unique(dataMatrix$anti_HER2))==1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor pCR analysis, all anti_HER2 values the same: ",unique(unique(dataMatrix$anti_HER2)),"\n")),
-            append=TRUE,file=summaryFile)
-        linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-                                            #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(pCR~chemotherapyClass+anti_estrogen,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
-        #now try with stage, grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
- 
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat(gsub(" ","_",paste0("\nNumber_of_patients_for_pCR_withGrade_model: ",nrow(dataMatrixHist),"\n")),append=TRUE,file=summaryFile)
-        linearModels[["pCR_logitWithRxGrade"]] <- tryCatch( glm(pCR~community+chemotherapyClass+anti_estrogen+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
-               && length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        cat(gsub(" ","_",paste0("\nFor pCR analysis, all anti_estrogen values the same: ",unique(unique(dataMatrix$anti_estrogen)),"\n")),
-            append=TRUE,file=summaryFile)
-        
-        linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-                                                  #remove communities for ANOVA
-           reducedModel <- tryCatch(glm(pCR~chemotherapyClass+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
-
-        #now try with stage, grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
- 
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat(gsub(" ","_",paste0("\nNumber_of_patients_for_pCR_withGrade_model: ",nrow(dataMatrixHist),"\n")),append=TRUE,file=summaryFile)
-        linearModels[["pCR_logitWithRxGrade"]] <- tryCatch( glm(pCR~community+chemotherapyClass+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))==1 && length(unique(dataMatrix$anti_estrogen))>1 
-               && length(unique(dataMatrix$anti_HER2))>1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor pCR analysis, all chemo values the same: ",unique(dataMatrix$chemotherapyClass),"\n")),
-            append=TRUE,file=summaryFile)
-        
-        linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-   #remove community for ANOVA
-        reducedModel <- tryCatch(glm(pCR~anti_estrogen+anti_HER2,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
-
- 
-        #now try with stage, grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
- 
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrix)
-        cat(gsub(" ","_",paste0("\nNumber_of_patients_for_pCR_withGrade_model: ",nrow(dataMatrixHist),"\n")),append=TRUE,file=summaryFile)
-        linearModels[["pCR_logitWithRxGrade"]] <- tryCatch( glm(pCR~community+anti_estrogen+anti_HER2+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-        
-        
-      }else if(length(unique(dataMatrix$chemotherapyClass))>1 && length(unique(dataMatrix$anti_estrogen))==1 
-               && length(unique(dataMatrix$anti_HER2))==1 ){
-        
-        
-        cat(gsub(" ","_",paste0("\nFor pCR analysis, the anti HER2 and estrogen variables have only one unique value each.\n")),append=TRUE,
-            file=summaryFile)
-        
-        
-        linearModels[["pCR_logitWithRx"]] <- tryCatch(glm(pCR~community+chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-
-   #remove community for ANOVA
-        reducedModel <- tryCatch(glm(pCR~chemotherapyClass,data=dataMatrix,family=binomial(link="logit")),
-                                                      error = function(e) {
-                                                        return(NA)
-                                                      }
-        )
-         linearModels[["pCR_logitWithRx_ANOVA"]] <- anova(reducedModel, linearModels[["pCR_logitWithRx"]],test="Chisq")
-
-
-        #now try with stage, grade.
-        cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
-        dataMatrixHist <- dataMatrix[which(!is.na(dataMatrix$hist_grade)),]
- 
-        cat(gsub(" ","_",paste0("\nStudies used: ",unique(dataMatrixHist$studyNum),"\n")),append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nMeta-clusters used: ",unique(dataMatrixHist$community),"\n")),append=TRUE,file=summaryFile)
-        
-        linearModelsSumm[["pCR_withGrade_numPatients"]] <- nrow(dataMatrixHist)
-        cat(gsub(" ","_",paste0("\nNumber_of_patients_for_pCR_withGrade_model: ",nrow(dataMatrixHist),"\n")),append=TRUE,file=summaryFile)
-        linearModels[["pCR_logitWithRxGrade"]] <- tryCatch( glm(pCR~community+chemotherapyClass+hist_grade,data=dataMatrixHist,family=binomial(link="logit")),
-                                                            error = function(e) {
-                                                              return(NA)
-                                                            }
-        )
-        
-        
-        
-        
-      }else{
-        
-        # don't run models
-        
-      }
-      
-      cat(gsub(" ","_",paste0("\nLinear analysis with pCR and treatment:\n")),append=TRUE,file=summaryFile)
-      if(any(!is.na(linearModels[["pCR_logitWithRx"]]))){
-        
-        linearModelsSumm[["pCR_logitWithRx"]] <- summary( linearModels[["pCR_logitWithRx"]])
-        textOut <- capture.output( linearModelsSumm[["pCR_logitWithRx"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile) 
-        linearModelsSumm[["pCR_WithRxMetaClusters_used"]] <- paste(unique(dataMatrix$community),collapse=",")
-                textOut <- capture.output( linearModelsSumm [["pCR_logitWithRx"]])
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat(gsub(" ","_",paste0("\nLinear analysis with pCR and treatment ANOVA for meta-clusters:\n")),append=TRUE,file=summaryFile)
-        textOut <- capture.output(linearModels[["pCR_logitWithRx_ANOVA"]])
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile)
-        
-        predictor <- predict(linearModels[["pCR_logitWithRx"]],type="response")
-        png(filename=paste0(saveDirMerged,"/",experimentName,"_pCR_withRx_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-        roc_data <- roc(response=dataMatrix$pCR,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-        dev.off()
-          ROC_list[["pCR_logitWithRx"]] <- roc_data
-        textOut <- capture.output(roc_data)
-        cat("roc_info\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-        
-        
-        
-      }else{
-        
-        cat(gsub(" ","_",paste0("\nRx with pCR analysis returned NA\n.")),append=TRUE,file=summaryFile)  
-      }
-      
-      
-      #now try with stage, grade.
-      cat(gsub(" ","_",paste0("\nLinear analysis with pCR and histological grade :\n")),append=TRUE,file=summaryFile)
-      cat(gsub(" ","_",paste0("\nUnique hist grade values :",unique(dataMatrixHist$hist_grade),"\n")),append=TRUE,file=summaryFile)
-
-      if(any(!is.na(linearModels[["pCR_logitWithRxGrade"]]))){
-        
-        linearModelsSumm[["pCR_logitWithRxGrade"]] <- summary( linearModels[["pCR_logitWithRxGrade"]])
-        textOut <- capture.output( linearModelsSumm[["pCR_logitWithRxGrade"]]$coefficients)
-        cat(textOut,sep="\n",append=TRUE,file=summaryFile) 
-        linearModelsSumm[["pCR_logitWithRxGrade"]] <- paste(unique(dataMatrixHist$community),collapse=",")
-        
-        predictor <- predict(linearModels[["pCR_logitWithRxGrade"]],type="response")
-        png(filename=paste0(saveDirMerged,"/",experimentName,"_pCR_withGrade_ROC_",Sys.Date(),".png"),width=1000,height=1000,res=200)
-        roc_data <- roc(response=dataMatrixHist$pCR,predictor=predictor,plot=TRUE,na.rm=TRUE,auc=TRUE)
-        dev.off()
-             ROC_list[["pCR_logitWithRxGrade"]] <- roc_data
-        textOut <- capture.output(roc_data)
-        cat("roc_info\n",textOut,sep="\n",append=TRUE,file=summaryFile)
-        cat("\nAUC: ",roc_data$auc,"\n",append=TRUE,file=summaryFile)
-        
-      }else{
-        
-        cat(gsub(" ","_",paste0("\nHist grade with pCR analysis returned NA.")),append=TRUE,file=summaryFile)  
-      }
-
-  output <- list(sampleClustCommPhenoData=sampleClustCommPhenoData,ROC_data=ROC_list,
-                 linearModelSummaries=linearModelsSumm,linearSurvModels=linearModels)
-  return(output)
-}

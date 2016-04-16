@@ -74,8 +74,6 @@ matrix clusterings using the script:
 Next, a lot of up-front work was done on simulated data to prove Coincide behaves as "expected".  Functions to 
 both create the simulated clusters and run Coincide on it can be found in the scripts below:
 
-(a quick note: below this line, I'm still working on not having paths hard-coded to make it 
-easier for other folks to copy and paste/run the code):
 -Coincide_tissueSimulation_script.R
 -Coincide_simulationVisualizations_script.R
 
@@ -85,7 +83,8 @@ Coincide package functions to analyze survival results for the breast and ovaria
 -Coincide_metaFeaturesAnalysisWrapper.R
 
 Scripts that use this wrapper function to interpret the output for the breast and ovarian functions can be found at:
-
+(a quick note: below this line, I'm still working on not having paths hard-coded to make it
+easier for other folks to copy and paste/run the code):
 -Coincide_breastMergedAnalysis_script.R
 -Coincide_ovarianMetaFeatures_analysis_withTop20Genes_script.R
 
