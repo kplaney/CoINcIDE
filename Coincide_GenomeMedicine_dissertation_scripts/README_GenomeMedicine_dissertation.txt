@@ -61,46 +61,49 @@ different normalization schemes, as this is the current way to cluster across mu
 OK we have all of our clusters for each dataset. Now let's run the core functions of Coincide. I did this by using two Rscript 
 command line files, and a third file that called them for each of the clustering analyses from the two files above. 
 
-Coincide_baseAnalysisNullFDRScript.R
-Coincide_baseAnalysisScript.R
-Coincide_breastAndOvarian_script.R
+-Coincide_baseAnalysisNullFDRScript.R
+-Coincide_baseAnalysisScript.R
+-Coincide_breastAndOvarian_script.R
 
 
 Next, as a pseudo basline comparison to later Coincide analyses, I analyzed the breast concatenated/merged 
 matrix clusterings using the script:
 
-Coincide_breastMergedAnalysis_script.R
+-Coincide_breastMergedAnalysis_script.R
 
 Next, a lot of up-front work was done on simulated data to prove Coincide behaves as "expected".  Functions to 
 both create the simulated clusters and run Coincide on it can be found in the scripts below:
 
-Concide_tissueSimulation_script.R
-Coincide_simulationVisualizations_script.R
+-Coincide_tissueSimulation_script.R
+-Coincide_simulationVisualizations_script.R
 
 Finally, on to the visualization and interpretation of the results on real data. I used a wrapper function that is more closely tailored to my specific breast and ovarian analyses that uses the broader 
 Coincide package functions to analyze survival results for the breast and ovarian data. This wrapper script is:
 
-Coincide_metaFeaturesAnalysisWrapper.R
+-Coincide_metaFeaturesAnalysisWrapper.R
 
 Scripts that use this wrapper function to interpret the output for the breast and ovarian functions can be found at:
 
-Coincide_breastMergedAnalysis_script.R
-Coincide_ovarianMetaFeatures_analysis_withTop20Genes_script.R
+-Coincide_breastMergedAnalysis_script.R
+-Coincide_ovarianMetaFeatures_analysis_withTop20Genes_script.R
 
 Two additional scripts to dig into further detail on specific aspects of the ovarian analyses are:
 
-Coincide_ovarianMetaFeaturesAnalysis_withTop20Genes_serousOnly_script.R
-Coincide_ovarianWithTop20Genes_MM7_min30OutcomesPerSubtypes_script.R 
+-Coincide_ovarianMetaFeaturesAnalysis_withTop20Genes_serousOnly_script.R
+-Coincide_ovarianWithTop20Genes_MM7_min30OutcomesPerSubtypes_script.R 
 
 And a script showing how I inspected druggable genes that had a high meta-ranked effect size is:
 
-Concide_findDruggableTopESGenes_script. R
+-Coincide_findDruggableTopESGenes_script. R
 
 Note that I used GSEA on the genes with a high meta-ranked effect size in these metaFeatures scripts, 
-and that requires gene lists to be inputted.  I specifiy the Broad institute gene lists 
+and that requires gene lists to be inputted (this is the refGeneListDir="~/GSEA_base_MSigDB_lists_merged.RData.gzip" 
+keyword in the metaFeaturesAnalysisWrapper function.)  I specifiy the Broad institute gene lists 
 in the supplemental sections of the Genome Medicine publication, but if the RData object is not in the Github repo,
 it's because I was nervous about its size.  However, I do have these gene lists in an RData object for complete 
 reproducibility, as the Broad Institute may change the gene lists over time. You can reach out to the email below 
-if you wish to obtain this RData object.
+if you wish to obtain this RData object. The script I used to format the Broad GMT files is:
+
+Coincide_readIn_MSigDB_GMTfiles.R
 
 Questions? Contact Katie Planey at katie.planey@gmail.com
