@@ -13,7 +13,7 @@ I am working on "stripping down" the full package into a more manageable and wel
 Bioconductor, and then slowly add on some of the more data-type-specific functions I used that are tailored to the 
 datasets I used in the publication, curatedBreastData and curatedOvarianData, which are on Biocondcutor.
 
-I am not currently in academia anymore, but I do my best to respond to emails quickly, and am still developing 
+I am not currently in academia anymore (i.e. I defended my thesis and graduated), but I do my best to respond to emails quickly, and am still developing 
 extensions to Coincide in my spare time. For example, Coincide can also be used as a new consensus clustering 
 framework to select the number of clusters on a single dataset. If you are interested in collaborating on this and 
 other work, please do let me know.
