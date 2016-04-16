@@ -5,6 +5,7 @@ scriptDir <- "/home/ywrfc09/CoINcIDE/coincide/GenomeBiology/"
 library("Coincide")
 
 ##CHANGE these paths to your user directory
+##these variables will be used in scripts further down the pipeline
 saveDirGlobal <- "/home/ywrfc09/breast_analysis/"
 saveDirGlobal_ovarian <- "/home/ywrfc09/ovarian_analysis/"
 saveDir_PAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses/"

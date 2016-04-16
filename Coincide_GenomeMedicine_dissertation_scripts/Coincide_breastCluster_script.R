@@ -1,7 +1,7 @@
 
 #clustering the beast cancer datasets using various feature sets
 #clustering method was selected using the Coincide_selectK_cluster_script.R
-
+#merged concatenated clustering is run at the bottom of the script
 library("Coincide")
 
 ##CHANGE these paths to your user directory
@@ -9,7 +9,8 @@ saveDirGlobal <- "/home/ywrfc09/breast_analysis/"
 saveDir_PAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses/"
 saveDir_20 <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes"
 saveDir_no20 <-  "/home/ywrfc09/breast_analysis/metaRankNoTop20Genes"
-outputFile <- "/home/kplaney/breast_analysis/clust_test_outMessages.txt"
+saveDirMerged <- "/home/ywrfc09/breast_analysis/mergedMatrix/"
+outputFile <- paste0(saveDirMerged ,"/merged_outMessages.txt")
 
 dataMatrixList <- readRDS(paste0(saveDirGlobal,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.rds"))
 
@@ -531,5 +532,132 @@ kmeansConsensus<- clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustM
                                          corUse="everything",pItem=.9,maxPAC=.15)
 
 saveRDS(kmeansConsensus,file=paste0(saveDirGlobal,"/curatedbreastData_kmeansConsensus_nstart1pItem9",numFeatures,"Features_NOPAM50_",Sys.Date(),".rds"),compress=TRUE)
+
+################MERGED clustering on concatenated matrices
+saveDirMerged 
+
+dataMatrixList <- readRDS(paste0(saveDirGlobal,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.rds"))
+##this code was already run in GenomeBiology_breastCluster_script.R to help with selection of final datasets.
+output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('none'));
+saveRDS(output,file=paste0(saveDirMerged, "/mergedExprMatrix_minVar001_17_studies_no_norm.RData.rds",compress=TRUE))
+
+load("pam50Short_genes.RData")
+
+#now our data matrix "list" is just one gigantic matrix
+dataMatrixList <- list(mergedNoNorm=output$mergedExprMatrix)
+
+clustFeaturesList <- list(pam50Short=pam50Short)
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <-  clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                             pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                             numSims=500,maxNumClusters=20,
+                                             outputFile=outputFile,distMethod=c("euclidean"),
+                                             hclustAlgorithm=c("average"),
+                                             consensusHclustAlgorithm=c("average"),
+                                             minClustConsensus=.7, minMeanClustConsensus=.85,
+                                             corUse="everything",pItem=.9,maxPAC=.15)
+
+
+saveRDS(kmeansConsensus,file=paste0(saveDirMerged,"/curatedBreastData_kmeansConsensus_mergedNoNorm_pam50Short_nstart1",Sys.Date(),".rds"),compress=TRUE)
+
+#how do the centroids look?
+
+# combat must be run on intersecting genes only; so limited pam50 gene set is a confounding factor.
+#but still, if subtypes changes between no norm and combat with limited pam50 gene set, this is still an issue:
+mergedNoNorm <- output$mergedExprMatrix
+Pam50_subtypes_noNorm <- assignCentroidSubtype(t(mergedNoNorm),minNumGenes=30,centroidRData="pam50_centroids_updatedSymbols.RData");
+
+
+#ooof..these are really mixed up!
+table(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]] ,"subtypeLabels"])
+table(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]] ,"subtypeLabels"])
+#and this cluster is super tiny!
+table(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]] ,"subtypeLabels"])
+
+attrDF <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])),
+                       rep.int(2,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]])),
+                       rep.int(3,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]))
+                       ),
+                     c(Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]] ,"subtypeLabels"],
+                       Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]] ,"subtypeLabels"],
+                       Pam50_subtypes_noNorm$subtype[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]] ,"subtypeLabels"]))
+library("ggplot2")
+colnames(attrDF) <- c("clustNum","subtype")
+#....not good
+ggplot(data=attrDF,aes(subtype))+geom_bar() + facet_grid(.~clustNum)
+
+#try with the pull pam50 subtypes, too?
+load("pam50Full_subtypeDF.RData.gzip")
+subtypes <- subtypeDF$subtype[na.omit(match(colnames(mergedNoNorm),subtypeDF$sampleName))]
+
+
+table(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]]])
+table(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]]])
+table(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]])
+
+attrDF_pam50Full <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]])),
+                       rep.int(2,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]])),
+                       rep.int(3,length(kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]))
+),
+c(subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]]],
+  subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[2]]],
+  subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[3]]]))
+library("ggplot2")
+colnames(attrDF_pam50Full) <- c("clustNum","subtype")
+ggplot(data=attrDF_pam50Full,aes(subtype))+geom_bar() + facet_grid(.~clustNum)
+
+#########
+#now with BMC normalization
+dataMatrixList <- readRDS(paste0(saveDirGlobal,"/curatedBreastData_dataMatrixList_proc_minVar001_min10kGenes_min40Samples.rds"))
+output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('BMC'));
+saveRDS(output,file=paste0(saveDirMerged,"/mergedExprMatrix_minVar001_17_studies_BMC_norm.RData.rds"),compress=TRUE)
+
+
+load("pam50Short_genes.RData")
+
+dataMatrixList <- list(mergedBMC=output$mergedExprMatrix)
+
+clustFeaturesList <- list(pam50Short=pam50Short)
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <-  clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                           pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                           numSims=500,maxNumClusters=20,
+                                           outputFile=outputFile,distMethod=c("euclidean"),
+                                           hclustAlgorithm=c("average"),
+                                           consensusHclustAlgorithm=c("average"),
+                                           minClustConsensus=.7, minMeanClustConsensus=.85,
+                                           corUse="everything",pItem=.9,maxPAC=.15)
+
+
+save(kmeansConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_mergedBMCNorm_pam50Short_nstart1",Sys.Date(),".RData.gzip"),compress="gzip")
+
+#########
+#combat
+###did not detect a batch effect!! p-value was .055....so try .1:
+output <- merge_datasetList(datasetList=dataMatrixList,minNumGenes = 10000, minNumPatients = 40,batchNormalize = c('combat'),combatPvalueThresh=.1);
+save(output,file="/home/kplaney/breast_analysis//mergedExprMatrix_minVar001_17_studies_combat_norm.RData.gzip",compress="gzip")
+message("Done with Combat")
+
+load("/home/kplaney/breast_analysis/pam50Short_genes.RData")
+
+dataMatrixList <- list(mergedCombat=output$mergedExprMatrix)
+
+clustFeaturesList <- list(pam50Short=pam50Short)
+
+#we know these are strong clusters. have  minMeanClustConsensus=.8
+kmeansConsensus <-  clustMatrixListWrapper(dataMatrixList,clustFeaturesList,clustMethod=c("km"),
+                                           pickKMethod=c("consensus"),iter.max=20,nstart=1,
+                                           numSims=500,maxNumClusters=20,
+                                           outputFile=outputFile,distMethod=c("euclidean"),
+                                           hclustAlgorithm=c("average"),
+                                           consensusHclustAlgorithm=c("average"),
+                                           minClustConsensus=.7, minMeanClustConsensus=.85,
+                                           corUse="everything",pItem=.9,maxPAC=.15)
+
+
+save(kmeansConsensus,file=paste0("/home/kplaney/breast_analysis/curatedBreastData_kmeansConsensus_mergedCombatNorm_pam50Short_nstart1",Sys.Date(),".RData.gzip"),compress="gzip")
+
 
 

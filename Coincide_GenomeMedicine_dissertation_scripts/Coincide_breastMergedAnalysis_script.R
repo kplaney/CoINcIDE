@@ -2,11 +2,36 @@
 library("Coincide")
 
 #this script follows from: breastProcessAndGeneFeature_script.R
+#It analyses the breast data using concatenated clustering on a merged 
+#dataset.
 
-#other libraries called later down: plyr, ggplot2
-saveDirMerged <- "/home/ywrfc09/breast_analysis/mergedMatrix/"
-##assign subtypes
+#it assumes you have these files in your path (they are in the same folder 
+#as this script in the github repo):
+#pam50_centroids_updatedSymbols.RData
+#pam50FullAndShort_subtypeDF.RData.gzip
+
+#and note the libraries called later down: plyr, ggplot2
+
+#CHANGE these paths to match ones have used in scripts that 
+#feed into this one
 saveDirGlobal <- "/home/ywrfc09/breast_analysis"
+saveDirMerged <- "/home/ywrfc09/breast_analysis/mergedMatrix/"
+
+#Script that pre-processes the curatedBreastData, filters out small datasets,
+#and then picks meta-rank gene sets of varying length.
+
+#CHANGE THESE PATHS to your own user directories
+saveDirGlobal <- "/home/ywrfc09/breast_analysis"
+saveDir_20 <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes"
+saveDir_no20 <-  "/home/ywrfc09/breast_analysis/metaRankNoTop20Genes"
+outputFile <- "/home/kplaney/breast_analysis/breast_proc_outMessages.txt"
+saveDirGlobal <- "/home/ywrfc09/breast_analysis/"
+saveDirGlobal_ovarian <- "/home/ywrfc09/ovarian_analysis/"
+saveDir_PAM50 <- "/home/ywrfc09/breast_analysis/PAM50_analyses/"
+saveDir_20 <- "/home/ywrfc09/breast_analysis/metaRankWithTop20Genes"
+saveDir_20_ovarian <-  "/home/ywrfc09/ovarian_analysis/metaRankNoTop20Genes"
+outputFile <- "/home/kplaney/breast_analysis/clust_test_outMessages.txt"
+
 # combat must be run on intersecting genes only; so limited pam50 gene set is a confounding factor.
 #but still, if subtypes changes between no norm and combat with limited pam50 gene set, this is still an issue:
 ##also: look at effects of BMC normalization:
@@ -15,14 +40,14 @@ mergedBMC <- output$mergedExprMatrix
 load(paste0(saveDirGlobal,"/mergedExprMatrix_minVar001_17_studies_no_norm.RData.gzip"))
 mergedNoNorm <- output$mergedExprMatrix
 
-Pam50_subtypes_noNorm <- assignCentroidSubtype(t(mergedNoNorm),minNumGenes=30,centroidRData="/home/ywrfc09/breast_analysis/PAM50_analyses/pam50_centroids_updatedSymbols.RData");
-Pam50_subtypes_BMCNorm <- assignCentroidSubtype(t(mergedBMC),minNumGenes=30,centroidRData="/home/ywrfc09/breast_analysis/PAM50_analyses/pam50_centroids_updatedSymbols.RData");
+Pam50_subtypes_noNorm <- assignCentroidSubtype(t(mergedNoNorm),minNumGenes=30,centroidRData="pam50_centroids_updatedSymbols.RData");
+Pam50_subtypes_BMCNorm <- assignCentroidSubtype(t(mergedBMC),minNumGenes=30,centroidRData="pam50_centroids_updatedSymbols.RData");
 #wow...a lot changed!!! of course, if all pam50 genes were in all datasets, these numbers may slightly changed, but unlikely by much.
 length(which(Pam50_subtypes_noNorm$subtype[,"subtypeLabels"] != Pam50_subtypes_BMCNorm$subtypes[,"subtypeLabels"]))
 
 load(paste0(saveDirGlobal,"/mergedExprMatrix_minVar001_17_studies_combat_norm.RData.gzip"))
 mergedCombat <- output$mergedExprMatrix
-Pam50_subtypes_combatNorm <- assignCentroidSubtype(t(mergedCombat),minNumGenes=30,centroidRData="/home/ywrfc09/breast_analysis/PAM50_analyses/pam50_centroids_updatedSymbols.RData");
+Pam50_subtypes_combatNorm <- assignCentroidSubtype(t(mergedCombat),minNumGenes=30,centroidRData="pam50_centroids_updatedSymbols.RData");
 
 #how changed from no norm using the restricted gene set?
 #indices matched up?
@@ -43,7 +68,7 @@ length(which(Pam50_subtypes_BMCNorm$subtypes[,"subtypeLabels"]!=Pam50_subtypes_c
 
 
 #load up original full subtypes with unrestricted gene set too.
-load("/home/ywrfc09/breast_analysis/PAM50_analyses/pam50FullAndShort_subtypeDF.RData.gzip")
+load("pam50FullAndShort_subtypeDF.RData.gzip")
 #short vs full difference? 309
 length(which(subtypeDF_master$subtype!=Pam50_subtypes_noNorm$subtypes[,"subtypeLabels"]))
 #vs combat? 723 have changed now
@@ -93,8 +118,8 @@ patientIndices <- data.frame(as.numeric(subtypeDF_master$subtypeNum),
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-load("/home/ywrfc09/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
-  esets=esets_minVar001_17_studies
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -118,8 +143,8 @@ patientIndices <- data.frame(as.numeric(Pam50_subtypes_noNorm$subtypes[,"subtype
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-load("/home/ywrfc09/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
-  esets=esets_minVar001_17_studies
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
+
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -142,8 +167,7 @@ patientIndices <- data.frame(as.numeric(Pam50_subtypes_BMCNorm$subtypes[,"subtyp
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-load("/home/ywrfc09/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
-  esets=esets_minVar001_17_studies
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -165,8 +189,7 @@ patientIndices <- data.frame(as.numeric(Pam50_subtypes_combatNorm$subtypes[,"sub
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-load("/home/ywrfc09/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
-  esets=esets_minVar001_17_studies
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 
@@ -181,7 +204,7 @@ expName <- "Combat_PAM50centroids_survival"
 ROC_output <- runBreastCancerBinarySurvModels(sampleClustCommPhenoData,expName,saveDirMerged)
 saveRDS(ROC_output,compress=TRUE,file=paste0(saveDirMerged,"/",expName,"_ROC_stats.rds"))
 
-########noNorm plotting
+########noNorm plotting for clustering results
 load("/home/ywrfc09/breast_analysis/mergedMatrix/curatedBreastData_kmeansConsensus_mergedNoNorm_pam50Short_nstart12015-05-04.RData.gzip")
 
 table(Pam50_subtypes_noNorm$subtypes[kmeansConsensus$clustSampleIndexList_PACR[[1]][[1]] ,"subtypeLabels"])
@@ -251,8 +274,7 @@ patientIndices <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndex
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-load("/home/ywrfc09/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
-  esets=esets_minVar001_17_studies
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -388,8 +410,7 @@ patientIndices <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndex
 
 colnames(patientIndices) <- c("community","sampleName")
                        
-load("/home/ywrfc09/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
-  esets=esets_minVar001_17_studies
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
@@ -537,9 +558,8 @@ patientIndices <- data.frame(c(rep.int(1,length(kmeansConsensus$clustSampleIndex
 
 
 colnames(patientIndices) <- c("community","sampleName")
-                       
-load("/home/ywrfc09/breast_analysis/curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.gzip")
-  esets=esets_minVar001_17_studies
+
+esets <- readRDS(paste0(saveDirGlobal, "curatedBreastData_esets_proc_minVar001_min10kGenes_min40Samples.RData.rds"))
 
 phenoMasterDF <- createPhenoMasterTableFromMatrixList(esetList=esets,sampleKeyColName="dbUniquePatientID")
 library("plyr")
