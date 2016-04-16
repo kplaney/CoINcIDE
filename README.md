@@ -1,4 +1,6 @@
-# Coincide: this directory/repo contains both a library and extensive scripts for clustering across multiple datasets. 
+# Coincide
+
+This directory/repo contains both a library and extensive scripts for clustering across multiple datasets. 
 The method is called CoINcIDE, or Clustering INtra and Inter DatasEts.
 
 The Coincide_fullPackage/ directory contains the "full" package in that it contains all main and helper functions 
