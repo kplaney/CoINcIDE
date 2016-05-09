@@ -1,0 +1,39 @@
+%\VignetteIndexEntry{Manual}
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+<<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@
+\title{Coincide Manual}
+\author{Katie Planey}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\bibliographystyle{plain}
+\maketitle
+\tableofcontents
+\newpage
+\section{Introduction}
+{\bf Coincide} is a novel way to cluster items (usually patients) across multiple datasets.
+
+
+\subsection{Prerequisites}
+The package {\bf Coincide} has several package dependencies, because it provides functions for every step of the analysis process, from pre-processing microarray data (if the user decides to cluster on this data type) to final cluster network visualizations using igraph.
+
+%function \Rfunction{processExpressionSetList()} 
+
+<<>>=
+library("Coincide")
+#will include examples soon.
+@
+
+\section{References}
+\begin{enumerate}
+\item Planey, Butte. Database integration of 4923 publicly-available samples of breast cancer molecular and clinical data. AMIA Joint Summits Translational Science Proceedings. (2003) PMC3814460
+\item Github repo with code, further documentation on datasets and baseline normalization schemes, and database quality checks: 
+https://github.com/kplaney/CoINcIDE
+
+\end{enumerate}
+
+\end{document}
