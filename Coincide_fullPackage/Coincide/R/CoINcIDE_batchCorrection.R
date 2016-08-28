@@ -100,7 +100,7 @@ BatchCorrection <- function(GEN_Data,BatchData,mod,batchColName,outputFile="./co
   
   #par.prior=TRUE indicates parametric adjustments will be used
   #need a numeric batch variable.
-  CombatResults <- ComBat(dat=GEN_Data, batch=BatchDataSelected[,batchColName], mod=mod, par.prior=TRUE, prior.plots=FALSE,numCovs=NULL);
+  CombatResults <- ComBat(dat=GEN_Data, batch=BatchDataSelected[,batchColName], mod=mod, par.prior=TRUE, prior.plots=FALSE);
   
   #GEN_Data_Corrected=CombatResults[,-1]
   #class(GEN_Data_Corrected) <- "numeric"
